@@ -1,0 +1,4 @@
+baseURL = 'https://tacedata.ca/'
+languageCode = 'en-us'
+title = 'tacedata'
+theme = 'blowfish'

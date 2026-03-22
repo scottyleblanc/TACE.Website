@@ -1,0 +1,4 @@
+winget install Hugo.Hugo.Extended
+cd tacedata-site\hugo-eval
+hugo new site . --force   # --force because the directory already exists
+hugo server -D

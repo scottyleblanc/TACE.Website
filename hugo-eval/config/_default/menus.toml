@@ -1,0 +1,19 @@
+[[main]]
+name   = "Projects"
+url    = "/projects/"
+weight = 10
+
+[[main]]
+name   = "Blog"
+url    = "/posts/"
+weight = 20
+
+[[main]]
+name   = "Evolution"
+url    = "/evolution/"
+weight = 30
+
+[[main]]
+name   = "AI Perspective"
+url    = "/ai-perspective/"
+weight = 40

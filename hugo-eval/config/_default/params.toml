@@ -1,0 +1,20 @@
+logo = "img/logo.png"
+colorScheme = "ocean"
+defaultAppearance = "dark"
+autoSwitchAppearance = true
+
+[header]
+layout = "basic"
+
+[homepage]
+layout = "profile"
+showRecent = true
+
+[author]
+name = "Scott LeBlanc"
+headline = "Oracle DBA → PowerShell automation engineer → cloud practitioner"
+bio = "A working journal — projects, technical writing, and an honest record of what learning looks like in practice."
+links = [
+  { github = "https://github.com/scottyleblanc" },
+  { linkedin = "https://linkedin.com/in/scottleblanc" },
+]
