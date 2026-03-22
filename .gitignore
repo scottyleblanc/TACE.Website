@@ -1,0 +1,15 @@
+# Hugo build output — generated, never committed
+hugo-eval/public/
+hugo-eval/resources/
+
+# Hugo module cache
+hugo-eval/.hugo_build.lock
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
