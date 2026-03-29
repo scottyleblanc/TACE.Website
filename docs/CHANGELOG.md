@@ -6,6 +6,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-03-29
+
+### Changed
+- `docs/DECISIONS.md` — Email Hosting: aliases confirmed as the model, Fastmail identified as preferred provider, Zoho free tier as viable fallback, inbox migration downgraded to nice-to-have
+- `docs/TODO.md` — Stage 3: domain count set at minimum 3, email migration tasks simplified
+- `docs/websavers.md` — Open decisions updated to reflect clarifications
+
+---
+
 ## [0.4.0] - 2026-03-29
 
 ### Added

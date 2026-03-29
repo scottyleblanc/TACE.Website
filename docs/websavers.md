@@ -93,13 +93,10 @@ Do not cancel email hosting until export is confirmed complete.
 
 ## Open Decisions (unblock before Stage 3)
 
-1. **Which domains to keep?** Confirm the 5 domain variants. Decide which to transfer to
-   Route 53 and which to let lapse at renewal. At minimum, `tacedata.ca` must transfer.
+1. **Which domains to keep?** Confirm the 5 variants in the Websavers dashboard.
+   Keep a minimum of 3, possibly more. Domains not kept: do not renew at July 14.
+   Domains kept: transfer to Route 53 (~$14 CAD/year each vs. ~$25 CAD/year at Websavers).
 
-2. **Accounting and contact email — separate inboxes or aliases?** If aliases are
-   acceptable, Zoho free tier may be sufficient. If separate inboxes with independent
-   history are needed, Fastmail or Google Workspace is required.
-
-3. **Email inbox export** — must be completed before Websavers email is cancelled.
-   Use an IMAP client (Thunderbird is the standard tool) to export to local storage
-   before the cutover date.
+2. **Email provider** — Fastmail preferred (~$5/mo CAD); Zoho free tier remains a viable fallback.
+   Aliases confirmed as the model: accounting and contact forward to personal inbox.
+   Inbox history migration is nice-to-have; attempt via IMAP/Thunderbird if it fits.

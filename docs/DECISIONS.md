@@ -139,23 +139,26 @@ Utilities section is a different layer — data aggregation from external source
 - **IMAP export required before cutover** — do not cancel Websavers email until confirmed complete
 - Thunderbird is the standard tool for IMAP-to-local export
 
-### Aliases vs. separate inboxes
+### Email model (confirmed)
 
-The accounting and contact addresses are the deciding factor on cost:
+Accounting and contact addresses are aliases forwarding to the personal inbox — that is the current Websavers setup and the preferred model going forward. No separate inboxes required.
 
-- **If aliases are acceptable** (accounting and contact forward to personal inbox): Zoho Mail free tier works — 1 user, up to 30 aliases
-- **If separate inboxes with independent history are needed**: Zoho free tier is insufficient; Fastmail or Google Workspace required
+This means **Zoho Mail free tier is viable**: 1 user, up to 30 aliases, covers all three addresses.
+
+### Inbox history migration
+
+Nice-to-have, not a hard requirement. Attempt IMAP export via Thunderbird if it fits into the migration window — but do not block the cutover on it.
 
 ### Options
 
-| Option | Cost | Inbox import | Multiple addresses | Notes |
+| Option | Cost | Aliases | Inbox import | Verdict |
 |---|---|---|---|---|
-| Zoho Mail (free) | Free | Yes (IMAP) | Aliases only on free tier | Good enough if aliases acceptable |
-| Fastmail | ~$5/mo CAD | Yes (IMAP) | Aliases per account | Clean, privacy-focused |
-| Google Workspace | ~$8/mo CAD | Yes (migration tool) | Aliases per user | Best tooling; higher cost |
+| Fastmail | ~$5/mo CAD | Yes | Yes (IMAP) | **Preferred** |
+| Zoho Mail (free) | Free | Yes (up to 30) | Yes (IMAP, best-effort) | Viable fallback |
+| Google Workspace | ~$8/mo CAD | Yes | Yes (migration tool) | Overbuilt for this use case |
 
 ### Domains decision (related)
 
-5 domain variants registered at ~$25 CAD/year each (~$125 CAD/year total).
-Must decide which to transfer to Route 53 and which to let lapse at renewal.
-At minimum `tacedata.ca` transfers. Route 53 costs ~$14 CAD/year per .ca domain.
+5 defensive registrations at ~$25 CAD/year each (~$125 CAD/year total).
+Will keep a minimum of 3, possibly more. Exact list TBD — confirm variants in Websavers dashboard and decide before renewal.
+Route 53 costs ~$14 CAD/year per `.ca` domain — keeping 3 saves ~$33 CAD/year vs. Websavers.

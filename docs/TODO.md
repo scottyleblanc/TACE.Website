@@ -37,17 +37,17 @@ Stages are defined in `docs/STAGES.md`.
 
 ### Decisions required (can be done in parallel with Stage 2)
 
-- [ ] Decide which of the 5 domain variants to keep vs. let lapse at renewal
-    - At minimum: `tacedata.ca` must be kept and transferred
+- [ ] Confirm the 5 domain variants in Websavers dashboard — decide which to keep (minimum 3)
     - Each kept domain: ~$14 CAD/year at Route 53 vs. ~$25 CAD/year at Websavers
-- [ ] Decide accounting and contact email: separate inboxes or aliases to personal address?
-    - Answer determines whether Zoho free tier is viable — see `docs/DECISIONS.md`
-- [ ] Choose email provider: Zoho Mail (free), Fastmail (~$5/mo), Google Workspace (~$8/mo)
+    - Domains not kept: let lapse at July 14 renewal — do not renew
+- [ ] Choose email provider — Fastmail preferred; Zoho free tier remains a viable fallback
+    - Aliases confirmed as the model: accounting and contact forward to personal inbox
+    - See `docs/DECISIONS.md` for options
 
-### Email migration (must complete before cancelling Websavers)
+### Email migration
 
-- [ ] Export all 3 inboxes via IMAP using Thunderbird — confirm export complete before proceeding
-- [ ] Set up new email provider and import inbox history
+- [ ] Set up new email provider; configure accounting and contact as aliases to personal address
+- [ ] Attempt IMAP inbox export via Thunderbird — nice-to-have, not a hard requirement
 - [ ] Validate all 3 addresses receive email correctly on new provider
 - [ ] Update any services or accounts using the accounting or contact addresses
 
