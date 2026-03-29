@@ -19,12 +19,13 @@ Stages are defined in `docs/STAGES.md`.
 
 ---
 
-## Stage 2 — CI/CD and Hosting (Pending Stage 1 complete)
+## Stage 2 — CI/CD and Hosting (Current)
 
 ### Open
 
-- [ ] Choose hosting target: Netlify vs GitHub Pages — see STAGES.md for decision criteria
-- [ ] Create GitHub Actions workflow: push to main → hugo build → deploy
+- [ ] Review Websavers account details — see `docs/websavers.md` for checklist
+- [ ] Make final hosting decision: Netlify-first vs AWS direct — analysis in `docs/DECISIONS.md`
+- [ ] Create GitHub Actions workflow: push to main → hugo build → deploy to chosen host
 - [ ] Test full pipeline end-to-end on a non-production URL before pointing domain
 - [ ] Document pipeline in README.md
 
@@ -34,12 +35,14 @@ Stages are defined in `docs/STAGES.md`.
 
 ### Open
 
+- [ ] Review Websavers account — see `docs/websavers.md` (can be done in parallel with Stage 2)
 - [ ] Decide on email hosting before Websavers renewal (June/July 2026)
     - Options: Zoho Mail (free tier), Google Workspace, Fastmail
-- [ ] Point tacedata.ca DNS to new hosting target
-- [ ] Validate SSL certificate provisioned correctly on new host
-- [ ] Confirm old Websavers site is fully decommissioned before non-renewal
-- [ ] Update domain registrar if moving away from Websavers
+    - Blocked on: confirming what email addresses exist and whether they are in active use
+- [ ] Delegate DNS to Route 53 (change nameservers at Websavers — 15-20 min)
+- [ ] Validate SSL certificate provisioned correctly on new host (ACM, free with CloudFront)
+- [ ] Cancel Websavers WordPress hosting and email before renewal date
+- [ ] Optionally transfer domain registration to Route 53 (separate from DNS delegation — 5-7 day ICANN window)
 
 ---
 
@@ -47,12 +50,19 @@ Stages are defined in `docs/STAGES.md`.
 
 ### Open
 
-- [ ] Define site sections: Home, About, Projects, Blog, (AWS journey?)
 - [ ] Draft "About" content — who I am, the evolution, the intent of the site
 - [ ] Write up first project — OracleAwsRotation (diagram + problem/solution write-up)
 - [ ] Draft first blog post — candidate topics in STAGES.md
 - [ ] Decide on AI perspective thread — format, cadence, tone
 - [ ] Define LinkedIn publishing workflow — how posts get from blog to LinkedIn
+- [ ] Flesh out Skills section — Oracle and PowerShell pages
+
+### Site Structure (Confirmed — 2026-03-29)
+
+- Home, Blog, Projects, Skills — static Hugo content
+- Utilities — data aggregation pages, some with auth; see `docs/DECISIONS.md`
+  - Economy Dashboard (first utility)
+  - Additional utilities TBD
 
 ---
 

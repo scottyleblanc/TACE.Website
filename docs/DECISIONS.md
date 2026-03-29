@@ -42,11 +42,87 @@ the date, the options considered, and the rationale.
 
 ## Hosting Target
 
-**Decision:** Pending
-**Date:** —
-**Status:** Open — to be decided at end of Stage 1
+**Decision:** Pending — analysis complete, final call deferred
+**Date:** 2026-03-29
+**Status:** Open — see analysis below
 
-Options: Netlify, GitHub Pages. Decision criteria in `docs/STAGES.md`.
+### Architecture Discovery
+
+The site has two distinct layers that change the hosting decision significantly:
+
+**Layer 1 — Static content (Hugo output)**
+- Home, About, Blog, Projects, Skills sections
+- Served as static files — any host handles this identically
+
+**Layer 2 — Utilities (web applications)**
+- Pages that pull data from external sources and present summaries
+- Some pages will require user authentication (username/password access control)
+- Authentication cannot be done on a static host — eliminates GitHub Pages entirely
+- Requires serverless functions (Lambda or equivalent) for backend logic and API key protection
+
+### Options Analysis
+
+| Option | Static content | Utilities with auth | AWS migration path | Verdict |
+|---|---|---|---|---|
+| GitHub Pages | Yes | No — incapable | Full rebuild required | Eliminated |
+| Netlify | Yes | Yes (Netlify Identity + Functions) | Static migrates cleanly; Functions need rewriting | Viable bridge |
+| AWS (S3 + CloudFront + Lambda + Cognito) | Yes | Yes — native | No migration needed | Right long-term answer |
+
+### AWS Cost at Personal Site Scale
+
+| Service | Cost |
+|---|---|
+| S3 + CloudFront | ~$0-2/month |
+| Route 53 (hosted zone) | $0.50/month |
+| Lambda + API Gateway | Free tier — effectively $0 at personal scale |
+| Cognito (auth) | Free tier — 50,000 MAUs |
+| **Total** | **~$1-5/month after free tier; ~$0.50/month in first 12 months** |
+
+### DNS: Delegation vs. Transfer
+
+These are independent operations — do not conflate them:
+
+- **Delegate DNS to Route 53** — keep Websavers as registrar, change nameservers only. 15-20 minutes of work. This is what the AWS cutover actually requires.
+- **Transfer domain registration to Route 53** — Websavers exits entirely. 30 minutes of work spread over 5-7 days (ICANN transfer window). Optional and separate from DNS delegation.
+
+Recommended sequence: delegate DNS first, confirm everything works, then optionally transfer registration.
+
+### Recommended Sequencing
+
+**Option A — Netlify first, AWS later:**
+Get the static site live on Netlify quickly (hits the Websavers deadline with minimal risk), then migrate to AWS when building the first utility. Migration of static content is low-risk (Hugo output is just files). Netlify Functions need a rewrite when moving to Lambda — known, acceptable cost.
+
+**Option B — AWS from day one:**
+Front-load the setup cost once. S3 + CloudFront pipeline becomes a portfolio piece immediately. No migration needed when utilities are built. Adds a few hours of setup vs. Netlify.
+
+**Decision pending:** AWS timeline is "definitely, when further down the cert path." Final hosting call deferred until Websavers account details are reviewed — see `docs/websavers.md`.
+
+---
+
+## Site Structure
+
+**Decision:** Confirmed
+**Date:** 2026-03-29
+**Status:** Active
+
+URL structure and section definitions:
+
+```
+tacedata.ca/
+├── /                    — Home
+├── /blog/               — Blog posts
+├── /projects/           — Project write-ups (OracleAwsRotation first)
+├── /skills/
+│   ├── /skills/oracle/
+│   └── /skills/powershell/
+└── /utilities/
+    ├── /utilities/economy-dashboard/
+    └── /utilities/[tbd]/
+```
+
+Static sections (home, blog, projects, skills) are Hugo content — Markdown files, built and served as static HTML.
+
+Utilities section is a different layer — data aggregation from external sources, some pages gated with user authentication. Maps to Lambda + API Gateway + Cognito on AWS.
 
 ---
 
@@ -56,4 +132,6 @@ Options: Netlify, GitHub Pages. Decision criteria in `docs/STAGES.md`.
 **Date:** —
 **Status:** Open — must be decided before Websavers renewal (June/July 2026)
 
-Options: Zoho Mail (free), Fastmail (~$5/mo), Google Workspace (~$8/mo).
+Blocked on: Websavers account review (see `docs/websavers.md`) — need to confirm whether email is bundled with hosting or billed separately, and whether any `@tacedata.ca` addresses are in active use.
+
+Options once unblocked: Zoho Mail (free), Fastmail (~$5/mo CAD), Google Workspace (~$8/mo CAD).

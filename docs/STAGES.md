@@ -29,21 +29,20 @@ to a full migration away from WordPress/Websavers.
 **Goal:** Automated pipeline from laptop to live URL. Push to main, site updates.
 
 **Definition of done:**
+- Hosting target decided and documented in `docs/DECISIONS.md`
 - GitHub Actions workflow building and deploying the Hugo site
 - Site accessible at a test URL (not yet tacedata.ca)
 - Full round-trip validated: local edit → commit → push → live within 2 minutes
 
-**Hosting decision criteria:**
+**Hosting decision status:** Analysis complete — final call pending Websavers account review.
 
-| Option          | Pros                                         | Cons                                  |
-|-----------------|----------------------------------------------|---------------------------------------|
-| GitHub Pages    | Everything in one place, zero config         | Less flexible (no redirects, no forms)|
-| Netlify         | Preview deploys, form handling, redirects    | One more account/service to manage    |
-| AWS (S3+CF)     | Learning touchpoint, portfolio signal        | More setup, not free at low volume    |
+GitHub Pages is eliminated. The site has a utilities layer requiring authentication and
+serverless backend logic, which GitHub Pages cannot support. Decision is between:
 
-**Recommendation:** Start with Netlify or GitHub Pages. AWS hosting is worth
-revisiting once AWS certification path is underway — at that point it becomes
-a portfolio item worth the setup effort.
+- **Netlify first** — get live quickly, migrate static content to AWS when first utility is built
+- **AWS direct** — front-load setup cost once, no migration needed later
+
+Full analysis and cost breakdown in `docs/DECISIONS.md`. Websavers review checklist in `docs/websavers.md`.
 
 ---
 
@@ -53,9 +52,14 @@ a portfolio item worth the setup effort.
 
 **Hard deadline:** Websavers renewal — June/July 2026.
 
-**Decision required before deadline:**
-- Email hosting replacement if moving away from Websavers
-- Whether to transfer domain registrar or keep at Websavers and just change DNS
+**Websavers account review required first** — see `docs/websavers.md`. Need to confirm
+exact renewal date, cost breakdown, what email addresses exist, and whether domain
+registration is bundled with hosting or billed separately.
+
+**DNS approach (decided):**
+Two separate operations — do not conflate:
+1. **Delegate DNS to Route 53** — change nameservers at Websavers, Route 53 becomes authoritative. ~15-20 min. This is the cutover step.
+2. **Transfer domain registration** — optional, separate, takes 5-7 days (ICANN). Do after DNS delegation is confirmed working.
 
 **Email options:**
 
@@ -64,6 +68,8 @@ a portfolio item worth the setup effort.
 | Zoho Mail        | Free (1 user)| Good enough for low-volume professional use|
 | Google Workspace | ~$8/mo CAD   | Best integration if using Google tools     |
 | Fastmail         | ~$5/mo CAD   | Privacy-focused, clean, reliable           |
+
+Email decision blocked on Websavers review — need to know what is in active use before choosing a replacement.
 
 ---
 

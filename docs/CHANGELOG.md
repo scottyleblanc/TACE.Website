@@ -6,6 +6,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-03-29
+
+### Added
+- `docs/websavers.md` — account review checklist; must be completed before Stage 3 decisions
+- `docs/DECISIONS.md` — Hosting Target: full architecture analysis, AWS cost breakdown, DNS delegation vs. transfer distinction, sequencing options
+- `docs/DECISIONS.md` — Site Structure: confirmed URL structure and two-layer architecture (static Hugo + utilities with auth)
+- `docs/DECISIONS.md` — Email Hosting: blocked on Websavers review, options documented
+
+### Changed
+- `docs/TODO.md` — Stage 2 updated: GitHub Pages eliminated, hosting decision reframed around architecture discovery
+- `docs/TODO.md` — Stage 3 updated: Websavers review as prerequisite, DNS delegation and transfer treated as separate operations
+- `docs/TODO.md` — Stage 4 updated: site structure confirmed, utilities section added
+- `docs/STAGES.md` — Stage 2 updated: hosting analysis summarized, rationale for eliminating GitHub Pages documented
+- `docs/STAGES.md` — Stage 3 updated: DNS approach clarified, email decision noted as blocked
+
+---
+
 ## [0.2.0] - 2026-03-29
 
 ### Changed
