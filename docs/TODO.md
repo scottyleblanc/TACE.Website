@@ -33,16 +33,34 @@ Stages are defined in `docs/STAGES.md`.
 
 ## Stage 3 — Domain and Email Migration (Pending Stage 2 complete)
 
-### Open
+**Hard deadline: July 14, 2026**
 
-- [ ] Review Websavers account — see `docs/websavers.md` (can be done in parallel with Stage 2)
-- [ ] Decide on email hosting before Websavers renewal (June/July 2026)
-    - Options: Zoho Mail (free tier), Google Workspace, Fastmail
-    - Blocked on: confirming what email addresses exist and whether they are in active use
-- [ ] Delegate DNS to Route 53 (change nameservers at Websavers — 15-20 min)
-- [ ] Validate SSL certificate provisioned correctly on new host (ACM, free with CloudFront)
-- [ ] Cancel Websavers WordPress hosting and email before renewal date
-- [ ] Optionally transfer domain registration to Route 53 (separate from DNS delegation — 5-7 day ICANN window)
+### Decisions required (can be done in parallel with Stage 2)
+
+- [ ] Decide which of the 5 domain variants to keep vs. let lapse at renewal
+    - At minimum: `tacedata.ca` must be kept and transferred
+    - Each kept domain: ~$14 CAD/year at Route 53 vs. ~$25 CAD/year at Websavers
+- [ ] Decide accounting and contact email: separate inboxes or aliases to personal address?
+    - Answer determines whether Zoho free tier is viable — see `docs/DECISIONS.md`
+- [ ] Choose email provider: Zoho Mail (free), Fastmail (~$5/mo), Google Workspace (~$8/mo)
+
+### Email migration (must complete before cancelling Websavers)
+
+- [ ] Export all 3 inboxes via IMAP using Thunderbird — confirm export complete before proceeding
+- [ ] Set up new email provider and import inbox history
+- [ ] Validate all 3 addresses receive email correctly on new provider
+- [ ] Update any services or accounts using the accounting or contact addresses
+
+### DNS and hosting cutover
+
+- [ ] Release registrar lock on domains being transferred (Websavers dashboard)
+- [ ] Create Route 53 hosted zone for `tacedata.ca`
+- [ ] Delegate DNS: change nameservers at Websavers to Route 53 (~15-20 min)
+- [ ] Validate SSL certificate provisioned correctly (ACM, free with CloudFront)
+- [ ] Confirm site and email both resolve correctly on new infrastructure
+- [ ] Cancel Websavers WordPress hosting and email (do not cancel domain registration yet)
+- [ ] Initiate domain transfer to Route 53 for kept domains (5-7 day ICANN window)
+- [ ] Confirm transfers complete; Websavers relationship fully wound down
 
 ---
 

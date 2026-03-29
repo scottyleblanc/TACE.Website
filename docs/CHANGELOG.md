@@ -6,6 +6,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-03-29
+
+### Added
+- `docs/websavers.md` — findings recorded: renewal July 14 2026, 5 domains at ~$25 CAD each, 3 email addresses with inbox history, hosting bundled free
+
+### Changed
+- `docs/DECISIONS.md` — Email Hosting: constraints documented (IMAP export required, aliases vs. inboxes decision needed, domains cost comparison added)
+- `docs/TODO.md` — Stage 3 fully replanned: email migration sequence, domain decisions, DNS cutover steps, hard deadline explicit
+
+---
+
 ## [0.3.0] - 2026-03-29
 
 ### Added
