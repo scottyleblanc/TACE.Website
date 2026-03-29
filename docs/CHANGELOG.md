@@ -6,6 +6,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-03-29
+
+### Changed
+- Stage 1 closed out — Hugo evaluation complete, Blowfish theme confirmed
+
+### Fixed
+- Removed `hugo-eval/themes/tacedata/` evaluation scaffold (not a submodule, not a theme — leftover from Congo/custom theme evaluation)
+
+---
+
 ## [0.1.0] - 2026-03-22
 
 ### Added

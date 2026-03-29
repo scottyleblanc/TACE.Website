@@ -5,22 +5,17 @@ Stages are defined in `docs/STAGES.md`.
 
 ---
 
-## Stage 1 — Hugo Evaluation (Current)
+## Stage 1 — Hugo Evaluation (Complete)
 
-### In Progress
-
-- [ ] Install Hugo Extended locally (`winget install Hugo.Hugo.Extended`)
-- [ ] Run `hugo new site hugo-eval` to initialize site structure
-- [ ] Evaluate 2-3 themes — shortlist criteria in STAGES.md
-- [ ] Create sample content — one post, one project page
-- [ ] Validate local workflow: edit Markdown → `hugo server` → view in browser
-
-### Open
-
-- [ ] Commit hugo.toml and initial content to repo
-- [ ] Add `.gitignore` — exclude `hugo-eval/public/`, `hugo-eval/resources/`
-- [ ] Document theme decision in `docs/DECISIONS.md` with rationale
-- [ ] Confirm `hugo-eval/` structure matches intended production layout before graduating it
+- [x] Install Hugo Extended locally (`winget install Hugo.Hugo.Extended`)
+- [x] Run `hugo new site hugo-eval` to initialize site structure
+- [x] Evaluate 2-3 themes — PaperMod, Congo, Blowfish; Blowfish selected
+- [x] Create sample content — one post, one project page
+- [x] Validate local workflow: edit Markdown → `hugo server` → view in browser
+- [x] Commit hugo.toml and initial content to repo
+- [x] Add `.gitignore` — exclude `hugo-eval/public/`, `hugo-eval/resources/`
+- [x] Document theme decision in `docs/DECISIONS.md` with rationale
+- [x] Confirm `hugo-eval/` structure matches intended production layout before graduating it
 
 ---
 

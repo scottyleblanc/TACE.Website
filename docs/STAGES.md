@@ -4,29 +4,23 @@ Phase definitions, current state, and decision criteria.
 
 ---
 
-## Current Stage: Stage 1 — Hugo Evaluation
+## Current Stage: Stage 2 — CI/CD and Hosting
+
+---
+
+## Stage 1 — Hugo Evaluation (Complete — 2026-03-29)
 
 **Goal:** Validate that Hugo + Git + CI/CD is the right workflow before committing
 to a full migration away from WordPress/Websavers.
 
-**Definition of done:**
-- Hugo running locally with a chosen theme
-- At least one post and one project page rendering correctly
+**Definition of done:** All items met.
+- Hugo Extended v0.158 installed locally
+- `hugo-eval/` initialized, Blowfish theme as git submodule (v2.100.0)
+- PaperMod, Congo, and Blowfish evaluated; Blowfish selected (see `docs/DECISIONS.md`)
+- Sample blog post and project page rendering correctly
 - Local workflow confirmed: edit Markdown → `hugo server` → view result
-- Theme decision documented in `docs/DECISIONS.md`
-- Comfortable with the authoring experience before moving to Stage 2
-
-**Theme evaluation criteria:**
-- Clean, readable typography — this is a writing and portfolio site first
-- Portfolio / projects section supported natively or easily added
-- Blog with tags or categories
-- Responsive (mobile-readable)
-- Low JavaScript footprint — fast by default
-- Active maintenance (check theme repo last commit date)
-- Themes to evaluate (starting points — not exhaustive):
-  - [PaperMod](https://github.com/adityatelange/hugo-PaperMod) — clean, widely used, blog-first
-  - [Congo](https://github.com/jpanther/congo) — portfolio-capable, well documented
-  - [Lynx](https://github.com/jpanther/lynx) — minimal, same author as Congo
+- Theme decision documented in `docs/DECISIONS.md` with full rationale
+- `.gitignore` confirmed: `hugo-eval/public/`, `hugo-eval/resources/`, `.hugo_build.lock` excluded
 
 ---
 
@@ -108,7 +102,7 @@ representative of the work and the journey.
 
 ## Completed Stages
 
-None yet.
+- Stage 1 — Hugo Evaluation — complete 2026-03-29
 
 ---
 
