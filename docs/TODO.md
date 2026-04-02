@@ -19,7 +19,19 @@ Stages are defined in `docs/STAGES.md`.
 
 ---
 
-## Stage 2 — CI/CD and Hosting (Current)
+## Stage 2 — Email Migration (Current)
+
+- [ ] Create Fastmail account; add tacedata.ca as custom domain
+- [ ] Add Fastmail TXT record to Websavers DNS for domain verification
+- [ ] Configure accounting and contact as aliases forwarding to personal address
+- [ ] Attempt IMAP inbox export via Thunderbird — nice-to-have, not a hard requirement
+- [ ] Change MX records at Websavers to Fastmail mail servers
+- [ ] Validate all 3 addresses receive email correctly on Fastmail
+- [ ] Update any services or accounts that send to the accounting or contact addresses
+
+---
+
+## Stage 3 — AWS Pipeline (Pending Stage 2 complete)
 
 **Decision: AWS direct — S3 + CloudFront + GitHub Actions**
 
@@ -43,41 +55,32 @@ Stages are defined in `docs/STAGES.md`.
 
 ---
 
-## Stage 3 — Domain and Email Migration (Pending Stage 2 complete)
+## Stage 4 — Domain Cutover (Pending Stage 3 complete)
 
 **Hard deadline: July 14, 2026**
 
-### Decisions required (can be done in parallel with Stage 2)
+### Preparation (can start before Stage 3 is complete)
 
 - [ ] Confirm the 5 domain variants in Websavers dashboard — decide which to keep (minimum 3)
     - Each kept domain: ~$14 CAD/year at Route 53 vs. ~$25 CAD/year at Websavers
     - Domains not kept: let lapse at July 14 renewal — do not renew
-- [ ] Choose email provider — Fastmail preferred; Zoho free tier remains a viable fallback
-    - Aliases confirmed as the model: accounting and contact forward to personal inbox
-    - See `docs/DECISIONS.md` for options
 
-### Email migration
-
-- [ ] Set up new email provider; configure accounting and contact as aliases to personal address
-- [ ] Attempt IMAP inbox export via Thunderbird — nice-to-have, not a hard requirement
-- [ ] Validate all 3 addresses receive email correctly on new provider
-- [ ] Update any services or accounts using the accounting or contact addresses
-
-### DNS and hosting cutover
+### Cutover
 
 - [ ] Create Route 53 hosted zone for `tacedata.ca`
+- [ ] Replicate all existing DNS records into Route 53 — including Fastmail MX records
 - [ ] Request ACM certificate for tacedata.ca (DNS validation — Route 53 auto-creates the record)
-- [ ] Attach tacedata.ca to CloudFront distribution; attach ACM cert
+- [ ] Attach tacedata.ca and ACM cert to the CloudFront distribution from Stage 3
 - [ ] Change nameservers at Websavers → Route 53 (~15-20 min) — first Websavers interaction
 - [ ] Validate tacedata.ca resolves correctly and SSL is clean
-- [ ] Confirm email still works (email DNS records carried over to Route 53 before nameserver change)
+- [ ] Confirm email still works on Fastmail after nameserver change
 - [ ] Cancel Websavers WordPress hosting and email
 - [ ] Release registrar lock; initiate domain transfer to Route 53 (5-7 day ICANN window)
 - [ ] Confirm transfers complete; Websavers relationship fully wound down
 
 ---
 
-## Stage 4 — Content (Ongoing from Stage 1)
+## Stage 5 — Content (Ongoing from Stage 1)
 
 ### Open
 

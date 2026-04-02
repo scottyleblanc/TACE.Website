@@ -110,10 +110,10 @@ Rationale:
 
 | Layer | Service | Purpose | Stage |
 |---|---|---|---|
-| Static hosting | S3 + CloudFront | Serve Hugo output | Stage 2 |
-| Deploy pipeline | GitHub Actions → S3 | Push to main triggers build and deploy | Stage 2 |
-| DNS | Route 53 | Authoritative DNS for tacedata.ca | Stage 3 |
-| SSL | ACM | Free cert, attached to CloudFront | Stage 3 |
+| Static hosting | S3 + CloudFront | Serve Hugo output | Stage 3 |
+| Deploy pipeline | GitHub Actions → S3 | Push to main triggers build and deploy | Stage 3 |
+| DNS | Route 53 | Authoritative DNS for tacedata.ca | Stage 4 |
+| SSL | ACM | Free cert, attached to CloudFront | Stage 4 |
 | Utility backend | Lambda + API Gateway | Serverless functions for data fetching | Future |
 | Auth | Cognito | User pool for gated utility pages | Future |
 
