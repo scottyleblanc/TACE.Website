@@ -21,13 +21,12 @@ Stages are defined in `docs/STAGES.md`.
 
 ## Stage 2 — Email Migration (Current)
 
-- [ ] Create Fastmail account; add tacedata.ca as custom domain
-- [ ] Add Fastmail TXT record to Websavers DNS for domain verification
-- [ ] Configure accounting and contact as aliases forwarding to personal address
-- [ ] Attempt IMAP inbox export via Thunderbird — nice-to-have, not a hard requirement
-- [ ] Change MX records at Websavers to Fastmail mail servers
-- [ ] Validate all 3 addresses receive email correctly on Fastmail
-- [ ] Update any services or accounts that send to the accounting or contact addresses
+- [x] Create Fastmail account; add tacedata.ca as custom domain (scott.leblanc@tacedata.ca)
+- [x] Add Fastmail TXT record to Websavers DNS for domain verification
+- [x] Configure accounting and contact as aliases forwarding to personal address
+- [x] Import inbox history from Websavers via Fastmail's built-in IMAP import
+- [x] Change MX records at Websavers to Fastmail mail servers
+- [x] Validate all 3 addresses receive email correctly on Fastmail
 
 ---
 

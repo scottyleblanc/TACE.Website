@@ -6,6 +6,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-04-01
+
+### Added
+- Stage 2 email migration complete — Fastmail active for tacedata.ca
+- MX, DKIM (3 CNAME records), and SPF records updated in Websavers DNS
+- accounting@tacedata.ca and contact@tacedata.ca configured as aliases to scott.leblanc@tacedata.ca
+- All 3 addresses validated receiving email on Fastmail
+- Inbox history imported from Websavers via Fastmail built-in IMAP import
+
+---
+
 ## [0.8.0] - 2026-04-01
 
 ### Changed

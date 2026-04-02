@@ -4,7 +4,7 @@ Phase definitions, current state, and decision criteria.
 
 ---
 
-## Current Stage: Stage 2 — Email Migration
+## Current Stage: Stage 3 — AWS Pipeline
 
 ---
 
@@ -24,7 +24,7 @@ to a full migration away from WordPress/Websavers.
 
 ---
 
-## Stage 2 — Email Migration
+## Stage 2 — Email Migration (Complete — 2026-04-01)
 
 **Goal:** Email for tacedata.ca fully operational on Fastmail before any DNS work begins.
 
@@ -35,11 +35,12 @@ Email migration is independent of the pipeline — no AWS work required.
 **Websavers:** DNS nameservers untouched. Only MX records and a TXT verification record
 are added/changed within Websavers DNS — the website continues serving WordPress unchanged.
 
-**Definition of done:**
+**Definition of done:** All items met.
 - Fastmail account active; tacedata.ca verified as custom domain
+- MX, DKIM (3 CNAME records), and SPF records updated in Websavers DNS
 - Accounting and contact addresses configured as aliases to personal inbox
-- MX records at Websavers updated to Fastmail mail servers
 - All 3 addresses confirmed receiving email on Fastmail
+- Inbox history imported via Fastmail built-in IMAP import
 
 ---
 
@@ -122,6 +123,7 @@ representative of the work and the journey.
 ## Completed Stages
 
 - Stage 1 — Hugo Evaluation — complete 2026-03-29
+- Stage 2 — Email Migration — complete 2026-04-01
 
 ---
 
