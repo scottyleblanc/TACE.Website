@@ -4,7 +4,7 @@ Phase definitions, current state, and decision criteria.
 
 ---
 
-## Current Stage: Stage 2 — CI/CD and Hosting
+## Current Stage: Stage 2 — Email Migration
 
 ---
 
@@ -24,14 +24,33 @@ to a full migration away from WordPress/Websavers.
 
 ---
 
-## Stage 2 — CI/CD and Hosting
+## Stage 2 — Email Migration
+
+**Goal:** Email for tacedata.ca fully operational on Fastmail before any DNS work begins.
+
+**Rationale:** Route 53 and ACM setup in Stage 4 will trigger credential and validation
+emails. Those must land in a known-working inbox on the new provider, not Websavers.
+Email migration is independent of the pipeline — no AWS work required.
+
+**Websavers:** DNS nameservers untouched. Only MX records and a TXT verification record
+are added/changed within Websavers DNS — the website continues serving WordPress unchanged.
+
+**Definition of done:**
+- Fastmail account active; tacedata.ca verified as custom domain
+- Accounting and contact addresses configured as aliases to personal inbox
+- MX records at Websavers updated to Fastmail mail servers
+- All 3 addresses confirmed receiving email on Fastmail
+
+---
+
+## Stage 3 — AWS Pipeline
 
 **Goal:** Hugo site building and deploying automatically to AWS on every push to main.
 Site validates on a CloudFront test URL — no domain cutover in this stage.
 
 **Hosting decision:** AWS direct — S3 + CloudFront + GitHub Actions. See `docs/DECISIONS.md`.
 
-**Websavers:** untouched in this stage. tacedata.ca continues serving WordPress until Stage 3.
+**Websavers:** untouched in this stage. tacedata.ca continues serving WordPress.
 
 **Definition of done:**
 - S3 bucket and CloudFront distribution provisioned
@@ -43,34 +62,31 @@ Site validates on a CloudFront test URL — no domain cutover in this stage.
 
 ---
 
-## Stage 3 — Domain and Email Migration
+## Stage 4 — Domain Cutover
 
-**Goal:** tacedata.ca pointing at CloudFront. Email migrated to Fastmail. Websavers wound down.
+**Goal:** tacedata.ca pointing at CloudFront. Websavers wound down.
 
 **Hard deadline:** July 14, 2026.
 
-**Websavers account:** reviewed — see `docs/websavers.md` for full findings.
+**Prerequisite:** Stage 2 (email on Fastmail) must be complete before this stage begins.
 
 **Cutover sequence:**
-1. Create Route 53 hosted zone; replicate all existing DNS records (including MX for email)
+1. Create Route 53 hosted zone; replicate all existing DNS records (including Fastmail MX records)
 2. Request ACM certificate for tacedata.ca — DNS validation via Route 53 (auto-created record)
-3. Attach tacedata.ca and ACM cert to the CloudFront distribution from Stage 2
+3. Attach tacedata.ca and ACM cert to the CloudFront distribution from Stage 3
 4. Change nameservers at Websavers → Route 53 (~15-20 min) — first Websavers interaction
 5. Validate tacedata.ca resolves correctly and SSL is clean
-6. Confirm email still works on Fastmail (MX records already in Route 53 before nameserver change)
+6. Confirm email still works on Fastmail after nameserver change
 7. Cancel Websavers WordPress hosting and email
 8. Release registrar lock; initiate domain transfer to Route 53 (5-7 day ICANN window)
 9. Confirm transfers complete; Websavers fully wound down
-
-**Email:** Fastmail preferred (~$5/mo CAD); accounting and contact as aliases to personal inbox.
-Inbox history migration is nice-to-have — attempt via IMAP/Thunderbird if it fits.
 
 **Domains:** 5 registered at Websavers (~$25 CAD/year each). Keep minimum 3; let remainder lapse.
 Exact variants to confirm in Websavers dashboard before renewal.
 
 ---
 
-## Stage 4 — Content
+## Stage 5 — Content
 
 **Goal:** Site has enough real content to be worth sharing. Not "complete" — just
 representative of the work and the journey.

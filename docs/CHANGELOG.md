@@ -6,6 +6,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-04-01
+
+### Changed
+- Stages renumbered: Email Migration inserted as Stage 2; pipeline promoted to Stage 3; domain cutover promoted to Stage 4; content promoted to Stage 5
+- Rationale: email must be functional on new provider before Stage 4 DNS and ACM work, which triggers validation emails
+- `docs/TODO.md` — full rewrite with new stage numbers and email migration tasks as Stage 2
+- `docs/STAGES.md` — full rewrite with new stage numbers; Stage 2 rationale documented
+- `docs/DECISIONS.md` — AWS stack table stage column updated (Stage 3/4 instead of Stage 2/3)
+
+---
+
 ## [0.7.0] - 2026-04-01
 
 ### Changed
