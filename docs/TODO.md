@@ -30,27 +30,16 @@ Stages are defined in `docs/STAGES.md`.
 
 ---
 
-## Stage 3 — AWS Pipeline (Pending Stage 2 complete)
+## Stage 3 — AWS Pipeline (Complete)
 
-**Decision: AWS direct — S3 + CloudFront + GitHub Actions**
-
-### AWS infrastructure
-
-- [ ] Create S3 bucket for Hugo output (private, CloudFront access only)
-- [ ] Create CloudFront distribution pointing at S3 bucket (test on *.cloudfront.net — no custom domain yet)
-- [ ] Create IAM role for GitHub Actions deployment (least-privilege: S3 sync + CloudFront invalidation only)
-
-### GitHub Actions pipeline
-
-- [ ] Configure OIDC trust between GitHub Actions and AWS (no long-lived credentials)
-- [ ] Write workflow: push to main → hugo build → `aws s3 sync` → CloudFront invalidation
-- [ ] Store AWS role ARN as GitHub Actions secret
-- [ ] Test full pipeline end-to-end on CloudFront test URL (`*.cloudfront.net`) before touching domain
-
-### Close out
-
-- [ ] Validate round-trip: local edit → commit → push → live within 2 minutes
-- [ ] Document pipeline in README.md
+- [x] Create S3 bucket for Hugo output (private, CloudFront access only) — tacedata-s3-bucket-02/tacedata-site/
+- [x] Create CloudFront distribution pointing at S3 bucket — d2i8qth3t7mbtl.cloudfront.net
+- [x] Create IAM role for GitHub Actions deployment — tacedata-github-deploy (least-privilege)
+- [x] Configure OIDC trust between GitHub Actions and AWS (no long-lived credentials)
+- [x] Write workflow: push to main → hugo build → `aws s3 sync` → CloudFront invalidation
+- [x] Store AWS role ARN as GitHub Actions secret
+- [x] Validate round-trip: local edit → commit → push → live within 2 minutes
+- [x] Document pipeline in README.md
 
 ---
 
