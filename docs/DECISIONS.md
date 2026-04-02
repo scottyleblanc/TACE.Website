@@ -108,14 +108,14 @@ Rationale:
 
 ### AWS stack
 
-| Layer | Service | Purpose |
-|---|---|---|
-| Static hosting | S3 + CloudFront | Serve Hugo output |
-| SSL | ACM | Free cert, attached to CloudFront |
-| DNS | Route 53 | Authoritative DNS for tacedata.ca |
-| Deploy pipeline | GitHub Actions → S3 | Push to main triggers build and deploy |
-| Utility backend | Lambda + API Gateway | Serverless functions for data fetching |
-| Auth | Cognito | User pool for gated utility pages |
+| Layer | Service | Purpose | Stage |
+|---|---|---|---|
+| Static hosting | S3 + CloudFront | Serve Hugo output | Stage 2 |
+| Deploy pipeline | GitHub Actions → S3 | Push to main triggers build and deploy | Stage 2 |
+| DNS | Route 53 | Authoritative DNS for tacedata.ca | Stage 3 |
+| SSL | ACM | Free cert, attached to CloudFront | Stage 3 |
+| Utility backend | Lambda + API Gateway | Serverless functions for data fetching | Future |
+| Auth | Cognito | User pool for gated utility pages | Future |
 
 ### Cost (free tier expired, personal site scale)
 

@@ -26,50 +26,47 @@ to a full migration away from WordPress/Websavers.
 
 ## Stage 2 — CI/CD and Hosting
 
-**Goal:** Automated pipeline from laptop to live URL. Push to main, site updates.
+**Goal:** Hugo site building and deploying automatically to AWS on every push to main.
+Site validates on a CloudFront test URL — no domain cutover in this stage.
+
+**Hosting decision:** AWS direct — S3 + CloudFront + GitHub Actions. See `docs/DECISIONS.md`.
+
+**Websavers:** untouched in this stage. tacedata.ca continues serving WordPress until Stage 3.
 
 **Definition of done:**
-- Hosting target decided and documented in `docs/DECISIONS.md`
-- GitHub Actions workflow building and deploying the Hugo site
-- Site accessible at a test URL (not yet tacedata.ca)
-- Full round-trip validated: local edit → commit → push → live within 2 minutes
-
-**Hosting decision status:** Analysis complete — final call pending Websavers account review.
-
-GitHub Pages is eliminated. The site has a utilities layer requiring authentication and
-serverless backend logic, which GitHub Pages cannot support. Decision is between:
-
-- **Netlify first** — get live quickly, migrate static content to AWS when first utility is built
-- **AWS direct** — front-load setup cost once, no migration needed later
-
-Full analysis and cost breakdown in `docs/DECISIONS.md`. Websavers review checklist in `docs/websavers.md`.
+- S3 bucket and CloudFront distribution provisioned
+- IAM role created for GitHub Actions (least-privilege: S3 sync + CloudFront invalidation only)
+- OIDC trust configured between GitHub Actions and AWS (no long-lived credentials)
+- GitHub Actions workflow: push to main → hugo build → `aws s3 sync` → CloudFront invalidation
+- Round-trip validated on `*.cloudfront.net` test URL: local edit → commit → push → live within 2 minutes
+- Pipeline documented in README.md
 
 ---
 
 ## Stage 3 — Domain and Email Migration
 
-**Goal:** tacedata.ca pointing at new host. Websavers relationship wound down cleanly.
+**Goal:** tacedata.ca pointing at CloudFront. Email migrated to Fastmail. Websavers wound down.
 
-**Hard deadline:** Websavers renewal — June/July 2026.
+**Hard deadline:** July 14, 2026.
 
-**Websavers account review required first** — see `docs/websavers.md`. Need to confirm
-exact renewal date, cost breakdown, what email addresses exist, and whether domain
-registration is bundled with hosting or billed separately.
+**Websavers account:** reviewed — see `docs/websavers.md` for full findings.
 
-**DNS approach (decided):**
-Two separate operations — do not conflate:
-1. **Delegate DNS to Route 53** — change nameservers at Websavers, Route 53 becomes authoritative. ~15-20 min. This is the cutover step.
-2. **Transfer domain registration** — optional, separate, takes 5-7 days (ICANN). Do after DNS delegation is confirmed working.
+**Cutover sequence:**
+1. Create Route 53 hosted zone; replicate all existing DNS records (including MX for email)
+2. Request ACM certificate for tacedata.ca — DNS validation via Route 53 (auto-created record)
+3. Attach tacedata.ca and ACM cert to the CloudFront distribution from Stage 2
+4. Change nameservers at Websavers → Route 53 (~15-20 min) — first Websavers interaction
+5. Validate tacedata.ca resolves correctly and SSL is clean
+6. Confirm email still works on Fastmail (MX records already in Route 53 before nameserver change)
+7. Cancel Websavers WordPress hosting and email
+8. Release registrar lock; initiate domain transfer to Route 53 (5-7 day ICANN window)
+9. Confirm transfers complete; Websavers fully wound down
 
-**Email options:**
+**Email:** Fastmail preferred (~$5/mo CAD); accounting and contact as aliases to personal inbox.
+Inbox history migration is nice-to-have — attempt via IMAP/Thunderbird if it fits.
 
-| Option           | Cost         | Notes                                      |
-|------------------|--------------|--------------------------------------------|
-| Zoho Mail        | Free (1 user)| Good enough for low-volume professional use|
-| Google Workspace | ~$8/mo CAD   | Best integration if using Google tools     |
-| Fastmail         | ~$5/mo CAD   | Privacy-focused, clean, reliable           |
-
-Email decision blocked on Websavers review — need to know what is in active use before choosing a replacement.
+**Domains:** 5 registered at Websavers (~$25 CAD/year each). Keep minimum 3; let remainder lapse.
+Exact variants to confirm in Websavers dashboard before renewal.
 
 ---
 

@@ -6,6 +6,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-04-01
+
+### Changed
+- `docs/STAGES.md` — Stage 2: rewritten to reflect AWS decision, Websavers untouched, test on CloudFront URL
+- `docs/STAGES.md` — Stage 3: Websavers review complete, cutover sequence documented with email DNS note, email and domain decisions recorded
+- `docs/DECISIONS.md` — AWS stack table: stage column added; ACM and Route 53 correctly placed in Stage 3, not Stage 2
+
+---
+
 ## [0.6.0] - 2026-04-01
 
 ### Changed
