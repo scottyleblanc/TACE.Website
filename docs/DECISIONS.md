@@ -42,9 +42,9 @@ the date, the options considered, and the rationale.
 
 ## Hosting Target
 
-**Decision:** Pending — analysis complete, final call deferred
-**Date:** 2026-03-29
-**Status:** Open — see analysis below
+**Decision:** AWS direct — S3 + CloudFront + GitHub Actions + Lambda + Cognito
+**Date:** 2026-04-01
+**Status:** Active
 
 ### Architecture Discovery
 
@@ -95,7 +95,37 @@ Get the static site live on Netlify quickly (hits the Websavers deadline with mi
 **Option B — AWS from day one:**
 Front-load the setup cost once. S3 + CloudFront pipeline becomes a portfolio piece immediately. No migration needed when utilities are built. Adds a few hours of setup vs. Netlify.
 
-**Decision pending:** AWS timeline is "definitely, when further down the cert path." Final hosting call deferred until Websavers account details are reviewed — see `docs/websavers.md`.
+**Decision:** AWS direct from day one.
+
+Rationale:
+- Netlify-first creates a guaranteed migration and pipeline rebuild later — pay the cost twice
+- AWS setup cost is a few hours, paid once, and the pipeline itself is a portfolio piece
+- Lambda + Cognito are in place when utilities are built — no rework
+- AWS account is already active (used for OracleAwsRotation); free tier has expired
+- Confirmed ongoing cost: ~$0.50-5/month — acceptable
+
+**Netlify is not on the path.** GitHub Pages was eliminated earlier (no auth capability).
+
+### AWS stack
+
+| Layer | Service | Purpose |
+|---|---|---|
+| Static hosting | S3 + CloudFront | Serve Hugo output |
+| SSL | ACM | Free cert, attached to CloudFront |
+| DNS | Route 53 | Authoritative DNS for tacedata.ca |
+| Deploy pipeline | GitHub Actions → S3 | Push to main triggers build and deploy |
+| Utility backend | Lambda + API Gateway | Serverless functions for data fetching |
+| Auth | Cognito | User pool for gated utility pages |
+
+### Cost (free tier expired, personal site scale)
+
+| Item | Monthly cost |
+|---|---|
+| Route 53 hosted zone | ~$0.50 USD |
+| S3 + CloudFront | ~$0.02 USD |
+| Lambda + Cognito | ~$0 (permanent free tier) |
+| API Gateway (utilities, low traffic) | ~$0-1 USD |
+| **Total** | **~$1-5 USD/month** |
 
 ---
 

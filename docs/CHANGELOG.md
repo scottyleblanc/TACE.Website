@@ -6,6 +6,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-04-01
+
+### Changed
+- `docs/DECISIONS.md` — Hosting Target: decision made — AWS direct (S3 + CloudFront + GitHub Actions + Lambda + Cognito); Netlify path closed; cost confirmed at ~$1-5 USD/month
+- `docs/TODO.md` — Stage 2 replanned with concrete AWS infrastructure and pipeline tasks
+
+---
+
 ## [0.5.0] - 2026-03-29
 
 ### Changed

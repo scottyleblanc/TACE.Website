@@ -21,12 +21,25 @@ Stages are defined in `docs/STAGES.md`.
 
 ## Stage 2 — CI/CD and Hosting (Current)
 
-### Open
+**Decision: AWS direct — S3 + CloudFront + GitHub Actions**
 
-- [ ] Review Websavers account details — see `docs/websavers.md` for checklist
-- [ ] Make final hosting decision: Netlify-first vs AWS direct — analysis in `docs/DECISIONS.md`
-- [ ] Create GitHub Actions workflow: push to main → hugo build → deploy to chosen host
-- [ ] Test full pipeline end-to-end on a non-production URL before pointing domain
+### AWS infrastructure
+
+- [ ] Create S3 bucket for Hugo output (private, CloudFront access only)
+- [ ] Create CloudFront distribution pointing at S3 bucket
+- [ ] Request ACM certificate for tacedata.ca (DNS validation via Route 53)
+- [ ] Create IAM role for GitHub Actions deployment (least-privilege: S3 sync + CloudFront invalidation only)
+
+### GitHub Actions pipeline
+
+- [ ] Configure OIDC trust between GitHub Actions and AWS (no long-lived credentials)
+- [ ] Write workflow: push to main → hugo build → `aws s3 sync` → CloudFront invalidation
+- [ ] Store AWS role ARN as GitHub Actions secret
+- [ ] Test full pipeline end-to-end on CloudFront test URL (`*.cloudfront.net`) before touching domain
+
+### Close out
+
+- [ ] Validate round-trip: local edit → commit → push → live within 2 minutes
 - [ ] Document pipeline in README.md
 
 ---
