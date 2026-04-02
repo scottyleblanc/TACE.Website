@@ -10,7 +10,7 @@ title = "tacedata"
 
 [params.author]
   name = "Scott LeBlanc"
-  headline = "Oracle DBA → PowerShell automation engineer → cloud practitioner"
+  headline = "Oracle DBA → PowerShell automation → cloud practitioner"
   bio = "A working journal — projects, technical writing, and an honest record of what learning looks like in practice."
   links = [
     { github = "https://github.com/scottyleblanc" },
