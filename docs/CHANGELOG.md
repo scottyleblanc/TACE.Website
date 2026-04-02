@@ -6,6 +6,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-04-02
+
+### Changed
+- Stages renumbered: Content promoted to Stage 4; Domain Cutover moved to Stage 5
+- Rationale: site needs representative content before going live on tacedata.ca
+
+---
+
 ## [0.10.0] - 2026-04-02
 
 ### Added
