@@ -26,8 +26,7 @@ Stages are defined in `docs/STAGES.md`.
 ### AWS infrastructure
 
 - [ ] Create S3 bucket for Hugo output (private, CloudFront access only)
-- [ ] Create CloudFront distribution pointing at S3 bucket
-- [ ] Request ACM certificate for tacedata.ca (DNS validation via Route 53)
+- [ ] Create CloudFront distribution pointing at S3 bucket (test on *.cloudfront.net — no custom domain yet)
 - [ ] Create IAM role for GitHub Actions deployment (least-privilege: S3 sync + CloudFront invalidation only)
 
 ### GitHub Actions pipeline
@@ -66,13 +65,14 @@ Stages are defined in `docs/STAGES.md`.
 
 ### DNS and hosting cutover
 
-- [ ] Release registrar lock on domains being transferred (Websavers dashboard)
 - [ ] Create Route 53 hosted zone for `tacedata.ca`
-- [ ] Delegate DNS: change nameservers at Websavers to Route 53 (~15-20 min)
-- [ ] Validate SSL certificate provisioned correctly (ACM, free with CloudFront)
-- [ ] Confirm site and email both resolve correctly on new infrastructure
-- [ ] Cancel Websavers WordPress hosting and email (do not cancel domain registration yet)
-- [ ] Initiate domain transfer to Route 53 for kept domains (5-7 day ICANN window)
+- [ ] Request ACM certificate for tacedata.ca (DNS validation — Route 53 auto-creates the record)
+- [ ] Attach tacedata.ca to CloudFront distribution; attach ACM cert
+- [ ] Change nameservers at Websavers → Route 53 (~15-20 min) — first Websavers interaction
+- [ ] Validate tacedata.ca resolves correctly and SSL is clean
+- [ ] Confirm email still works (email DNS records carried over to Route 53 before nameserver change)
+- [ ] Cancel Websavers WordPress hosting and email
+- [ ] Release registrar lock; initiate domain transfer to Route 53 (5-7 day ICANN window)
 - [ ] Confirm transfers complete; Websavers relationship fully wound down
 
 ---
