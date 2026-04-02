@@ -4,7 +4,7 @@ Phase definitions, current state, and decision criteria.
 
 ---
 
-## Current Stage: Stage 4 — Domain Cutover
+## Current Stage: Stage 4 — Content
 
 ---
 
@@ -63,13 +63,13 @@ Site validates on a CloudFront test URL — no domain cutover in this stage.
 
 ---
 
-## Stage 4 — Domain Cutover
+## Stage 5 — Domain Cutover
 
 **Goal:** tacedata.ca pointing at CloudFront. Websavers wound down.
 
 **Hard deadline:** July 14, 2026.
 
-**Prerequisite:** Stage 2 (email on Fastmail) must be complete before this stage begins.
+**Prerequisite:** Stage 4 (content) must be complete before this stage begins.
 
 **Cutover sequence:**
 1. Create Route 53 hosted zone; replicate all existing DNS records (including Fastmail MX records)
@@ -87,7 +87,7 @@ Exact variants to confirm in Websavers dashboard before renewal.
 
 ---
 
-## Stage 5 — Content
+## Stage 4 — Content
 
 **Goal:** Site has enough real content to be worth sharing. Not "complete" — just
 representative of the work and the journey.

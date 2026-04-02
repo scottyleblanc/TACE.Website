@@ -43,11 +43,31 @@ Stages are defined in `docs/STAGES.md`.
 
 ---
 
-## Stage 4 — Domain Cutover (Pending Stage 3 complete)
+## Stage 4 — Content (Current)
+
+### Open
+
+- [ ] Draft "About" content — who I am, the evolution, the intent of the site
+- [ ] Write up first project — OracleAwsRotation (diagram + problem/solution write-up)
+- [ ] Draft first blog post — candidate topics in STAGES.md
+- [ ] Decide on AI perspective thread — format, cadence, tone
+- [ ] Define LinkedIn publishing workflow — how posts get from blog to LinkedIn
+- [ ] Flesh out Skills section — Oracle and PowerShell pages
+
+### Site Structure (Confirmed — 2026-03-29)
+
+- Home, Blog, Projects, Skills — static Hugo content
+- Utilities — data aggregation pages, some with auth; see `docs/DECISIONS.md`
+  - Economy Dashboard (first utility)
+  - Additional utilities TBD
+
+---
+
+## Stage 5 — Domain Cutover (Pending Stage 4 complete)
 
 **Hard deadline: July 14, 2026**
 
-### Preparation (can start before Stage 3 is complete)
+### Preparation (can start before Stage 4 is complete)
 
 - [ ] Confirm the 5 domain variants in Websavers dashboard — decide which to keep (minimum 3)
     - Each kept domain: ~$14 CAD/year at Route 53 vs. ~$25 CAD/year at Websavers
@@ -65,26 +85,6 @@ Stages are defined in `docs/STAGES.md`.
 - [ ] Cancel Websavers WordPress hosting and email
 - [ ] Release registrar lock; initiate domain transfer to Route 53 (5-7 day ICANN window)
 - [ ] Confirm transfers complete; Websavers relationship fully wound down
-
----
-
-## Stage 5 — Content (Ongoing from Stage 1)
-
-### Open
-
-- [ ] Draft "About" content — who I am, the evolution, the intent of the site
-- [ ] Write up first project — OracleAwsRotation (diagram + problem/solution write-up)
-- [ ] Draft first blog post — candidate topics in STAGES.md
-- [ ] Decide on AI perspective thread — format, cadence, tone
-- [ ] Define LinkedIn publishing workflow — how posts get from blog to LinkedIn
-- [ ] Flesh out Skills section — Oracle and PowerShell pages
-
-### Site Structure (Confirmed — 2026-03-29)
-
-- Home, Blog, Projects, Skills — static Hugo content
-- Utilities — data aggregation pages, some with auth; see `docs/DECISIONS.md`
-  - Economy Dashboard (first utility)
-  - Additional utilities TBD
 
 ---
 
