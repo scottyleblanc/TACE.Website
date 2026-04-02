@@ -6,6 +6,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-04-02
+
+### Added
+- Stage 3 AWS pipeline complete
+- S3 bucket `REDACTED_S3_BUCKET/tacedata-site/` configured with CloudFront OAC bucket policy
+- CloudFront distribution `REDACTED_CF_DIST_ID` — `REDACTED_CF_DOMAIN`
+- IAM OIDC provider for GitHub Actions (`token.actions.githubusercontent.com`)
+- IAM role `REDACTED_DEPLOY_ROLE` — least-privilege, scoped to this repo and distribution
+- GitHub Actions workflow: push to main → hugo build → S3 sync → CloudFront invalidation
+- Round-trip validated: change live on CloudFront URL within 2 minutes of push
+- Config files: `config/s3.bucket.policy.json`, `config/iam-trust-policy.json`, `config/iam-permissions-policy.json`
+- `config/runbook-stage3-aws.md` — full AWS infrastructure setup commands and resource reference
+- `README.md` — updated with stack, pipeline, AWS resources, and repo structure
+
+---
+
 ## [0.9.0] - 2026-04-01
 
 ### Added
