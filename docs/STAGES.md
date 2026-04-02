@@ -4,7 +4,7 @@ Phase definitions, current state, and decision criteria.
 
 ---
 
-## Current Stage: Stage 3 — AWS Pipeline
+## Current Stage: Stage 4 — Domain Cutover
 
 ---
 
@@ -44,7 +44,7 @@ are added/changed within Websavers DNS — the website continues serving WordPre
 
 ---
 
-## Stage 3 — AWS Pipeline
+## Stage 3 — AWS Pipeline (Complete — 2026-04-02)
 
 **Goal:** Hugo site building and deploying automatically to AWS on every push to main.
 Site validates on a CloudFront test URL — no domain cutover in this stage.
@@ -124,6 +124,7 @@ representative of the work and the journey.
 
 - Stage 1 — Hugo Evaluation — complete 2026-03-29
 - Stage 2 — Email Migration — complete 2026-04-01
+- Stage 3 — AWS Pipeline — complete 2026-04-02
 
 ---
 
