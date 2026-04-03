@@ -1,14 +1,33 @@
 baseURL = 'https://REDACTED_CF_DOMAIN/'
 languageCode = 'en-us'
-title = 'tacedata'
+
 theme = 'PaperMod'
+
+title = 'TACE Data'
+copyright = '© 2026 TACE Data Management Inc.'
 
 [params]
   author = "Scott LeBlanc"
 
+[params.profileMode]
+  enabled  = true
+  title    = "Scott LeBlanc"
+  subtitle = "Oracle DBA → PowerShell automation engineer → cloud practitioner. Building in public."
+  imageUrl = "tace.logo.png"
+  imageWidth  = 80
+  imageHeight = 80
+
+[[params.profileMode.buttons]]
+  name = "Projects"
+  url  = "/projects/"
+
+[[params.profileMode.buttons]]
+  name = "Blog"
+  url  = "/posts/"
+
 [params.label]
-  text = "TACE DATA"
-  icon = "/logo.png"
+  text = "TACE Data Management Inc"
+  icon = "tace.logo.png"
   iconHeight = 35
 
 [markup.goldmark.renderer]

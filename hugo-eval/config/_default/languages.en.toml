@@ -2,8 +2,6 @@ languageCode = "en-CA"
 languageName = "English"
 weight = 1
 
-title = "TACE DATA"
-
 [params]
   mainSections = ["posts", "projects"]
   description = "Oracle DBA to PowerShell automation engineer to cloud practitioner."

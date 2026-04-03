@@ -1,12 +1,16 @@
 +++
 date = '2026-04-03T12:55:14-03:00'
 draft = false
-title = 'Contact'
+title = 'contact'
 +++
 
-contact information here:
+**Email:** [contact@tacedata.ca](mailto:contact@tacedata.ca)  
+  
+Additional company information:
 
-email:
-
-phone:
-
+**Company Name:** TACE Data Management Inc  
+**Principal Consultant:** Scott LeBlanc  
+**Location:** New Brunswick, Canada  
+**Legal Structure:** Canadian Corporation  
+**Security Clearance:** Previously held Secret clearance, eligible for renewal  
+**Certifications:** Oracle 19c OCP, Oracle Data Guard Specialist, legacy Oracle OCPs
