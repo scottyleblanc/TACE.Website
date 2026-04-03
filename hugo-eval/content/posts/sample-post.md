@@ -1,7 +1,7 @@
 ---
 title: "Sample Post"
 date: 2026-03-22
-draft: true
+draft: false
 tags: ["meta"]
 summary: "Replace this with a one-sentence summary shown in post listings."
 ---

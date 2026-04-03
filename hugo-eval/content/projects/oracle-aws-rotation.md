@@ -1,7 +1,7 @@
 ---
 title: "OracleAwsRotation"
 date: 2026-03-22
-draft: true
+draft: false
 tags: ["powershell", "aws", "oracle", "lambda", "secrets-manager"]
 summary: "A PowerShell module and AWS Lambda function that automates Oracle credential rotation across EC2 instances using Secrets Manager and SSM Run Command."
 ---
