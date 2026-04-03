@@ -1,4 +1,4 @@
-baseURL = 'https://tacedata.ca/'
+baseURL = 'https://REDACTED_CF_DOMAIN/'
 languageCode = 'en-us'
 title = 'tacedata'
 theme = 'PaperMod'

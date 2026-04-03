@@ -26,7 +26,7 @@ jobs:
           extended: true
 
       - name: Build
-        run: hugo --source hugo-eval --minify
+        run: hugo --source hugo-eval --minify --baseURL "${{ vars.SITE_URL }}"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
