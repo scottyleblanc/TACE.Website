@@ -17,6 +17,8 @@ and "it's live."
 The solution needed to be Git-friendly, minimalistic, and fully operable from a
 text editor and the command line.
 
+It was also an opportunity to apply recent AWS learning and build skills in web development and deployment.
+
 ## Solution
 
 A static site built with Hugo — a fast, Markdown-based site generator — deployed
