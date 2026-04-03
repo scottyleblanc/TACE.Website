@@ -18,5 +18,5 @@ Lots more to come, but for now, Claude and I welcome you to TACE Data's new digs
 
 Scott
 
-More detail in the projects section - [tacedata.ca project write-up](/projects/tacedata-site/)
+More detail in the projects section - [tacedata.ca project write-up](/projects/tacedata-site-proj/)
   

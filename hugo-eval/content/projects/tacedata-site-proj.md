@@ -1,5 +1,5 @@
 ---
-title: "tacedata.ca — This Site"
+title: "tacedata.ca — this site"
 date: 2026-04-03
 draft: false
 tags: ["hugo", "aws", "github-actions", "cloudfront", "s3"]
