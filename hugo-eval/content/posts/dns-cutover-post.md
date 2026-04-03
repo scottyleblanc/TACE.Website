@@ -28,6 +28,36 @@ The sequence:
 
 That is not an afternoon task — it is a coordinated sequence where order matters and most steps have a dependency on the one before it.
 
+```mermaid
+graph TD
+    subgraph Websavers
+        REG[Domain Registrar\ntacedata.ca]
+    end
+
+    subgraph AWS
+        R53[Route 53\nAuthoritative DNS]
+        ACM[ACM Certificate\nus-east-1]
+        CF[CloudFront\nCDN Distribution]
+        S3[S3 Bucket\nHugo static files]
+    end
+
+    subgraph Fastmail
+        MX[Email\ntacedata.ca]
+    end
+
+    subgraph GitHub
+        GHA[GitHub Actions\nbuild + deploy]
+    end
+
+    REG -->|NS delegation| R53
+    R53 -->|A alias| CF
+    R53 -->|CNAME www| CF
+    R53 -->|MX records| MX
+    ACM -->|attached to| CF
+    CF -->|OAC| S3
+    GHA -->|s3 sync| S3
+```
+
 ## the registrar/DNS split
 
 One thing worth understanding: domain registration and DNS hosting are separate concerns. We kept Websavers as the registrar — they hold the domain registration — but delegated DNS authority to Route 53 by changing the nameservers. Route 53 is now authoritative for all DNS on tacedata.ca. Websavers is just where the domain is registered.
