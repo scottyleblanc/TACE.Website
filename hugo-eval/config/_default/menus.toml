@@ -17,3 +17,8 @@ weight = 30
 name   = "AI Perspective"
 url    = "/ai-perspective/"
 weight = 40
+
+[[main]]
+name   = "Contact"
+url    = "/contact/"
+weight = 50

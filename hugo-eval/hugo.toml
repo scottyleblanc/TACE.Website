@@ -1,4 +1,15 @@
 baseURL = 'https://tacedata.ca/'
 languageCode = 'en-us'
 title = 'tacedata'
-theme = 'blowfish'
+theme = 'PaperMod'
+
+[params]
+  author = "Scott LeBlanc"
+
+[params.label]
+  text = "TACE DATA"
+  icon = "/logo.png"
+  iconHeight = 35
+
+[markup.goldmark.renderer]
+  unsafe = true

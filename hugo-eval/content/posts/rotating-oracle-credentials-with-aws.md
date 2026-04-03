@@ -6,6 +6,27 @@ tags: ["powershell", "aws", "oracle", "secrets-manager"]
 summary: "How I automated Oracle database credential rotation across EC2 instances using AWS Secrets Manager, Lambda, and SSM Run Command — and what I learned about lock design along the way."
 ---
 
+```mermaid
+sequenceDiagram
+    participant EB as EventBridge
+    participant L as Lambda
+    participant SM as Secrets Manager
+    participant DB as DynamoDB Lock
+    participant SSM as SSM Run Command
+    participant EC2 as EC2 PowerShell
+
+    EB->>L: Trigger rotation
+    L->>DB: Acquire lock (UUID)
+    L->>SM: Write AWSPENDING
+    L->>SSM: Send script to EC2
+    SSM->>EC2: Execute PowerShell
+    EC2->>SM: Retrieve credential (instance role)
+    EC2->>EC2: ALTER USER / update Tomcat
+    L->>L: Poll health endpoint
+    L->>SM: Promote AWSPENDING → AWSCURRENT
+    L->>DB: Release lock
+```
+
 Most credential rotation guides stop at the AWS console. This one starts where the
 real work begins: getting a Lambda function to reach into a Windows EC2 instance,
 change an Oracle password, update a Tomcat properties file, and prove the whole
