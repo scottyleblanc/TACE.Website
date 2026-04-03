@@ -7,36 +7,25 @@ the date, the options considered, and the rationale.
 
 ## Theme Selection
 
-**Decision:** Blowfish
-**Date:** 2026-03-22
+**Decision:** PaperMod
+**Date:** 2026-04-03 (switched from Blowfish)
 **Status:** Active
 
 ### Options Evaluated
 
 | Theme | Outcome |
 |-------|---------|
-| PaperMod | Evaluated — clean, works well, dark/light toggle, good nav. Liked it. |
-| Congo | Evaluated — incompatible with Hugo 0.158 on stable branch; build errors not resolved. Abandoned. |
-| Blowfish | Selected — preferred structure and layout over PaperMod; built cleanly; logo integration working. |
+| PaperMod | **Selected** — clean, fast, dark/light toggle, profile home page, good nav. |
+| Blowfish | Initially selected 2026-03-22; switched out — rendering issues and config complexity. |
+| Congo | Evaluated — incompatible with Hugo 0.158; build errors not resolved. Abandoned. |
 | Custom theme | Considered and rejected — weeks of work with no content value for this site's purpose. |
-
-### Rationale
-
-- Blowfish built cleanly with no errors on Hugo Extended v0.158
-- Layout and structure preferred over PaperMod after side-by-side comparison
-- Logo (PNG, transparent background) integrates cleanly via `assets/img/`
-- Color scheme customization is straightforward via CSS variables
-- Dark/light mode built in
-- Content (Markdown) is fully portable if theme is ever switched
-- Theme is not the value of this site — content is; Blowfish gets out of the way
 
 ### Configuration Notes
 
-- Theme added as git submodule: `themes/blowfish`
-- Config split across `config/_default/params.toml` and `config/_default/menus.toml`
-- Logo at `assets/img/logo.png`; referenced via `logo = "img/logo.png"` in `params.toml`
-- Color scheme: `ocean` (to be revisited — teal accent to match logo)
-- Never edit files inside `themes/blowfish/` — all overrides go in `layouts/`, `assets/`, `config/`
+- Theme added as git submodule: `themes/PaperMod`
+- Profile mode configured in `hugo.toml` under `[params.profileMode]`
+- Custom CSS overrides in `assets/css/extended/custom.css`
+- Layout overrides in `layouts/partials/` — never edit files inside `themes/PaperMod/`
 
 ---
 
@@ -112,8 +101,8 @@ Rationale:
 |---|---|---|---|
 | Static hosting | S3 + CloudFront | Serve Hugo output | Stage 3 |
 | Deploy pipeline | GitHub Actions → S3 | Push to main triggers build and deploy | Stage 3 |
-| DNS | Route 53 | Authoritative DNS for tacedata.ca | Stage 4 |
-| SSL | ACM | Free cert, attached to CloudFront | Stage 4 |
+| DNS | Route 53 | Authoritative DNS for tacedata.ca | Stage 5 |
+| SSL | ACM | Free cert, attached to CloudFront | Stage 5 |
 | Utility backend | Lambda + API Gateway | Serverless functions for data fetching | Future |
 | Auth | Cognito | User pool for gated utility pages | Future |
 
@@ -158,9 +147,9 @@ Utilities section is a different layer — data aggregation from external source
 
 ## Email Hosting
 
-**Decision:** Pending
-**Date:** —
-**Status:** Open — must be decided before July 14, 2026
+**Decision:** Fastmail
+**Date:** 2026-04-01
+**Status:** Complete
 
 ### Constraints (from Websavers review)
 
@@ -192,3 +181,47 @@ Nice-to-have, not a hard requirement. Attempt IMAP export via Thunderbird if it 
 5 defensive registrations at ~$25 CAD/year each (~$125 CAD/year total).
 Will keep a minimum of 3, possibly more. Exact list TBD — confirm variants in Websavers dashboard and decide before renewal.
 Route 53 costs ~$14 CAD/year per `.ca` domain — keeping 3 saves ~$33 CAD/year vs. Websavers.
+
+---
+
+## DNS and Domain Architecture
+
+**Decision:** Split registrar and DNS — Websavers retains registration, Route 53 is authoritative DNS
+**Date:** 2026-04-03
+**Status:** Decided — implementation pending (Stage 5)
+
+### Architecture
+
+| Function | Provider | Notes |
+|---|---|---|
+| Domain registrar | Websavers | Kept here deliberately — no plans to transfer |
+| DNS hosting | AWS Route 53 | Authoritative for all DNS on tacedata.ca |
+| SSL certificate | AWS ACM | Provisioned in us-east-1, attached to CloudFront |
+
+### How This Works
+
+Websavers holds the domain registration but delegates DNS authority to Route 53.
+The nameservers for tacedata.ca are set to the 4 AWS nameservers assigned when
+the Route 53 hosted zone is created. All DNS records (A, CNAME, MX, TXT) are
+managed in Route 53 — nothing is managed in Websavers DNS after cutover.
+
+### Rules
+
+- Do not touch DNS in Websavers after cutover — the only Websavers setting that matters is the nameserver delegation pointing at Route 53
+- All DNS changes go in Route 53 — including MX records for Fastmail email
+- Domain renewal stays at Websavers — this is a deliberate choice; do not propose transferring the registration to Route 53
+
+### Pre-Cutover Checklist
+
+Before creating the hosted zone, inventory all current Websavers DNS records:
+- Fastmail MX records (2 records)
+- Fastmail DKIM CNAME records (3 records: fm1, fm2, fm3._domainkey)
+- SPF TXT record
+- Any A records for the current WordPress site (will be replaced by CloudFront)
+
+All records must be replicated in Route 53 before nameservers are changed.
+
+### ACM Note
+
+The ACM certificate must be provisioned in `us-east-1` regardless of the region
+used for other AWS resources. CloudFront only accepts certificates from `us-east-1`.

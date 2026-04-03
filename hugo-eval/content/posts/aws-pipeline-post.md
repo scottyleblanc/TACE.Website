@@ -1,12 +1,12 @@
 ---
-title: "deploying a static site on aws"
+title: "stage 3: deploying a static site on aws"
 date: 2026-04-02
-draft: true
+draft: false
 tags: ["aws", "s3", "cloudfront", "github-actions", "oidc"]
-summary: "How I set up S3, CloudFront, and a GitHub Actions deploy pipeline for tacedata.ca — no long-lived credentials, no manual deploys."
+summary: "How we set up S3, CloudFront, and a GitHub Actions deploy pipeline for tacedata.ca — no long-lived credentials, no manual deploys."
 ---
 
-The site is built with Hugo. Hugo produces a folder of static files — HTML, CSS, JavaScript, images. The question is where those files live and how they get there. I chose AWS, and the setup turned out to be more interesting than I expected.
+The site is built with Hugo. Hugo produces a folder of static files — HTML, CSS, JavaScript, images. The question is where those files live and how they get there. We chose AWS, and the setup turned out to be more interesting than expected.
 
 ## the stack
 
@@ -20,7 +20,7 @@ S3 and CloudFront are deliberately separated. S3 is private — only CloudFront 
 
 ## no long-lived credentials
 
-The part I am most satisfied with is the deploy pipeline authentication. GitHub Actions needs AWS credentials to write to S3 and invalidate the CloudFront cache. The naive approach is to create an IAM user, generate an access key, and store it as a GitHub secret. That access key sits in GitHub indefinitely, never rotates, and becomes a liability.
+The part we are most satisfied with is the deploy pipeline authentication. GitHub Actions needs AWS credentials to write to S3 and invalidate the CloudFront cache. The naive approach is to create an IAM user, generate an access key, and store it as a GitHub secret. That access key sits in GitHub indefinitely, never rotates, and becomes a liability.
 
 The better approach is OIDC. GitHub Actions can request a short-lived token from AWS by presenting a signed identity assertion from GitHub's token endpoint. AWS verifies the assertion against a registered OIDC provider and issues temporary credentials scoped to a specific IAM role. The credentials exist only for the duration of the job.
 
@@ -54,7 +54,7 @@ Fifteen lines of JavaScript, associated with the distribution's default behavior
 
 ## the runbook
 
-The full command sequence — S3 bucket policy, OIDC provider setup, IAM role creation, GitHub Actions workflow — is in the project write-up.
+The full command sequence — S3 bucket policy, OIDC provider setup, IAM role creation, GitHub Actions workflow — is in the Stage 3 runbook in the repository.
 
 [tacedata.ca project write-up](/projects/tacedata-site-proj/)
 

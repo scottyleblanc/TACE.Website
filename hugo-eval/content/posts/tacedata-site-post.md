@@ -1,6 +1,6 @@
 ---
 title: "new digs"
-date: 2026-04-03
+date: 2026-04-03T18:00:00
 draft: false
 tags: ["hugo", "aws", "meta"]
 summary: "Introducing the new tacedata.ca — why I moved from WordPress to a static site on AWS, and what I plan to do with it."
