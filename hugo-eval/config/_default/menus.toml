@@ -9,16 +9,6 @@ url    = "/posts/"
 weight = 20
 
 [[main]]
-name   = "Evolution"
-url    = "/evolution/"
-weight = 30
-
-[[main]]
-name   = "AI Perspective"
-url    = "/ai-perspective/"
-weight = 40
-
-[[main]]
 name   = "Contact"
 url    = "/contact/"
-weight = 50
+weight = 30
