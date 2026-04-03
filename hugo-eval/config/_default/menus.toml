@@ -1,21 +1,19 @@
 [[main]]
-name   = "Projects"
+name   = "projects"
 url    = "/projects/"
 weight = 10
 
 [[main]]
-name   = "Blog"
+name   = "blog"
 url    = "/posts/"
 weight = 20
 
 [[main]]
-name   = "Contact"
+name   = "contact"
 url    = "/contact/"
 weight = 30
 
 [[main]]
-name   = "About"
+name   = "about"
 url    = "/about/"
 weight = 40
-
-

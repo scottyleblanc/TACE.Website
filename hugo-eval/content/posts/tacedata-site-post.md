@@ -1,8 +1,10 @@
-+++
-date = '2026-04-03T12:22:37-03:00'
-draft = false
-title = 'New digs'
-+++
+---
+title: "new digs"
+date: 2026-04-03
+draft: false
+tags: ["hugo", "aws", "meta"]
+summary: "Introducing the new tacedata.ca — why I moved from WordPress to a static site on AWS, and what I plan to do with it."
+---
 
 Claude and I have been hanging out in the evenings and on weekends lately - collaborating and building a range of things, using tools and techniques that are new to me.  More accurately, Claude and I hash through my ideas, he does all the grunt work.  Anyway, more to come on our relationship.  
 

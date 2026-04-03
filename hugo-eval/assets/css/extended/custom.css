@@ -5,3 +5,11 @@ body, .logo, h1, h2, h3, h4, h5, h6, p, a, li {
 .logo a {
     color: #5baab8 !important;
 }
+
+h1, h2, h3, h4, h5, h6 {
+    text-transform: none;
+}
+
+#menu a {
+    text-transform: none;
+}
