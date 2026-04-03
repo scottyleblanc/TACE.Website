@@ -19,7 +19,7 @@ Stages are defined in `docs/STAGES.md`.
 
 ---
 
-## Stage 2 — Email Migration (Current)
+## Stage 2 — Email Migration (Complete)
 
 - [x] Create Fastmail account; add tacedata.ca as custom domain (scott.leblanc@tacedata.ca)
 - [x] Add Fastmail TXT record to Websavers DNS for domain verification
@@ -45,6 +45,13 @@ Stages are defined in `docs/STAGES.md`.
 
 ## Stage 4 — Content (Current)
 
+### Done
+
+- [x] Contact page published
+- [x] Economy Dashboard deployed at `/ai/projects/econ/` (static HTML, no auth required)
+- [x] Placeholder project pages published (OracleAwsRotation, Sample Project)
+- [x] Theme switched to PaperMod; Mermaid diagram rendering confirmed working
+
 ### Open
 
 - [ ] Draft "About" content — who I am, the evolution, the intent of the site
@@ -53,12 +60,13 @@ Stages are defined in `docs/STAGES.md`.
 - [ ] Decide on AI perspective thread — format, cadence, tone
 - [ ] Define LinkedIn publishing workflow — how posts get from blog to LinkedIn
 - [ ] Flesh out Skills section — Oracle and PowerShell pages
+- [ ] Add Evolution and AI Perspective sections once content direction is confirmed
 
 ### Site Structure (Confirmed — 2026-03-29)
 
 - Home, Blog, Projects, Skills — static Hugo content
 - Utilities — data aggregation pages, some with auth; see `docs/DECISIONS.md`
-  - Economy Dashboard (first utility)
+  - Economy Dashboard (first utility — deployed 2026-04-03)
   - Additional utilities TBD
 
 ---

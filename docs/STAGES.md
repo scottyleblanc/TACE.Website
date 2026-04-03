@@ -61,6 +61,10 @@ Site validates on a CloudFront test URL — no domain cutover in this stage.
 - Round-trip validated on `*.cloudfront.net` test URL: local edit → commit → push → live within 2 minutes
 - Pipeline documented in README.md
 
+**Post-Stage 3 infrastructure additions (2026-04-03):**
+- CloudFront Function `rewrite-index-html` added — rewrites directory-style URLs (e.g. `/posts/`) to `/posts/index.html`; required because S3 OAC does not resolve Hugo's directory index structure without it
+- `hugo.toml` baseURL replaced with `vars.SITE_URL` GitHub Actions variable — prevents production domain from being baked into builds before domain cutover; update variable at Stage 5
+
 ---
 
 ## Stage 5 — Domain Cutover
@@ -133,6 +137,5 @@ representative of the work and the journey.
 Items not yet assigned to a stage:
 
 - AWS certification path and how it shapes site content
-- Contact page
 - Analytics (Plausible, Fathom, or none — avoid Google Analytics)
 - Whether repo goes public immediately or after initial content is in place

@@ -6,6 +6,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-04-03
+
+### Added
+- PaperMod theme added as git submodule; Blowfish retired
+- Mermaid diagram support via render hook (`layouts/_default/_markup/render-codeblock-mermaid.html`) and unconditional JS loader in `extend_footer.html`
+- Economy dashboard deployed as static HTML at `/ai/projects/econ/`
+- Contact page (`content/contact.md`) published
+- CloudFront Function `rewrite-index-html` (cloudfront-js-1.0) — rewrites directory-style URLs to `index.html` paths; required for Hugo static output served via S3 OAC
+- `config/rewrite-index-html.js`, `config/dist-config.json`, `config/dist-config-updated.json` — function source and distribution config snapshots
+
+### Changed
+- `hugo.toml` baseURL removed from source; replaced with `vars.SITE_URL` GitHub Actions variable — site renders correctly at CloudFront URL before domain cutover; update variable at Stage 5
+- Menus: removed Evolution and AI Perspective (no content); Contact retained
+- `draft: true` removed from contact, Hello World post, oracle-aws-rotation project, sample project, sample post — all now deploy to production
+
+### Fixed
+- All subpath navigation returned AccessDenied (S3 OAC does not resolve directory index without rewrite); fixed with CloudFront Function
+- Site CSS and JS not loading at CloudFront URL due to hardcoded tacedata.ca baseURL
+
+---
+
 ## [0.11.0] - 2026-04-02
 
 ### Changed
