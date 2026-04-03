@@ -12,7 +12,7 @@ copyright = '© 2026 TACE Data Management Inc.'
 [params.profileMode]
   enabled  = true
   title    = "Scott LeBlanc"
-  subtitle = "Oracle DBA → PowerShell automation engineer → cloud practitioner. Building in public."
+  subtitle = "Oracle DBA / Automater / AI Enthusiast / AWS Tinkerer"
   imageUrl = "tace.logo.png"
   imageWidth  = 80
   imageHeight = 80
@@ -31,7 +31,7 @@ copyright = '© 2026 TACE Data Management Inc.'
 
 [[params.socialIcons]]
   name = "linkedin"
-  url  = "https://linkedin.com/in/scottleblanc"
+  url  = "https://www.linkedin.com/in/leblancscott/"
 
 [params.label]
   text = "TACE Data Management Inc"
