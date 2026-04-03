@@ -25,6 +25,14 @@ copyright = '© 2026 TACE Data Management Inc.'
   name = "Blog"
   url  = "/posts/"
 
+[[params.socialIcons]]
+  name = "github"
+  url  = "https://github.com/scottyleblanc"
+
+[[params.socialIcons]]
+  name = "linkedin"
+  url  = "https://linkedin.com/in/scottleblanc"
+
 [params.label]
   text = "TACE Data Management Inc"
   icon = "tace.logo.png"

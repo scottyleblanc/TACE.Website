@@ -4,6 +4,3 @@
 [submodule "hugo-eval/themes/congo"]
 	path = hugo-eval/themes/congo
 	url = https://github.com/jpanther/congo
-[submodule "hugo-eval/themes/blowfish"]
-	path = hugo-eval/themes/blowfish
-	url = https://github.com/nunocoracao/blowfish

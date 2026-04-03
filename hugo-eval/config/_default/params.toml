@@ -1,18 +1,2 @@
-logo = "img/logo.png"
-colorScheme = "ocean"
-defaultAppearance = "dark"
-autoSwitchAppearance = true
-
-[header]
-layout = "basic"
-
-[homepage]
-layout = "profile"
-showRecent = true
-
-[blowfishAuthor]
-name = "Scott LeBlanc"
-links = [
-  { github = "https://github.com/scottyleblanc" },
-  { linkedin = "https://linkedin.com/in/scottleblanc" },
-]
+# PaperMod theme parameters
+# Social icons appear on the profile home page
