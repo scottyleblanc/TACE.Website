@@ -1,6 +1,6 @@
 # tacedata-site
 
-Personal portfolio and professional development site for [tacedata.ca](https://tacedata.ca).
+Personal portfolio and professional development site — [tacedata.ca](https://tacedata.ca).
 
 ## Purpose
 
@@ -20,11 +20,11 @@ This is not a consulting brochure. It is a working journal with proof of work.
 | Component       | Tool                          | Notes                                         |
 |-----------------|-------------------------------|-----------------------------------------------|
 | Site generator  | Hugo Extended v0.158          | Markdown-based, single binary, fast           |
-| Theme           | Blowfish                      | Git submodule at `hugo-eval/themes/blowfish`  |
-| Source control  | Git / GitHub                  | Private repo                                  |
+| Theme           | PaperMod                      | Git submodule at `hugo-eval/themes/PaperMod`  |
+| Source control  | Git / GitHub                  |                                               |
 | CI/CD           | GitHub Actions                | Push to main → build → deploy                 |
 | Hosting         | AWS S3 + CloudFront           | ca-central-1                                  |
-| Domain          | tacedata.ca                   | Registered via Websavers; cutover in Stage 4  |
+| Domain          | tacedata.ca                   | Registered via Websavers; cutover in Stage 5  |
 | Email           | Fastmail                      | scott.leblanc@tacedata.ca                     |
 
 ---
@@ -34,6 +34,8 @@ This is not a consulting brochure. It is a working journal with proof of work.
 ```
 tacedata-site/
 ├── README.md                       ← this file
+├── LICENSE                         ← MIT
+├── SECURITY.md                     ← vulnerability reporting
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml              ← GitHub Actions deploy pipeline
@@ -41,23 +43,28 @@ tacedata-site/
 │   ├── runbook-stage3-aws.md       ← AWS infrastructure setup commands
 │   ├── s3.bucket.policy.json       ← S3 bucket policy (CloudFront OAC)
 │   ├── iam-trust-policy.json       ← IAM role trust policy
-│   └── iam-permissions-policy.json ← IAM role permissions policy
+│   ├── iam-permissions-policy.json ← IAM role permissions policy
+│   ├── rewrite-index-html.js       ← CloudFront Function source
+│   └── dist-config-updated.json   ← CloudFront distribution config snapshot
 ├── docs/
 │   ├── TODO.md                     ← active build checklist
 │   ├── STAGES.md                   ← phase definitions and current state
 │   ├── DECISIONS.md                ← key decisions and rationale
 │   ├── CHANGELOG.md                ← version history
 │   ├── VERSIONING.md               ← commit and release conventions
+│   ├── templates/                  ← content templates
 │   └── websavers.md                ← Websavers account review findings
-└── hugo-eval/                      ← Hugo site (graduates to site root post-cutover)
+└── hugo-eval/                      ← Hugo site source
     ├── hugo.toml                   ← Hugo site config
-    ├── config/_default/            ← Blowfish theme config
+    ├── config/_default/            ← PaperMod theme config
     ├── content/
     │   ├── _index.md               ← home page
     │   ├── posts/                  ← blog post Markdown files
-    │   └── projects/               ← project write-up Markdown files
-    ├── themes/blowfish/            ← Blowfish theme (git submodule)
-    ├── assets/                     ← logo and static assets
+    │   ├── projects/               ← project write-up Markdown files
+    │   └── about.md                ← about page
+    ├── themes/PaperMod/            ← PaperMod theme (git submodule)
+    ├── static/                     ← static assets (logo, diagrams)
+    ├── assets/css/extended/        ← custom CSS overrides
     └── layouts/                    ← custom layout overrides
 ```
 
@@ -97,8 +104,8 @@ Push to `main` triggers the GitHub Actions pipeline automatically.
 
 ### Pipeline steps
 
-1. Checkout repo with submodules (Blowfish theme)
-2. Build Hugo Extended with `--minify`
+1. Checkout repo with submodules (PaperMod theme)
+2. Build Hugo Extended with `--minify --baseURL` from `vars.SITE_URL`
 3. Authenticate to AWS via OIDC (no long-lived credentials)
 4. Sync `hugo-eval/public/` to `s3://REDACTED_S3_BUCKET/tacedata-site/`
 5. Invalidate CloudFront distribution to serve updated content
@@ -113,11 +120,12 @@ Push to `main` triggers the GitHub Actions pipeline automatically.
 | IAM role | `REDACTED_DEPLOY_ROLE` |
 | Region | `ca-central-1` |
 
-### GitHub secrets required
+### GitHub configuration required
 
-| Secret | Purpose |
-|---|---|
-| `AWS_ROLE_ARN` | IAM role ARN for OIDC authentication |
+| Type | Name | Purpose |
+|---|---|---|
+| Secret | `AWS_ROLE_ARN` | IAM role ARN for OIDC authentication |
+| Variable | `SITE_URL` | Base URL for Hugo build (update at domain cutover) |
 
 See `config/runbook-stage3-aws.md` for full infrastructure setup commands.
 

@@ -12,7 +12,7 @@ copyright = '© 2026 TACE Data Management Inc.'
 [params.profileMode]
   enabled  = true
   title    = "Scott LeBlanc"
-  subtitle = "Oracle DBA / Automater / AI Enthusiast / AWS Tinkerer"
+  subtitle = "Oracle DBA / PowerShell Automater / AI Enthusiast / AWS Tinkerer"
   imageUrl = "tace.logo.png"
   imageWidth  = 80
   imageHeight = 80
