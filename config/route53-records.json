@@ -1,0 +1,83 @@
+{
+  "Comment": "Initial DNS records for tacedata.ca",
+  "Changes": [
+    {
+      "Action": "CREATE",
+      "ResourceRecordSet": {
+        "Name": "tacedata.ca",
+        "Type": "MX",
+        "TTL": 300,
+        "ResourceRecords": [
+          {"Value": "10 in1-smtp.messagingengine.com."},
+          {"Value": "20 in2-smtp.messagingengine.com."}
+        ]
+      }
+    },
+    {
+      "Action": "CREATE",
+      "ResourceRecordSet": {
+        "Name": "tacedata.ca",
+        "Type": "TXT",
+        "TTL": 300,
+        "ResourceRecords": [
+          {"Value": "\"v=spf1 include:spf.messagingengine.com ?all\""}
+        ]
+      }
+    },
+    {
+      "Action": "CREATE",
+      "ResourceRecordSet": {
+        "Name": "_dmarc.tacedata.ca",
+        "Type": "TXT",
+        "TTL": 300,
+        "ResourceRecords": [
+          {"Value": "\"v=DMARC1; p=quarantine; adkim=s; aspf=s\""}
+        ]
+      }
+    },
+    {
+      "Action": "CREATE",
+      "ResourceRecordSet": {
+        "Name": "fm1._domainkey.tacedata.ca",
+        "Type": "CNAME",
+        "TTL": 300,
+        "ResourceRecords": [
+          {"Value": "fm1.tacedata.ca.dkim.fmhosted.com."}
+        ]
+      }
+    },
+    {
+      "Action": "CREATE",
+      "ResourceRecordSet": {
+        "Name": "fm2._domainkey.tacedata.ca",
+        "Type": "CNAME",
+        "TTL": 300,
+        "ResourceRecords": [
+          {"Value": "fm2.tacedata.ca.dkim.fmhosted.com."}
+        ]
+      }
+    },
+    {
+      "Action": "CREATE",
+      "ResourceRecordSet": {
+        "Name": "fm3._domainkey.tacedata.ca",
+        "Type": "CNAME",
+        "TTL": 300,
+        "ResourceRecords": [
+          {"Value": "fm3.tacedata.ca.dkim.fmhosted.com."}
+        ]
+      }
+    },
+    {
+      "Action": "CREATE",
+      "ResourceRecordSet": {
+        "Name": "www.tacedata.ca",
+        "Type": "CNAME",
+        "TTL": 300,
+        "ResourceRecords": [
+          {"Value": "REDACTED_CF_DOMAIN."}
+        ]
+      }
+    }
+  ]
+}

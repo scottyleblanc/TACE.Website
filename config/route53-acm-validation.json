@@ -1,0 +1,27 @@
+{
+  "Comment": "ACM certificate DNS validation records",
+  "Changes": [
+    {
+      "Action": "CREATE",
+      "ResourceRecordSet": {
+        "Name": "_e2a12bc48260c6dc74c0eaf3ccea3a0c.tacedata.ca.",
+        "Type": "CNAME",
+        "TTL": 300,
+        "ResourceRecords": [
+          {"Value": "_078ec87562e0e980db87a6b971636cd7.jkddzztszm.acm-validations.aws."}
+        ]
+      }
+    },
+    {
+      "Action": "CREATE",
+      "ResourceRecordSet": {
+        "Name": "_9b0a3a566c55cb82061462b6eb668dcb.www.tacedata.ca.",
+        "Type": "CNAME",
+        "TTL": 300,
+        "ResourceRecords": [
+          {"Value": "_9d349ee42430f6da04877d51d8499edd.jkddzztszm.acm-validations.aws."}
+        ]
+      }
+    }
+  ]
+}

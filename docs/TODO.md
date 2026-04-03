@@ -43,56 +43,37 @@ Stages are defined in `docs/STAGES.md`.
 
 ---
 
-## Stage 4 — Content (Current)
-
-### Done
+## Stage 4 — Content (Complete — 2026-04-03)
 
 - [x] Contact page published
 - [x] Economy Dashboard deployed at `/ai/projects/econ/` (static HTML, no auth required)
-- [x] Placeholder project pages published (OracleAwsRotation, Sample Project)
 - [x] Theme switched to PaperMod; Mermaid diagram rendering confirmed working
-
-### Open
-
-- [ ] Draft "About" content — who I am, the evolution, the intent of the site
-- [ ] Write up first project — OracleAwsRotation (diagram + problem/solution write-up)
-- [ ] Draft first blog post — candidate topics in STAGES.md
-- [ ] Decide on AI perspective thread — format, cadence, tone
-- [ ] Define LinkedIn publishing workflow — how posts get from blog to LinkedIn
-- [ ] Flesh out Skills section — Oracle and PowerShell pages
-- [ ] Add Evolution and AI Perspective sections once content direction is confirmed
-
-### Site Structure (Confirmed — 2026-03-29)
-
-- Home, Blog, Projects, Skills — static Hugo content
-- Utilities — data aggregation pages, some with auth; see `docs/DECISIONS.md`
-  - Economy Dashboard (first utility — deployed 2026-04-03)
-  - Additional utilities TBD
+- [x] About page — TACE Data background, evolution from DBA to automation engineer
+- [x] Home — profile mode with intro, buttons, social icons
+- [x] Projects — tacedata.ca site write-up with architecture and deployment diagrams
+- [x] Blog — "new digs" intro post published; Stage 1–5 posts drafted (held as drafts)
 
 ---
 
-## Stage 5 — Domain Cutover (Pending Stage 4 complete)
+## Stage 5 — Domain Cutover (Complete — 2026-04-03)
 
-**Hard deadline: July 14, 2026**
+- [x] Create Route 53 hosted zone for `tacedata.ca`
+- [x] Replicate all existing DNS records into Route 53 — including Fastmail MX records
+- [x] Request ACM certificate for tacedata.ca and www.tacedata.ca (DNS validation)
+- [x] Add ACM validation CNAME records to Route 53
+- [x] Change nameservers at Websavers → Route 53
+- [x] Wait for ACM certificate to reach ISSUED status
+- [x] Attach tacedata.ca / www.tacedata.ca and ACM cert to CloudFront distribution
+- [x] Add A alias record for tacedata.ca root to Route 53
+- [x] Update SITE_URL GitHub Actions variable to https://tacedata.ca
+- [x] Trigger deploy; validate tacedata.ca loads with SSL
+- [x] Confirm email still works on Fastmail after nameserver change
 
-### Preparation (can start before Stage 4 is complete)
+### Remaining (post-cutover)
 
 - [ ] Confirm the 5 domain variants in Websavers dashboard — decide which to keep (minimum 3)
-    - Each kept domain: ~$14 CAD/year at Route 53 vs. ~$25 CAD/year at Websavers
-    - Domains not kept: let lapse at July 14 renewal — do not renew
-
-### Cutover
-
-- [ ] Create Route 53 hosted zone for `tacedata.ca`
-- [ ] Replicate all existing DNS records into Route 53 — including Fastmail MX records
-- [ ] Request ACM certificate for tacedata.ca (DNS validation — Route 53 auto-creates the record)
-- [ ] Attach tacedata.ca and ACM cert to the CloudFront distribution from Stage 3
-- [ ] Change nameservers at Websavers → Route 53 (~15-20 min) — first Websavers interaction
-- [ ] Validate tacedata.ca resolves correctly and SSL is clean
-- [ ] Confirm email still works on Fastmail after nameserver change
 - [ ] Cancel Websavers WordPress hosting and email
-- [ ] Release registrar lock; initiate domain transfer to Route 53 (5-7 day ICANN window)
-- [ ] Confirm transfers complete; Websavers relationship fully wound down
+- [ ] Optionally initiate domain transfer to Route 53 (5-7 day ICANN window)
 
 ---
 

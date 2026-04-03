@@ -4,7 +4,7 @@ Phase definitions, current state, and decision criteria.
 
 ---
 
-## Current Stage: Stage 4 — Content
+## Current Stage: Stage 5 — Domain Cutover
 
 ---
 
@@ -67,31 +67,7 @@ Site validates on a CloudFront test URL — no domain cutover in this stage.
 
 ---
 
-## Stage 5 — Domain Cutover
-
-**Goal:** tacedata.ca pointing at CloudFront. Websavers wound down.
-
-**Hard deadline:** July 14, 2026.
-
-**Prerequisite:** Stage 4 (content) must be complete before this stage begins.
-
-**Cutover sequence:**
-1. Create Route 53 hosted zone; replicate all existing DNS records (including Fastmail MX records)
-2. Request ACM certificate for tacedata.ca — DNS validation via Route 53 (auto-created record)
-3. Attach tacedata.ca and ACM cert to the CloudFront distribution from Stage 3
-4. Change nameservers at Websavers → Route 53 (~15-20 min) — first Websavers interaction
-5. Validate tacedata.ca resolves correctly and SSL is clean
-6. Confirm email still works on Fastmail after nameserver change
-7. Cancel Websavers WordPress hosting and email
-8. Release registrar lock; initiate domain transfer to Route 53 (5-7 day ICANN window)
-9. Confirm transfers complete; Websavers fully wound down
-
-**Domains:** 5 registered at Websavers (~$25 CAD/year each). Keep minimum 3; let remainder lapse.
-Exact variants to confirm in Websavers dashboard before renewal.
-
----
-
-## Stage 4 — Content
+## Stage 4 — Content (Complete — 2026-04-03)
 
 **Goal:** Site has enough real content to be worth sharing. Not "complete" — just
 representative of the work and the journey.
@@ -122,6 +98,36 @@ representative of the work and the journey.
 - Link back to tacedata.ca for full version
 - No tooling required to start — manual is fine until cadence is established
 
+**Completed content:**
+- Home — profile mode with intro, buttons, social icons
+- About — TACE Data background, evolution from DBA to automation engineer
+- Projects — tacedata.ca site write-up with architecture and deployment diagrams
+- Blog — "new digs" intro post, AWS pipeline post, DNS cutover post
+
+---
+
+## Stage 5 — Domain Cutover
+
+**Goal:** tacedata.ca pointing at CloudFront. Websavers wound down.
+
+**Hard deadline:** July 14, 2026.
+
+**Prerequisite:** Stage 4 (content) must be complete before this stage begins.
+
+**Cutover sequence:**
+1. Create Route 53 hosted zone; replicate all existing DNS records (including Fastmail MX records)
+2. Request ACM certificate for tacedata.ca — DNS validation via Route 53 (auto-created record)
+3. Attach tacedata.ca and ACM cert to the CloudFront distribution from Stage 3
+4. Change nameservers at Websavers → Route 53 (~15-20 min) — first Websavers interaction
+5. Validate tacedata.ca resolves correctly and SSL is clean
+6. Confirm email still works on Fastmail after nameserver change
+7. Cancel Websavers WordPress hosting and email
+8. Release registrar lock; initiate domain transfer to Route 53 (5-7 day ICANN window)
+9. Confirm transfers complete; Websavers fully wound down
+
+**Domains:** 5 registered at Websavers (~$25 CAD/year each). Keep minimum 3; let remainder lapse.
+Exact variants to confirm in Websavers dashboard before renewal.
+
 ---
 
 ## Completed Stages
@@ -129,6 +135,7 @@ representative of the work and the journey.
 - Stage 1 — Hugo Evaluation — complete 2026-03-29
 - Stage 2 — Email Migration — complete 2026-04-01
 - Stage 3 — AWS Pipeline — complete 2026-04-02
+- Stage 4 — Content — complete 2026-04-03
 
 ---
 

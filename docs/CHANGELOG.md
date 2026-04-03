@@ -6,6 +6,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-04-03
+
+### Added
+- Route 53 hosted zone `REDACTED_R53_ZONE_ID` — authoritative DNS for tacedata.ca
+- DNS records in Route 53: MX (Fastmail), SPF, DMARC, DKIM CNAMEs, www CNAME to CloudFront
+- ACM certificate issued for tacedata.ca and www.tacedata.ca (us-east-1, DNS validation)
+- CloudFront distribution updated: alternate domain names tacedata.ca / www.tacedata.ca, ACM cert attached, SNI-only, TLSv1.2_2021
+- Route 53 A alias record for tacedata.ca root pointing to CloudFront
+- `config/route53-records.json` — initial DNS records batch file
+- `config/route53-acm-validation.json` — ACM DNS validation CNAME records
+- `config/route53-alias.json` — A alias record for root domain
+- `config/dist-config-live.json` — CloudFront distribution config with aliases and ACM cert
+- `config/runbook-stage5-dns-cutover.md` — full cutover runbook with architecture diagram
+- Blog posts (draft): Stage 1–5 write-ups — hugo-evaluation, email-migration, aws-pipeline, site-content, dns-cutover
+
+### Changed
+- Nameservers at Websavers changed to Route 53 NS records — Route 53 is now authoritative
+- `SITE_URL` GitHub Actions variable updated from CloudFront URL to `https://tacedata.ca`
+- `docs/STAGES.md` — Stage 4 moved to correct position, marked complete; current stage updated to Stage 5
+
+### Fixed
+- `docs/STAGES.md` — Stage 4 was out of order (appeared after Stage 5); corrected
+
 ## [0.12.0] - 2026-04-03
 
 ### Added
