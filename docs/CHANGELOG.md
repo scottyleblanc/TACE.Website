@@ -6,6 +6,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-04-04
+
+### Added
+- `hugo/static/.well-known/security.txt` (RFC 9116) — vulnerability reporting contact and expiry
+- `.github/dependabot.yml` — weekly Dependabot scans for GitHub Actions versions and git submodules
+- `hugo.toml` `[params.assets]` — interim favicon pointing to existing logo; eliminates 404s pending proper favicon generation
+
+### Security
+- Branch protection applied to `main` — force pushes and deletions blocked
+- Favicon TODO added — proper favicon files (ico, 16x16, 32x32) to be generated from tace.logo.png
+
+---
+
 ## [0.15.0] - 2026-04-04
 
 ### Security
