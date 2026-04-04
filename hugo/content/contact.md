@@ -8,9 +8,8 @@ title = 'contact'
   
 Additional company information:
 
-**Company Name:** TACE Data Management Inc  
 **Principal Consultant:** Scott LeBlanc  
+**Company Name:** TACE Data Management Inc  
 **Location:** New Brunswick, Canada  
 **Legal Structure:** Canadian Corporation  
-**Security Clearance:** Previously held Secret clearance, eligible for renewal  
 **Certifications:** Oracle 19c OCP, Oracle Data Guard Specialist, legacy Oracle OCPs
