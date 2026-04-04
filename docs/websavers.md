@@ -91,12 +91,13 @@ Do not cancel email hosting until export is confirmed complete.
 
 ---
 
-## Open Decisions (unblock before Stage 3)
+## Decisions (resolved)
 
-1. **Which domains to keep?** Confirm the 5 variants in the Websavers dashboard.
-   Keep a minimum of 3, possibly more. Domains not kept: do not renew at July 14.
-   Domains kept: transfer to Route 53 (~$14 CAD/year each vs. ~$25 CAD/year at Websavers).
+1. **Domain registrar** — Websavers retained as registrar. DNS delegated to Route 53 (nameserver
+   change only — no domain transfer). Deliberate choice; do not propose transferring registration.
 
-2. **Email provider** — Fastmail preferred (~$5/mo CAD); Zoho free tier remains a viable fallback.
-   Aliases confirmed as the model: accounting and contact forward to personal inbox.
-   Inbox history migration is nice-to-have; attempt via IMAP/Thunderbird if it fits.
+2. **Which domains to keep?** — Open. Confirm the 5 variants in the Websavers dashboard before
+   July 14, 2026 renewal. Keep a minimum of 3; let remainder lapse.
+
+3. **Email provider** — Fastmail. Resolved 2026-04-01. All 3 addresses confirmed working;
+   inbox history imported via IMAP.
