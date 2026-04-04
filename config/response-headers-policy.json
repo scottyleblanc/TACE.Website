@@ -1,0 +1,32 @@
+{
+    "Comment": "Security headers for tacedata.ca",
+    "Name": "tacedata-security-headers",
+    "SecurityHeadersConfig": {
+        "XSSProtection": {
+            "Override": true,
+            "Protection": true,
+            "ModeBlock": true
+        },
+        "FrameOptions": {
+            "Override": true,
+            "FrameOption": "SAMEORIGIN"
+        },
+        "ReferrerPolicy": {
+            "Override": true,
+            "ReferrerPolicy": "strict-origin-when-cross-origin"
+        },
+        "ContentTypeOptions": {
+            "Override": true
+        },
+        "StrictTransportSecurity": {
+            "Override": true,
+            "IncludeSubdomains": true,
+            "Preload": false,
+            "AccessControlMaxAgeSec": 31536000
+        },
+        "ContentSecurityPolicy": {
+            "Override": true,
+            "ContentSecurityPolicy": "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self';"
+        }
+    }
+}
