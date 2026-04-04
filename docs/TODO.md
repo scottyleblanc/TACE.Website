@@ -77,9 +77,34 @@ Stages are defined in `docs/STAGES.md`.
 
 ---
 
-## Parking Lot — Not Yet Staged
+## Post-Launch — Monitoring (Complete — 2026-04-03)
 
+- [x] CloudWatch Synthetics canary — checks https://tacedata.ca every 5 minutes
+- [x] CloudWatch Alarm — 2 consecutive failures triggers SNS email alert
+- [x] IAM role for canary Lambda execution
+- [x] Alarm tested — set-alarm-state confirmed email delivery on ALARM and OK
+- [x] Blog post published: "site monitoring with aws cloudwatch"
+- [x] Runbook documented: `config/runbook-cloudwatch-monitoring.md`
+
+---
+
+## Post-Launch — Security Remediation (Complete — 2026-04-04)
+
+- [x] Security review conducted — 2 HIGH, 2 MEDIUM, 2 LOW, 1 INFO findings
+- [x] [HIGH] Scrub AWS resource identifiers from current files
+- [x] [HIGH] Rewrite git history (46 commits) — git-filter-repo, file content + commit messages
+- [x] [MEDIUM] Remove security clearance disclosure from contact page
+- [x] [LOW] Replace MIT license with All Rights Reserved
+- [x] [LOW] Add security response headers via CloudFront Function (viewer-response)
+  - CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy
+  - Tested locally via hugo.toml dev server headers before production deploy
+- [x] Blog post published: "cleaning sensitive data out of git history"
+
+---
+
+## Parking Lot — Open
+
+- Confirm 5 domain variants in Websavers dashboard before July 14, 2026 — keep minimum 3, let remainder lapse
+- Cancel Websavers WordPress hosting and email (after domain decision)
 - AWS certification path — which cert, timeline, how it integrates with site content
-- Whether to make the GitHub repo public from the start or after initial content is in place
-- Contact page — needed eventually, not urgent while not actively seeking clients
 - Analytics — simple, privacy-respecting option (Plausible, Fathom, or none)

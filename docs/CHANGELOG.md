@@ -6,6 +6,36 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-04-04
+
+### Security
+- Rewrote git history (46 commits) using git-filter-repo — scrubbed all AWS resource identifiers from file content and commit messages
+- Replaced MIT license with All Rights Reserved (proprietary)
+- Removed security clearance disclosure from contact page
+- Added `*-Security-Review.md` to `.gitignore`
+
+### Added
+- CloudFront Function `tacedata-security-headers` (viewer-response) — sets CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy on all responses
+- `config/security-headers.js` — CloudFront Function source
+- `config/response-headers-policy.json` — response headers policy reference (not attached; WAF conflict)
+- `hugo.toml` dev server headers — mirrors production headers for local CSP testing
+- Blog post: "cleaning sensitive data out of git history"
+
+---
+
+## [0.14.0] - 2026-04-03
+
+### Added
+- CloudWatch Synthetics canary `tacedata-canary` — checks `https://tacedata.ca` every 5 minutes, alerts on 2 consecutive failures
+- CloudWatch Alarm — triggers after 2 failed canary runs; SNS email notification on ALARM and OK transitions
+- IAM role for canary Lambda execution (least-privilege: S3 write + CloudWatch metrics)
+- `config/canary-script.js` — canary Node.js source (syn-nodejs-puppeteer-9.1 runtime)
+- `config/canary-config.json`, `config/canary-permissions-policy.json`, `config/canary-trust-policy.json`
+- `config/runbook-cloudwatch-monitoring.md` — full monitoring setup runbook
+- Blog post: "site monitoring with aws cloudwatch"
+
+---
+
 ## [0.13.0] - 2026-04-03
 
 ### Added
