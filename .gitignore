@@ -15,5 +15,7 @@ Thumbs.db
 *.swp
 
 scratch.txt
+config/canary.zip
+config/canary-zip/
 .claude/
 linkedin.md

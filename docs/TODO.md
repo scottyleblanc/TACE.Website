@@ -51,7 +51,7 @@ Stages are defined in `docs/STAGES.md`.
 - [x] About page — TACE Data background, evolution from DBA to automation engineer
 - [x] Home — profile mode with intro, buttons, social icons
 - [x] Projects — tacedata.ca site write-up with architecture and deployment diagrams
-- [x] Blog — "new digs" intro post published; Stage 1–5 posts drafted (held as drafts)
+- [x] Blog — "new digs" intro post published; Stage 1–5 write-up posts published
 
 ---
 

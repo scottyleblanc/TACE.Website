@@ -1,0 +1,19 @@
+{
+  "Name": "tacedata-availability",
+  "Code": {
+    "Handler": "canary-script.handler"
+  },
+  "ArtifactS3Location": "s3://tacedata-canary-artifacts/canary-runs/",
+  "ExecutionRoleArn": "arn:aws:iam::REDACTED_AWS_ACCOUNT_ID:role/tacedata-canary-role",
+  "Schedule": {
+    "Expression": "rate(5 minutes)",
+    "DurationInSeconds": 0
+  },
+  "RunConfig": {
+    "TimeoutInSeconds": 60
+  },
+  "SuccessRetentionPeriodInDays": 7,
+  "FailureRetentionPeriodInDays": 31,
+  "RuntimeVersion": "syn-nodejs-puppeteer-9.1",
+  "StartCanaryAfterCreation": true
+}

@@ -75,6 +75,14 @@ flowchart TD
     classDef aws     fill:#FF9900,stroke:#e68a00,color:#000000
     classDef browser fill:#4a90d9,stroke:#357abd,color:#ffffff
 ```
+## Monitoring
+
+Availability monitoring via AWS CloudWatch Synthetics. A canary script runs every
+5 minutes, checks `https://tacedata.ca` for HTTP 200, and triggers a CloudWatch
+Alarm after 2 consecutive failures. The alarm publishes to SNS — an email alert
+lands within 10 minutes of an outage. Cost: under $0.15/month.
+
+[CloudWatch monitoring runbook](https://github.com/scottyleblanc/TACE.Website/blob/main/config/runbook-cloudwatch-monitoring.md)
 
 ## Tech Used
 
@@ -86,6 +94,14 @@ flowchart TD
 - AWS S3 (private bucket, CloudFront OAC)
 - AWS CloudFront
 - AWS IAM (OIDC — short-lived tokens, no stored access keys)
+
+## Runbooks
+
+Step-by-step command references for each infrastructure stage, committed to the repository:
+
+- [Stage 3 — AWS Infrastructure](https://github.com/scottyleblanc/TACE.Website/blob/main/config/runbook-stage3-aws.md) — S3, CloudFront, IAM, OIDC, GitHub Actions pipeline
+- [Stage 5 — DNS Cutover](https://github.com/scottyleblanc/TACE.Website/blob/main/config/runbook-stage5-dns-cutover.md) — Route 53, ACM certificate, CloudFront domain attachment
+- [CloudWatch Monitoring](https://github.com/scottyleblanc/TACE.Website/blob/main/config/runbook-cloudwatch-monitoring.md) — Synthetics canary, alarm, SNS alerting
 
 ## What I Learned
 
@@ -103,6 +119,8 @@ GitHub and AWS establish trust directly, and tokens are short-lived.
 **The hardest part is not the technical part.** The stack came together quickly.
 The harder question — what do you want to present, and how do you communicate it
 — is the part that takes longer.
+
+
 
 ## Links
 
