@@ -8,7 +8,7 @@ summary: "Moving tacedata.ca from Websavers DNS to AWS Route 53 — what the cut
 
 The new site has been running at a CloudFront URL since Stage 3. Functional, deployed, but not yet at tacedata.ca. The last piece was DNS — moving the domain off Websavers DNS and onto AWS Route 53, and attaching a proper SSL certificate.
 
-It sounds like a small thing. It is not a small thing.  
+It sounds like a small thing. It is not a small thing.  However, with a well defined plan and a bunch of help from Claude, we managed to get it done in an evening.   
 
 ## what actually had to happen
 
