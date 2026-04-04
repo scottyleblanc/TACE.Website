@@ -9,6 +9,11 @@ copyright = '© 2026 TACE Data Management Inc.'
 [params]
   author = "Scott LeBlanc"
 
+[params.assets]
+  favicon      = "tace.logo.png"
+  favicon16x16 = "tace.logo.png"
+  favicon32x32 = "tace.logo.png"
+
 [params.profileMode]
   enabled  = true
   title    = "Scott LeBlanc"
