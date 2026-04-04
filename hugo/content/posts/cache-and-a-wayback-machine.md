@@ -1,6 +1,6 @@
 
 ---
-title: "internet cache and wayback machine"
+title: "internet cache and the wayback machine"
 date: 2026-04-04T06:00:00
 draft: true
 tags: ["git", "security", "aws", "git-filter-repo", "wayback machine", "internet cache"]

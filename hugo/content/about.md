@@ -33,4 +33,3 @@ A recurring theme was doing more with less — tighter timelines, leaner teams, 
 - Oracle Certified Professional — Oracle 19c
 - Oracle Certified Specialist — Oracle Data Guard 19c
 - Oracle Certified Professional — Oracle 11g, 10g, 9i, 8i
-- Eligible for Secret Security Clearance (previously held)

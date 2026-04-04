@@ -8,14 +8,17 @@ summary: "A post-launch security review of tacedata.ca uncovered sensitive AWS i
 
 ## The Mistake
 
-The site was built in public from the start. That decision made sense for a portfolio — the repository itself is part of the proof of work. The mistake was not thinking through what documentation would live alongside the Hugo source.
+The site was built in private to start. During a later stage a decision was made to move the repository to public - which made sense for a portfolio — the repository itself is part of the proof of work. The mistake was not thinking through what documentation would live alongside the Hugo source.
 
 Over five stages of infrastructure work, we wrote detailed runbooks: AWS CLI commands, IAM policy documents, CloudFront config snapshots, architecture diagrams. All of it committed to the same public repository as the site content. None of it was credentials. But the AWS resource identifiers — account ID, distribution ID, S3 bucket name, hosted zone ID, certificate ARN, IAM role names — were present throughout. Together, they form a complete infrastructure map. A threat actor does not need credentials to cause damage if they already know the exact shape of your environment.
 
-A security review caught it. The honest version: both the developer and the AI collaborator (Claude) made this mistake together. The portfolio argument for going public was made without either party asking what would be committed there over time. The instinct to be cautious about a public repo was present and not pushed hard enough.
+A security review caught it. The honest version: both the developer and the AI collaborator (Claude) made this mistake together. The portfolio argument for going public was made without either party asking what would be committed there over time. The instinct to be cautious about a public repo was present - I did not push back hard enough.
 
-Cleaning it up took longer than building the site.
+Cleaning this mess up took longer than building the site.
 
+## How did we catch it?
+
+I engaged two different AI tools to perform penetration testing on the site, and on the GitHub repository.  Each came up with overlapping and unique findings.
 ## What Was Exposed
 
 Seven categories of AWS identifiers across multiple files and 46 git commits:
@@ -60,7 +63,7 @@ With the immediate exposure addressed, we moved on to the broader findings:
 
 ### Step 4 — Private repo for operational documentation
 
-Real infrastructure values now live in a private repository (`TACE-Website-private`). The public repo contains descriptions and placeholders only. Any future infrastructure work follows the same pattern.
+Real infrastructure values now live in a private repository. The public repo contains descriptions and placeholders only. Any future infrastructure work follows the same pattern.
 
 ### Step 5 — Verify external exposure
 
@@ -72,11 +75,15 @@ Cleaning the git history removes data from the repository — not from systems t
 
 A support ticket was raised with GitHub requesting a search index purge and object cache clear for the repository.
 
-## The Lesson
+## The Learning
+
+It was a good call to complete penetration testing on publicly available content.  Unfortunately we did it when the site was live, not before.
 
 Resource identifiers are not credentials, but they are sensitive. They eliminate the reconnaissance phase for a targeted attack. The rule going forward: public repositories get architecture descriptions and placeholders. Runbooks, policy files, and config snapshots with real values go in private documentation.
 
 The second lesson is about instinct. The hesitation about using a public repository was present from the start and not pushed on hard enough. When a security instinct surfaces, it deserves a proper answer — not a deferred one.
+
+AI makes mistakes.  Despite my hesitation, and initial pushback, I eventually acquiesced to the idea of making the repo public.  My mistake was not keeping security top of mind throughout; if I had prompted Claude to consider security, this issue would not have presented itself.
 
 ## References
 
