@@ -1,0 +1,265 @@
+# tacedata.ca — Economic Indicators Dashboard
+## Project Scaffold for Claude Code Working Sessions
+
+This document is the authoritative starting point for any Claude Code session on this project. Read it in full before writing any code or making any changes. It describes what exists, what is planned, the principles that govern how we build, and the context needed to make good decisions without repeated clarification.
+
+---
+
+## Project purpose
+
+A Canadian economic indicators dashboard built as a portfolio piece on tacedata.ca. It tracks eight indicators with a direct relationship to Canadian mortgage rates and translates them into plain-English signals — the primary use case is deciding whether to lock in a fixed mortgage rate or stay variable.
+
+The project is documented publicly as a staged build: a blog series on tacedata.ca tracks each architectural stage, the decisions made, and why. Code quality and decision transparency matter as much as the working result.
+
+---
+
+## Repository and deployment
+
+| Item | Detail |
+|---|---|
+| Site | tacedata.ca |
+| Static site generator | Hugo |
+| Hosting | AWS S3 + CloudFront |
+| Publish trigger | Git push → GitHub Actions → S3 sync |
+| Current dashboard file | `index_v0_3_0.html` (single-file, no build step) |
+| Dashboard version | v0.3.0 |
+
+The dashboard currently lives as a standalone HTML file, deployed separately from the Hugo site. It will be integrated into the Hugo site as Stage 2 of the build.
+
+---
+
+## What currently exists — v0.3.0
+
+A single self-contained HTML file (~921 lines). No external dependencies beyond Google Fonts. All logic — data fetching, signal computation, sparkline rendering, verdict aggregation — is in one `<script>` block.
+
+### Eight indicator cards, two rows
+
+```
+Row 1 (market/price):  [ S&P 500 ]  [ TSX Canada ]  [ Crude Oil ]  [ CAD/USD ]
+Row 2 (macro/rate):    [ BoC Rate ] [ Inflation    ] [ GoC 5yr   ] [ GoC 10yr ]
+```
+
+Each card: current value · day-over-day change · 30-day sparkline · plain-English signal.
+
+An **Overall read** panel weighs all eight signals and produces a single paragraph recommendation. Signal outcomes are: `lock` · `wait` · `watch` · `neutral`.
+
+A **Weekly observation log** persists notes to `localStorage` (max 24 entries, 6 displayed).
+
+A **Diagnostics panel** exposes raw Twelve Data API responses for troubleshooting TSX symbol availability.
+
+### Data sources and API details
+
+| Indicator | Source | Endpoint / Symbol | Key required |
+|---|---|---|---|
+| BoC Overnight Rate | Bank of Canada Valet API | `V39079` · `recent=10` | No |
+| GoC 5yr Bond Yield | Bank of Canada Valet API | `group/bond_yields_benchmark` · `recent=60` | No |
+| GoC 10yr Bond Yield | Bank of Canada Valet API | same group fetch as 5yr | No |
+| Inflation (CPI) | Statistics Canada WDS API | vector `41690973` · `latestN=25` | No |
+| S&P 500 | Twelve Data | SPY · quote + time_series · outputsize=30 | Yes (free) |
+| TSX Canada | Twelve Data | EWC · quote + time_series · outputsize=30 | Yes (free) |
+| Crude Oil | Twelve Data | USO · quote + time_series · outputsize=30 | Yes (free) |
+| CAD/USD | Twelve Data | CAD/USD · quote + time_series · outputsize=30 | Yes (free) |
+
+**Key facts about the current API implementation:**
+
+- Government APIs (BoC, StatCan) fire in parallel at load start — no quota, CORS-enabled
+- Twelve Data calls are sequenced: SP → pause(8000) → TSX → pause(8000) → Oil → pause(8000) → CAD
+- Each Twelve Data symbol makes two calls: `quote` (current + prev close) and `time_series` (30-day history)
+- Total Twelve Data calls per refresh: 8 (within the 8 calls/minute free tier ceiling)
+- Refresh is followed by a 90-second cooldown enforced in the browser
+- Full refresh takes ~32 seconds
+- The Twelve Data API key is stored in `localStorage` under key `td-key`; users must enter it once per browser
+
+**Known data source constraints (workarounds in place):**
+
+- **TSX proxy:** GSPTSE and XIU.TO return 404 on Twelve Data free tier (US-listed instruments only). EWC (iShares MSCI Canada ETF, NYSE Arca) is used as proxy. Correlation >0.95 to TSX Composite. Priced in USD.
+- **Crude oil proxy:** WTI/USD time series is paywalled on free tier. USO (United States Oil Fund) used instead. Same directional signal.
+- **GoC bond yields:** Previously used individual series `BD.CDN.5YR.DQ.YLD` and `BD.CDN.10YR.DQ.YLD`, which go silent during BoC benchmark bond transitions. v0.3.0 switched to the `bond_yields_benchmark` group endpoint, which is maintained continuously. Stale data (>5 days old) triggers a "BoC feed delayed — last known value" warning on the card metadata.
+- **CPI sort order:** Statistics Canada WDS API does not guarantee observation order. v0.3.0 explicitly sorts by `refPer` descending before indexing. 25 periods requested (not 14) to support 13-month YoY sparkline computation.
+
+**CPI sparkline note:** Unlike all other cards, the CPI sparkline plots the 12-month YoY inflation *rate* (not raw index level). Green = rate falling (inflation cooling). Red = rate rising. This is intentional — plotting raw index level would be permanently red and meaningless.
+
+### Signal thresholds
+
+| Indicator | lock | watch | wait | neutral |
+|---|---|---|---|---|
+| BoC Rate | cur > prev | — | cur < prev | cur == prev |
+| CPI YoY | > 3.0% | 2.5–3.0% | < 2.0% | 2.0–2.5% |
+| GoC 5yr (30-day diff) | > +0.30% | +0.10–0.30% | < −0.10% | −0.10 to +0.10% |
+| GoC 10yr | — | inverted or +0.30% | < −0.30% | otherwise |
+| S&P 500 (30-day pct) | — | −3 to −10% | < −10% | > −3% |
+| TSX/EWC (30-day pct) | — | −3 to −10% | < −10% | > −3% |
+| Crude/USO (30-day pct) | > +15% | +5 to +15% | < −10% | −10 to +5% |
+| CAD/USD (30-day pct) | — | < −3% | — | > −3% |
+
+Verdict logic: `locks >= 2` → lock paragraph; `waits >= 2` → wait paragraph; `watches >= 2` → mixed paragraph; otherwise neutral.
+
+### Visual design
+
+- Dark theme: `#0f0f0e` background, `#1a1a18` card surface
+- Typography: DM Mono (monospace body) + Fraunces (serif display/values)
+- CSS custom properties for all colours — defined in `:root`
+- Sparklines: Canvas 2D, 40px height, 1.5px stroke, filled area with 10% opacity
+- Signal colours: green `#4ade80` · red `#f87171` · amber `#fbbf24` · blue `#60a5fa` · accent `#c9b99a`
+
+---
+
+## Staged build plan
+
+The project is being built and documented in stages. Each stage is a blog post on tacedata.ca. **Do not skip stages or implement future-stage work speculatively.** Each stage must leave the dashboard fully functional — no broken intermediate states.
+
+### Stage 1 — Document the origin ✅ COMPLETE
+Blog post written. Covers the original problem, what was built, the constraints that emerged, and the architectural intent going forward.
+
+### Stage 2 — Hugo integration (NEXT)
+**Goal:** Move the dashboard from a standalone file into the Hugo site as a proper project page. Style it to match tacedata.ca's design language. Set up the project page structure that subsequent stages will build from. No AWS work in this stage — the dashboard continues to fetch data from the browser.
+
+**Deliverables:**
+- Dashboard embedded in Hugo site at an appropriate URL (e.g. `/projects/indicators/` or `/tools/indicators/`)
+- Project page with overview, live embed, link to blog series
+- Hugo partial or shortcode if appropriate for embedding
+- Dashboard visually coherent with the site's design system
+
+**What does NOT change in this stage:**
+- Dashboard data fetching logic
+- API sources
+- Signal thresholds
+- The `localStorage` key prompt (still required until Stage 3)
+
+### Stage 3 — AWS data fetching migration
+**Goal:** Move all data fetching server-side. Browser stops calling upstream APIs directly.
+
+**Architecture:**
+```
+EventBridge cron (hourly or configured schedule)
+  → Lambda function (Python)
+      → Bank of Canada Valet API  (BoC rate, 5yr yield, 10yr yield)
+      → Statistics Canada WDS API (CPI)
+      → Twelve Data               (SPY, EWC, USO, CAD/USD)
+  → writes indicators.json to S3
+
+Browser (CloudFront)
+  → fetches /data/indicators.json (static file, sub-100ms)
+  → renders dashboard from cached JSON
+```
+
+**What disappears from the dashboard HTML:**
+- API key overlay and `localStorage` key management
+- All `tdFetch`, `tdQuote`, `tdSeries` functions
+- The 90-second cooldown timer
+- The 8-second pauses between Twelve Data calls
+- The `loadBoC`, `loadBonds`, `loadCPI` fetch functions
+- The diagnostics panel (or repurposed for cache debugging)
+- The `loadAll` orchestration function
+
+**What stays:**
+- All signal computation logic (`spSignal`, `tsxSignal`, `oilSignal`, etc.)
+- All rendering logic (`drawSpark`, `fmtChg`, `setSig`, `buildVerdict`, etc.)
+- All card HTML and CSS
+- The observation log (localStorage, unaffected)
+
+**GitHub Actions addition:**
+```yaml
+- name: Deploy Lambda
+  run: |
+    zip -j function.zip lambda/indicators.py
+    aws lambda update-function-code \
+      --function-name <LAMBDA-FUNCTION-NAME> \
+      --zip-file fileb://function.zip
+```
+
+**Lambda output schema** (indicative — finalise before implementation):
+```json
+{
+  "generated_at": "2026-04-04T14:00:00Z",
+  "boc": { "rate": 2.75, "prev": 3.00, "date": "2026-03-18" },
+  "b5":  { "current": 3.12, "prev": 3.09, "history": [...30 values...], "date": "2026-04-03" },
+  "b10": { "current": 3.28, "prev": 3.25, "history": [...30 values...], "date": "2026-04-03" },
+  "cpi": { "yoy": 2.3, "mom": 0.1, "yoy_history": [...13 values...], "ref_date": "2026-02" },
+  "sp":  { "cur": 548.21, "prev": 541.10, "history": [...30 values...] },
+  "tsx": { "cur": 43.18,  "prev": 42.95,  "history": [...30 values...] },
+  "oil": { "cur": 18.42,  "prev": 18.10,  "history": [...30 values...] },
+  "cad": { "cur": 0.7312, "prev": 0.7298, "history": [...30 values...] }
+}
+```
+
+### Stage 4 — Data source upgrades
+**Goal:** Now that CORS is no longer a constraint, replace ETF proxies with direct sources where beneficial.
+
+**Candidates:**
+- TSX: GSPTSE or XIU.TO via Twelve Data (if upgraded to paid) or an alternative source
+- Crude Oil: WTI/USD directly (Twelve Data paid, or FRED/EIA)
+- GoC bond yields: Evaluate Nasdaq Data Link / FRED as alternative to BoC Valet for greater reliability
+
+**Decision point:** Evaluate whether Twelve Data paid plan ($29/month) unlocks everything needed, or whether mixing sources (e.g. FRED for bond yields, Twelve Data for equities) is preferable. Blog post documents the evaluation.
+
+### Stage 5 — Historical storage
+**Goal:** Lambda writes a timestamped snapshot to DynamoDB each run. Dashboard gains 3-month and 6-month sparkline options.
+
+**Scope:** DynamoDB table design, Lambda write logic, dashboard UI for period selection.
+
+### Stage 6 — Threshold alerting (optional)
+**Goal:** Lambda detects threshold crossings and publishes to SNS → email.
+
+**Example triggers:** 5yr yield up >0.3% in a week; CPI crosses above 3%; yield curve inverts.
+
+---
+
+## Principles for all working sessions
+
+**1. Leave the dashboard functional at all times.**
+Every commit should result in a working dashboard. No partially-migrated states should be pushed.
+
+**2. Preserve existing signal logic exactly unless explicitly asked to change it.**
+Thresholds, signal text, verdict logic, and sparkline colour conventions are deliberate and documented. Do not adjust them incidentally during other changes.
+
+**3. Document constraints honestly.**
+When a workaround is in place (EWC proxy, bond yield stale warning), it stays labelled and explained — in code comments, in the README, and in the UI where relevant. Do not silently remove explanatory text.
+
+**4. README stays in sync.**
+Any change to data sources, signal logic, API endpoints, or architecture must be reflected in the README before the session ends.
+
+**5. One stage at a time.**
+Do not implement Stage 3 work during a Stage 2 session. If a future-stage improvement is obvious, note it in a comment or README section — do not build it speculatively.
+
+**6. Confirm schema before writing Lambda or fetch code.**
+The `indicators.json` schema shown above is indicative. Confirm the final schema at the start of any Stage 3 session before writing either the Lambda or the dashboard fetch logic.
+
+**7. CSS variables, not hardcoded colours.**
+All colour references must use the CSS custom properties defined in `:root`. No hex values in new CSS rules.
+
+**8. No credentials in code.**
+Twelve Data API key: Lambda environment variable only — never in source. AWS credentials: GitHub Actions secrets only.
+
+---
+
+## Things to know that aren't obvious from the code
+
+- **BoC announcement dates are hardcoded.** `BOC_DATES_2026` in the JS is a fixed array from the BoC's published annual calendar. This needs updating each January. In Stage 3 this moves to the Lambda.
+- **The bond yield group endpoint was a deliberate v0.3.0 fix.** Previous versions used individual series that went silent during benchmark transitions. The `bond_yields_benchmark` group endpoint is maintained continuously by the BoC. Do not revert to individual series.
+- **CPI requires 25 observations, not 14.** 13 months of YoY sparkline data requires 25 raw index values (each YoY rate needs the value 12 months prior). Requesting fewer will cause an index-out-of-bounds error in the sparkline computation.
+- **Statistics Canada sort order is not guaranteed.** The WDS API response must be sorted by `refPer` descending before indexing. This is already in v0.3.0 — preserve it.
+- **The diagnostics panel is for TSX symbol testing.** It exists to verify that GSPTSE and XIU.TO return 404 on the free tier, and to test the EWC fallback. It can be removed or repurposed in Stage 3 once the browser is no longer calling Twelve Data directly.
+- **Sparkline colour for CPI is reversed.** Green = YoY rate falling (good). Red = rising. All other sparklines: green = value up, red = value down. This is intentional and documented in the README.
+- **The `ff()` formatter must be applied to all Twelve Data values.** Twelve Data returns price values as strings. `parseFloat()` before any arithmetic, `ff()` for display.
+
+---
+
+## Files in this project
+
+| File | Description |
+|---|---|
+| `index_v0_3_0.html` | Current dashboard — v0.3.0 |
+| `README.md` | Technical reference — kept in sync with all changes |
+| `project-scaffold.md` | This file — passed to Claude Code at the start of each working session |
+| `stage-1-post.md` | Published blog post — Stage 1 origin story |
+
+---
+
+## How to start a working session
+
+1. Read this scaffold in full.
+2. Confirm which stage is being worked on.
+3. If code files are needed, they will be provided as uploads — do not assume file content from memory.
+4. State your plan before writing code. Get confirmation before executing changes that touch signal logic, API endpoints, or the README.
+5. At session end: confirm the dashboard is functional, README is updated, and no future-stage work has been speculatively introduced.

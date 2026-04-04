@@ -19,3 +19,18 @@ h1, h2, h3, h4, h5, h6 {
     opacity: 0.7;
     margin-top: 2rem;
 }
+
+.launch-btn {
+    display: inline-block;
+    margin: 1.5rem 0;
+    padding: 0.6rem 1.4rem;
+    background: #5baab8;
+    color: #fff !important;
+    border-radius: 4px;
+    font-weight: 500;
+    text-decoration: none !important;
+}
+
+.launch-btn:hover {
+    background: #4a90a0;
+}
