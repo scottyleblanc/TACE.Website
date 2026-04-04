@@ -10,7 +10,7 @@ All commands use the `tace-aws-admin` AWS profile.
 
 - AWS CLI installed and configured
 - Profile `tace-aws-admin` available (`aws sts get-caller-identity --profile tace-aws-admin`)
-- AWS account: `REDACTED_AWS_ACCOUNT_ID`
+- AWS account: `<AWS_ACCOUNT_ID>`
 - Region: `ca-central-1`
 
 ---
@@ -20,12 +20,12 @@ All commands use the `tace-aws-admin` AWS profile.
 | Resource | Name / ID |
 |---|---|
 | S3 bucket (canary artifacts) | `tacedata-canary-artifacts` |
-| IAM role | `tacedata-canary-role` |
-| IAM role ARN | `arn:aws:iam::REDACTED_AWS_ACCOUNT_ID:role/tacedata-canary-role` |
+| IAM role | `<CANARY_ROLE_NAME>` |
+| IAM role ARN | `arn:aws:iam::<AWS_ACCOUNT_ID>:role/<CANARY_ROLE_NAME>` |
 | Canary name | `tacedata-availability` |
 | CloudWatch Alarm | `tacedata-availability-alarm` |
-| SNS Topic ARN | `arn:aws:sns:ca-central-1:REDACTED_AWS_ACCOUNT_ID:tacedata-availability-alerts` |
-| SNS Subscription ARN | `arn:aws:sns:ca-central-1:REDACTED_AWS_ACCOUNT_ID:tacedata-availability-alerts:e6a0d3ec-6f67-44ee-8228-d1a4d5faa732` |
+| SNS Topic ARN | `arn:aws:sns:ca-central-1:<AWS_ACCOUNT_ID>:<SNS_TOPIC_NAME>` |
+| SNS Subscription ARN | `arn:aws:sns:ca-central-1:<AWS_ACCOUNT_ID>:<SNS_TOPIC_NAME>:<SNS_SUBSCRIPTION_ID>` |
 | Alert email | `aws.cloudwatch@tacedata.ca` |
 
 ---
@@ -61,12 +61,12 @@ Permissions policy: `config/canary-permissions-policy.json`
 
 ```powershell
 aws iam create-role `
-  --role-name tacedata-canary-role `
+  --role-name <CANARY_ROLE_NAME> `
   --assume-role-policy-document file://config/canary-trust-policy.json `
   --profile tace-aws-admin
 
 aws iam put-role-policy `
-  --role-name tacedata-canary-role `
+  --role-name <CANARY_ROLE_NAME> `
   --policy-name tacedata-canary-policy `
   --policy-document file://config/canary-permissions-policy.json `
   --profile tace-aws-admin
@@ -101,7 +101,7 @@ aws synthetics create-canary `
   --name tacedata-availability `
   --code $code `
   --artifact-s3-location s3://tacedata-canary-artifacts/canary-runs/ `
-  --execution-role-arn arn:aws:iam::REDACTED_AWS_ACCOUNT_ID:role/tacedata-canary-role `
+  --execution-role-arn arn:aws:iam::<AWS_ACCOUNT_ID>:role/<CANARY_ROLE_NAME> `
   --schedule $schedule `
   --run-config $runconfig `
   --success-retention-period-in-days 7 `
@@ -158,8 +158,8 @@ aws cloudwatch put-metric-alarm `
   --threshold 100 `
   --comparison-operator LessThanThreshold `
   --treat-missing-data breaching `
-  --alarm-actions arn:aws:sns:ca-central-1:REDACTED_AWS_ACCOUNT_ID:tacedata-availability-alerts `
-  --ok-actions arn:aws:sns:ca-central-1:REDACTED_AWS_ACCOUNT_ID:tacedata-availability-alerts `
+  --alarm-actions arn:aws:sns:ca-central-1:<AWS_ACCOUNT_ID>:<SNS_TOPIC_NAME> `
+  --ok-actions arn:aws:sns:ca-central-1:<AWS_ACCOUNT_ID>:<SNS_TOPIC_NAME> `
   --region ca-central-1 `
   --profile tace-aws-admin
 ```
@@ -170,14 +170,14 @@ aws cloudwatch put-metric-alarm `
 
 ```powershell
 aws sns create-topic `
-  --name tacedata-availability-alerts `
+  --name <SNS_TOPIC_NAME> `
   --region ca-central-1 `
   --profile tace-aws-admin `
   --query 'TopicArn' `
   --output text
 
 aws sns subscribe `
-  --topic-arn arn:aws:sns:ca-central-1:REDACTED_AWS_ACCOUNT_ID:tacedata-availability-alerts `
+  --topic-arn arn:aws:sns:ca-central-1:<AWS_ACCOUNT_ID>:<SNS_TOPIC_NAME> `
   --protocol email `
   --notification-endpoint aws.cloudwatch@tacedata.ca `
   --region ca-central-1 `
@@ -190,7 +190,7 @@ Verify confirmed:
 
 ```powershell
 aws sns get-subscription-attributes `
-  --subscription-arn arn:aws:sns:ca-central-1:REDACTED_AWS_ACCOUNT_ID:tacedata-availability-alerts:e6a0d3ec-6f67-44ee-8228-d1a4d5faa732 `
+  --subscription-arn arn:aws:sns:ca-central-1:<AWS_ACCOUNT_ID>:<SNS_TOPIC_NAME>:<SNS_SUBSCRIPTION_ID> `
   --region ca-central-1 `
   --profile tace-aws-admin `
   --query 'Attributes.PendingConfirmation' `

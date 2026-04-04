@@ -36,10 +36,10 @@ jobs:
 
       - name: Deploy to S3
         run: |
-          aws s3 sync hugo/public/ s3://REDACTED_S3_BUCKET/tacedata-site/ --delete
+          aws s3 sync hugo/public/ s3://${{ vars.S3_BUCKET_NAME }}/tacedata-site/ --delete
 
       - name: Invalidate CloudFront cache
         run: |
           aws cloudfront create-invalidation \
-            --distribution-id REDACTED_CF_DIST_ID \
+            --distribution-id ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }} \
             --paths "/*"

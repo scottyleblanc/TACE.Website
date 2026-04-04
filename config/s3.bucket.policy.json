@@ -8,10 +8,10 @@
         "Service": "cloudfront.amazonaws.com"
       },
       "Action": "s3:GetObject",
-      "Resource": "arn:aws:s3:::REDACTED_S3_BUCKET/tacedata-site/*",
+      "Resource": "arn:aws:s3:::<S3_BUCKET_NAME>/tacedata-site/*",
       "Condition": {
         "StringEquals": {
-          "AWS:SourceArn": "arn:aws:cloudfront::REDACTED_AWS_ACCOUNT_ID:distribution/REDACTED_CF_DIST_ID"
+          "AWS:SourceArn": "arn:aws:cloudfront::<AWS_ACCOUNT_ID>:distribution/<CLOUDFRONT_DISTRIBUTION_ID>"
         }
       }
     }

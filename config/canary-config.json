@@ -4,7 +4,7 @@
     "Handler": "canary-script.handler"
   },
   "ArtifactS3Location": "s3://tacedata-canary-artifacts/canary-runs/",
-  "ExecutionRoleArn": "arn:aws:iam::REDACTED_AWS_ACCOUNT_ID:role/tacedata-canary-role",
+  "ExecutionRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/<CANARY_ROLE_NAME>",
   "Schedule": {
     "Expression": "rate(5 minutes)",
     "DurationInSeconds": 0

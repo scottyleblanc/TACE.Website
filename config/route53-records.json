@@ -75,7 +75,7 @@
         "Type": "CNAME",
         "TTL": 300,
         "ResourceRecords": [
-          {"Value": "REDACTED_CF_DOMAIN."}
+          {"Value": "<CLOUDFRONT_DOMAIN>."}
         ]
       }
     }

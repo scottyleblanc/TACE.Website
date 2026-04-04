@@ -15,6 +15,7 @@ Thumbs.db
 *.swp
 
 scratch.txt
+*-security-findings.md
 config/canary.zip
 config/canary-zip/
 .claude/

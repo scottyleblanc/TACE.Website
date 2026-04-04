@@ -19,7 +19,7 @@ This is not a consulting brochure. It is a working journal with proof of work.
 
 | Component       | Tool                          | Notes                                         |
 |-----------------|-------------------------------|-----------------------------------------------|
-| Site generator  | Hugo Extended v0.158          | Markdown-based, single binary, fast           |
+| Site generator  | Hugo Extended                 | Markdown-based, single binary, fast           |
 | Theme           | PaperMod                      | Git submodule at `hugo/themes/PaperMod`  |
 | Source control  | Git / GitHub                  |                                               |
 | CI/CD           | GitHub Actions                | Push to main → build → deploy                 |
@@ -41,11 +41,12 @@ tacedata-site/
 │       └── deploy.yml              ← GitHub Actions deploy pipeline
 ├── config/
 │   ├── runbook-stage3-aws.md       ← AWS infrastructure setup commands
+│   ├── runbook-stage5-dns-cutover.md ← DNS cutover runbook
+│   ├── runbook-cloudwatch-monitoring.md ← CloudWatch monitoring setup
 │   ├── s3.bucket.policy.json       ← S3 bucket policy (CloudFront OAC)
 │   ├── iam-trust-policy.json       ← IAM role trust policy
 │   ├── iam-permissions-policy.json ← IAM role permissions policy
-│   ├── rewrite-index-html.js       ← CloudFront Function source
-│   └── dist-config-updated.json   ← CloudFront distribution config snapshot
+│   └── rewrite-index-html.js       ← CloudFront Function source
 ├── docs/
 │   ├── TODO.md                     ← active build checklist
 │   ├── STAGES.md                   ← phase definitions and current state
@@ -107,25 +108,22 @@ Push to `main` triggers the GitHub Actions pipeline automatically.
 1. Checkout repo with submodules (PaperMod theme)
 2. Build Hugo Extended with `--minify --baseURL` from `vars.SITE_URL`
 3. Authenticate to AWS via OIDC (no long-lived credentials)
-4. Sync `hugo/public/` to `s3://REDACTED_S3_BUCKET/tacedata-site/`
+4. Sync `hugo/public/` to `s3://<S3_BUCKET_NAME>/tacedata-site/`
 5. Invalidate CloudFront distribution to serve updated content
 
 ### AWS resources
 
-| Resource | Value |
-|---|---|
-| S3 bucket | `REDACTED_S3_BUCKET` (prefix: `tacedata-site/`) |
-| CloudFront distribution | `REDACTED_CF_DIST_ID` |
-| CloudFront domain | `REDACTED_CF_DOMAIN` |
-| IAM role | `REDACTED_DEPLOY_ROLE` |
-| Region | `ca-central-1` |
+Private S3 bucket + CloudFront distribution in `ca-central-1`. Resource identifiers
+are stored in GitHub Actions variables — not committed to this repository.
 
 ### GitHub configuration required
 
 | Type | Name | Purpose |
 |---|---|---|
 | Secret | `AWS_ROLE_ARN` | IAM role ARN for OIDC authentication |
-| Variable | `SITE_URL` | Base URL for Hugo build (update at domain cutover) |
+| Variable | `SITE_URL` | Base URL for Hugo build |
+| Variable | `S3_BUCKET_NAME` | S3 bucket name for site content |
+| Variable | `CLOUDFRONT_DISTRIBUTION_ID` | CloudFront distribution ID for cache invalidation |
 
 See `config/runbook-stage3-aws.md` for full infrastructure setup commands.
 

@@ -9,7 +9,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [0.13.0] - 2026-04-03
 
 ### Added
-- Route 53 hosted zone `REDACTED_R53_ZONE_ID` — authoritative DNS for tacedata.ca
+- Route 53 hosted zone `<ROUTE53_HOSTED_ZONE_ID>` — authoritative DNS for tacedata.ca
 - DNS records in Route 53: MX (Fastmail), SPF, DMARC, DKIM CNAMEs, www CNAME to CloudFront
 - ACM certificate issued for tacedata.ca and www.tacedata.ca (us-east-1, DNS validation)
 - CloudFront distribution updated: alternate domain names tacedata.ca / www.tacedata.ca, ACM cert attached, SNI-only, TLSv1.2_2021
@@ -62,10 +62,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 - Stage 3 AWS pipeline complete
-- S3 bucket `REDACTED_S3_BUCKET/tacedata-site/` configured with CloudFront OAC bucket policy
-- CloudFront distribution `REDACTED_CF_DIST_ID` — `REDACTED_CF_DOMAIN`
+- S3 bucket `<S3_BUCKET_NAME>/tacedata-site/` configured with CloudFront OAC bucket policy
+- CloudFront distribution `<CLOUDFRONT_DISTRIBUTION_ID>` — `<CLOUDFRONT_DOMAIN>`
 - IAM OIDC provider for GitHub Actions (`token.actions.githubusercontent.com`)
-- IAM role `REDACTED_DEPLOY_ROLE` — least-privilege, scoped to this repo and distribution
+- IAM role `<DEPLOY_ROLE_NAME>` — least-privilege, scoped to this repo and distribution
 - GitHub Actions workflow: push to main → hugo build → S3 sync → CloudFront invalidation
 - Round-trip validated: change live on CloudFront URL within 2 minutes of push
 - Config files: `config/s3.bucket.policy.json`, `config/iam-trust-policy.json`, `config/iam-permissions-policy.json`

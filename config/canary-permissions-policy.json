@@ -31,7 +31,7 @@
         "logs:CreateLogStream",
         "logs:PutLogEvents"
       ],
-      "Resource": "arn:aws:logs:ca-central-1:REDACTED_AWS_ACCOUNT_ID:log-group:/aws/lambda/cwsyn-*"
+      "Resource": "arn:aws:logs:ca-central-1:<AWS_ACCOUNT_ID>:log-group:/aws/lambda/cwsyn-*"
     }
   ]
 }

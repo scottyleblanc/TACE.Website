@@ -8,13 +8,13 @@
         "s3:PutObject",
         "s3:DeleteObject"
       ],
-      "Resource": "arn:aws:s3:::REDACTED_S3_BUCKET/tacedata-site/*"
+      "Resource": "arn:aws:s3:::<S3_BUCKET_NAME>/tacedata-site/*"
     },
     {
       "Sid": "S3List",
       "Effect": "Allow",
       "Action": "s3:ListBucket",
-      "Resource": "arn:aws:s3:::REDACTED_S3_BUCKET",
+      "Resource": "arn:aws:s3:::<S3_BUCKET_NAME>",
       "Condition": {
         "StringLike": {
           "s3:prefix": "tacedata-site/*"
@@ -25,7 +25,7 @@
       "Sid": "CloudFrontInvalidation",
       "Effect": "Allow",
       "Action": "cloudfront:CreateInvalidation",
-      "Resource": "arn:aws:cloudfront::REDACTED_AWS_ACCOUNT_ID:distribution/REDACTED_CF_DIST_ID"
+      "Resource": "arn:aws:cloudfront::<AWS_ACCOUNT_ID>:distribution/<CLOUDFRONT_DISTRIBUTION_ID>"
     }
   ]
 }

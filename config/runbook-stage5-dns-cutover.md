@@ -20,9 +20,9 @@ graph TD
     end
 
     subgraph AWS
-        R53[Route 53\nHosted Zone\nREDACTED_R53_ZONE_ID]
+        R53[Route 53\nHosted Zone]
         ACM[ACM Certificate\nus-east-1]
-        CF[CloudFront\nREDACTED_CF_DIST_ID]
+        CF[CloudFront\nDistribution]
         S3[S3 Bucket\nHugo static files]
     end
 
@@ -49,10 +49,10 @@ graph TD
 
 | Resource | Value |
 |---|---|
-| Route 53 hosted zone | `REDACTED_R53_ZONE_ID` |
-| ACM certificate ARN | `arn:aws:acm:us-east-1:REDACTED_AWS_ACCOUNT_ID:certificate/REDACTED_ACM_CERT_ID` |
-| CloudFront distribution | `REDACTED_CF_DIST_ID` |
-| CloudFront domain | `REDACTED_CF_DOMAIN` |
+| Route 53 hosted zone | `<ROUTE53_HOSTED_ZONE_ID>` |
+| ACM certificate ARN | `arn:aws:acm:us-east-1:<AWS_ACCOUNT_ID>:certificate/<ACM_CERT_ID>` |
+| CloudFront distribution | `<CLOUDFRONT_DISTRIBUTION_ID>` |
+| CloudFront domain | `<CLOUDFRONT_DOMAIN>` |
 | AWS profile | `tace-aws-admin` |
 
 ---
@@ -72,7 +72,7 @@ ns-1726.awsdns-23.co.uk
 
 ## DNS Records in Route 53
 
-Records added to hosted zone `REDACTED_R53_ZONE_ID`:
+Records added to hosted zone `<ROUTE53_HOSTED_ZONE_ID>`:
 
 | Name | Type | Value |
 |---|---|---|
@@ -83,7 +83,7 @@ Records added to hosted zone `REDACTED_R53_ZONE_ID`:
 | `fm1._domainkey.tacedata.ca` | CNAME | `fm1.tacedata.ca.dkim.fmhosted.com.` |
 | `fm2._domainkey.tacedata.ca` | CNAME | `fm2.tacedata.ca.dkim.fmhosted.com.` |
 | `fm3._domainkey.tacedata.ca` | CNAME | `fm3.tacedata.ca.dkim.fmhosted.com.` |
-| `www.tacedata.ca` | CNAME | `REDACTED_CF_DOMAIN.` |
+| `www.tacedata.ca` | CNAME | `<CLOUDFRONT_DOMAIN>.` |
 | `tacedata.ca` | A (alias) | CloudFront distribution — added after cert issued |
 | `_e2a12bc48260c6dc74c0eaf3ccea3a0c.tacedata.ca` | CNAME | ACM validation record |
 | `_9b0a3a566c55cb82061462b6eb668dcb.www.tacedata.ca` | CNAME | ACM validation record |
@@ -106,7 +106,7 @@ aws route53 create-hosted-zone `
 
 ```powershell
 aws route53 change-resource-record-sets `
-  --hosted-zone-id REDACTED_R53_ZONE_ID `
+  --hosted-zone-id <ROUTE53_HOSTED_ZONE_ID> `
   --change-batch "file://config/route53-records.json" `
   --profile tace-aws-admin
 ```
@@ -126,7 +126,7 @@ aws acm request-certificate `
 
 ```powershell
 aws route53 change-resource-record-sets `
-  --hosted-zone-id REDACTED_R53_ZONE_ID `
+  --hosted-zone-id <ROUTE53_HOSTED_ZONE_ID> `
   --change-batch "file://config/route53-acm-validation.json" `
   --profile tace-aws-admin
 ```
@@ -142,7 +142,7 @@ Enter the 4 Route 53 nameservers listed above.
 ```powershell
 do {
     $status = aws acm describe-certificate `
-        --certificate-arn "arn:aws:acm:us-east-1:REDACTED_AWS_ACCOUNT_ID:certificate/REDACTED_ACM_CERT_ID" `
+        --certificate-arn "arn:aws:acm:us-east-1:<AWS_ACCOUNT_ID>:certificate/<ACM_CERT_ID>" `
         --region us-east-1 `
         --profile tace-aws-admin `
         --query 'Certificate.Status' `
@@ -159,7 +159,7 @@ Get current ETag:
 
 ```powershell
 aws cloudfront get-distribution-config `
-  --id REDACTED_CF_DIST_ID `
+  --id <CLOUDFRONT_DISTRIBUTION_ID> `
   --profile tace-aws-admin `
   --query 'ETag' `
   --output text
@@ -173,7 +173,7 @@ Update distribution config to add:
 
 ```powershell
 aws cloudfront update-distribution `
-  --id REDACTED_CF_DIST_ID `
+  --id <CLOUDFRONT_DISTRIBUTION_ID> `
   --if-match <ETag> `
   --distribution-config "file://config/dist-config-updated.json" `
   --profile tace-aws-admin
@@ -183,7 +183,7 @@ aws cloudfront update-distribution `
 
 ```powershell
 aws route53 change-resource-record-sets `
-  --hosted-zone-id REDACTED_R53_ZONE_ID `
+  --hosted-zone-id <ROUTE53_HOSTED_ZONE_ID> `
   --change-batch "file://config/route53-alias.json" `
   --profile tace-aws-admin
 ```
@@ -191,7 +191,7 @@ aws route53 change-resource-record-sets `
 ### Step 9 — Update SITE_URL GitHub variable
 
 GitHub repo → Settings → Secrets and variables → Actions → Variables
-Update `SITE_URL` from `https://REDACTED_CF_DOMAIN` to `https://tacedata.ca`
+Update `SITE_URL` from `https://<CLOUDFRONT_DOMAIN>` to `https://tacedata.ca`
 
 ### Step 10 — Trigger deploy
 
@@ -209,7 +209,7 @@ nslookup www.tacedata.ca
 
 # Check certificate
 aws acm describe-certificate `
-  --certificate-arn "arn:aws:acm:us-east-1:REDACTED_AWS_ACCOUNT_ID:certificate/REDACTED_ACM_CERT_ID" `
+  --certificate-arn "arn:aws:acm:us-east-1:<AWS_ACCOUNT_ID>:certificate/<ACM_CERT_ID>" `
   --region us-east-1 `
   --profile tace-aws-admin `
   --query 'Certificate.Status'

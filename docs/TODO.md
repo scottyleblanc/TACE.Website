@@ -32,9 +32,9 @@ Stages are defined in `docs/STAGES.md`.
 
 ## Stage 3 — AWS Pipeline (Complete)
 
-- [x] Create S3 bucket for Hugo output (private, CloudFront access only) — REDACTED_S3_BUCKET/tacedata-site/
-- [x] Create CloudFront distribution pointing at S3 bucket — REDACTED_CF_DOMAIN
-- [x] Create IAM role for GitHub Actions deployment — REDACTED_DEPLOY_ROLE (least-privilege)
+- [x] Create S3 bucket for Hugo output (private, CloudFront access only) — <S3_BUCKET_NAME>/tacedata-site/
+- [x] Create CloudFront distribution pointing at S3 bucket — <CLOUDFRONT_DOMAIN>
+- [x] Create IAM role for GitHub Actions deployment — <DEPLOY_ROLE_NAME> (least-privilege)
 - [x] Configure OIDC trust between GitHub Actions and AWS (no long-lived credentials)
 - [x] Write workflow: push to main → hugo build → `aws s3 sync` → CloudFront invalidation
 - [x] Store AWS role ARN as GitHub Actions secret

@@ -11,28 +11,28 @@ All commands use the `tace-aws-admin` AWS profile.
 - AWS CLI installed and configured
 - Profile `tace-aws-admin` available (`aws sts get-caller-identity --profile tace-aws-admin`)
 - GitHub repo: `scottyleblanc/TACE.Website`
-- AWS account: `REDACTED_AWS_ACCOUNT_ID`
+- AWS account: `<AWS_ACCOUNT_ID>`
 - Region: `ca-central-1`
 
 ---
 
 ## 1. Verify S3 Bucket Settings
 
-Bucket `REDACTED_S3_BUCKET` must have public access blocked and no static website hosting.
+Bucket `<S3_BUCKET_NAME>` must have public access blocked and no static website hosting.
 
 ```powershell
 aws s3api get-public-access-block `
-  --bucket REDACTED_S3_BUCKET `
+  --bucket <S3_BUCKET_NAME> `
   --region ca-central-1 `
   --profile tace-aws-admin
 
 aws s3api get-bucket-website `
-  --bucket REDACTED_S3_BUCKET `
+  --bucket <S3_BUCKET_NAME> `
   --region ca-central-1 `
   --profile tace-aws-admin
 
 aws s3api get-bucket-policy `
-  --bucket REDACTED_S3_BUCKET `
+  --bucket <S3_BUCKET_NAME> `
   --region ca-central-1 `
   --profile tace-aws-admin
 ```
@@ -42,7 +42,7 @@ aws s3api get-bucket-policy `
 ## 2. Create CloudFront Distribution
 
 Done via AWS console:
-- Origin: `REDACTED_S3_BUCKET`
+- Origin: `<S3_BUCKET_NAME>`
 - Origin path: `/tacedata-site`
 - Private S3 access via OAC (Origin Access Control)
 - Default root object: `index.html`
@@ -50,9 +50,9 @@ Done via AWS console:
 - Pricing: Free tier / Pay as you go
 
 **Distribution details:**
-- Distribution ID: `REDACTED_CF_DIST_ID`
-- Domain: `REDACTED_CF_DOMAIN`
-- ARN: `arn:aws:cloudfront::REDACTED_AWS_ACCOUNT_ID:distribution/REDACTED_CF_DIST_ID`
+- Distribution ID: `<CLOUDFRONT_DISTRIBUTION_ID>`
+- Domain: `<CLOUDFRONT_DOMAIN>`
+- ARN: `arn:aws:cloudfront::<AWS_ACCOUNT_ID>:distribution/<CLOUDFRONT_DISTRIBUTION_ID>`
 
 ---
 
@@ -63,7 +63,7 @@ Policy file: `config/s3.bucket.policy.json`
 
 ```powershell
 aws s3api put-bucket-policy `
-  --bucket REDACTED_S3_BUCKET `
+  --bucket <S3_BUCKET_NAME> `
   --region ca-central-1 `
   --profile tace-aws-admin `
   --policy file://config/s3.bucket.policy.json
@@ -73,7 +73,7 @@ Verify:
 
 ```powershell
 aws s3api get-bucket-policy `
-  --bucket REDACTED_S3_BUCKET `
+  --bucket <S3_BUCKET_NAME> `
   --region ca-central-1 `
   --profile tace-aws-admin `
   --query Policy `
@@ -112,18 +112,18 @@ Permissions policy: `config/iam-permissions-policy.json`
 
 ```powershell
 aws iam create-role `
-  --role-name REDACTED_DEPLOY_ROLE `
+  --role-name <DEPLOY_ROLE_NAME> `
   --assume-role-policy-document file://config/iam-trust-policy.json `
   --profile tace-aws-admin
 
 aws iam put-role-policy `
-  --role-name REDACTED_DEPLOY_ROLE `
+  --role-name <DEPLOY_ROLE_NAME> `
   --policy-name tacedata-deploy-policy `
   --policy-document file://config/iam-permissions-policy.json `
   --profile tace-aws-admin
 ```
 
-**Role ARN:** `arn:aws:iam::REDACTED_AWS_ACCOUNT_ID:role/REDACTED_DEPLOY_ROLE`
+**Role ARN:** `arn:aws:iam::<AWS_ACCOUNT_ID>:role/<DEPLOY_ROLE_NAME>`
 
 ---
 
@@ -133,7 +133,7 @@ Add to `scottyleblanc/TACE.Website` → Settings → Secrets and variables → A
 
 | Secret name | Value |
 |---|---|
-| `AWS_ROLE_ARN` | `arn:aws:iam::REDACTED_AWS_ACCOUNT_ID:role/REDACTED_DEPLOY_ROLE` |
+| `AWS_ROLE_ARN` | `arn:aws:iam::<AWS_ACCOUNT_ID>:role/<DEPLOY_ROLE_NAME>` |
 
 ---
 
@@ -145,5 +145,5 @@ Triggers on push to `main`. Steps:
 1. Checkout (with submodules for Blowfish theme)
 2. Build Hugo Extended v0.158.0 with `--minify`
 3. Authenticate to AWS via OIDC (no long-lived credentials)
-4. Sync `hugo-eval/public/` to `s3://REDACTED_S3_BUCKET/tacedata-site/`
-5. Invalidate CloudFront distribution `REDACTED_CF_DIST_ID`
+4. Sync `hugo-eval/public/` to `s3://<S3_BUCKET_NAME>/tacedata-site/`
+5. Invalidate CloudFront distribution `<CLOUDFRONT_DISTRIBUTION_ID>`
