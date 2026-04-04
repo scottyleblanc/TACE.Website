@@ -1,7 +1,7 @@
 ---
 title: "security remediation — what we got wrong"
 date: 2026-04-04
-draft: true
+draft: false
 tags: ["security", "aws", "git", "git-filter-repo", "cloudfront"]
 summary: "A post-launch security review of tacedata.ca uncovered sensitive AWS identifiers committed to a public repository. This is a full account of what was exposed, how it was found, and what it took to fix it."
 ---
@@ -13,8 +13,6 @@ The site was built in private to start. During a later stage a decision was made
 Over five stages of infrastructure work, we wrote detailed runbooks: AWS CLI commands, IAM policy documents, CloudFront config snapshots, architecture diagrams. All of it committed to the same public repository as the site content. None of it was credentials. But the AWS resource identifiers — account ID, distribution ID, S3 bucket name, hosted zone ID, certificate ARN, IAM role names — were present throughout. Together, they form a complete infrastructure map. A threat actor does not need credentials to cause damage if they already know the exact shape of your environment.
 
 A security review caught it. The honest version: both the developer and the AI collaborator (Claude) made this mistake together. The portfolio argument for going public was made without either party asking what would be committed there over time. The instinct to be cautious about a public repo was present - I did not push back hard enough.
-
-Cleaning this mess up took longer than building the site.
 
 ## How did we catch it?
 
@@ -72,6 +70,7 @@ Cleaning the git history removes data from the repository — not from systems t
 1. **Search engines** — searched Google, Bing, and DuckDuckGo for the specific identifier strings. No results.
 2. **Wayback Machine** — checked `web.archive.org` for snapshots of the repository taken before the cleanup. No snapshots.
 3. **GitHub code search** — searched GitHub directly for the identifier strings. Old blob objects were still indexed and returning results even after the force push. GitHub's search index does not immediately reflect history rewrites.
+4. **GitHub Actions workflow logs** — old workflow runs contain the full build and deploy output, including commands with the original bucket name and distribution ID hardcoded. The Actions tab on a public repository is visible to anyone. All 44 historical workflow runs were deleted via the GitHub CLI.
 
 A support ticket was raised with GitHub requesting a search index purge and object cache clear for the repository.
 

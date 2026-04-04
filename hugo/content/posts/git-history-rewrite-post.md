@@ -72,4 +72,6 @@ I was already hesitant about a public repo. That instinct was right. The lesson 
 
 [tacedata.ca project write-up](/projects/tacedata-site-proj/)
 
+[security remediation — what we got wrong](/projects/security-remediation-proj/)
+
 Scott

@@ -2,7 +2,7 @@
 ---
 title: "internet cache and the wayback machine"
 date: 2026-04-04T06:00:00
-draft: true
+draft: false
 tags: ["git", "security", "aws", "git-filter-repo", "wayback machine", "internet cache"]
 summary: "Cleaning git history removes data from your repo — but not from search engines, the Wayback Machine, or GitHub's cache. Here is what to check."
 ---
@@ -32,10 +32,34 @@ https://web.archive.org/web/*/github.com/your-username/your-repo
 
 If snapshots exist, review them to determine what state of the repository they captured. If a snapshot contains sensitive data, you can submit a removal request to the Internet Archive directly.
 
+## github actions workflow logs
+
+There is a fourth surface that is easy to miss: GitHub Actions workflow run logs. Every run records the full output of each step — including the commands that were executed. When the bucket name and distribution ID were hardcoded in `deploy.yml`, every workflow run logged them in plain text. The Actions tab on a public repository is visible to anyone, not just the repository owner.
+
+Cleaning the git history does not touch the workflow logs. They are stored independently and persist until explicitly deleted. All 44 historical runs were deleted via the GitHub CLI:
+
+```powershell
+gh run list --repo your-username/your-repo --limit 100 --json databaseId --jq '.[].databaseId' | ForEach-Object {
+    gh run delete $_ --repo your-username/your-repo
+}
+```
+
+This is worth checking any time sensitive data has appeared in a workflow — not just in committed files.
+
 ## what no results actually means
 
-In this case, both searches returned nothing — no search engine results and no Wayback Machine snapshots. That is a good outcome, but it reflects timing as much as process. The repository was new, had no public profile, and the cleanup happened before external systems had a chance to index the content.
+In this case, all seven identifier strings returned nothing across search engines, the Wayback Machine, and GitHub code search. The index was clean.
+
+A GitHub support ticket had been raised to request a cache purge, but it may not have been the deciding factor. The more likely explanation is the workflow log deletion. The logs contained 44 runs worth of CLI commands executing with the real values — far more indexed content than the source files alone. Removing them appears to have cleared the GitHub search index ahead of any manual intervention.
+
+That is worth noting: in this case the workflow logs were probably the primary indexed surface, not the committed files. Deleting them first may be the most effective step when sensitive data has appeared in a public repository's Actions history.
 
 The lesson is not that this will always be the case. On a repository with traffic, stars, or forks, the window between exposure and indexing can be very short. Bots actively watch public GitHub repositories for credentials and infrastructure identifiers. The right assumption after any sensitive data hits a public repository is that it was seen — and the response is to rotate or invalidate the affected resources, not just clean the history.
+
+## references
+
+[tacedata.ca project write-up](/projects/tacedata-site-proj/)
+
+[security remediation — what we got wrong](/projects/security-remediation-proj/)
 
 Scott
