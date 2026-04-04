@@ -6,6 +6,7 @@ draft: false
 tags: ["git", "security", "aws", "git-filter-repo", "wayback machine", "internet cache"]
 summary: "Cleaning git history removes data from your repo — but not from search engines, the Wayback Machine, or GitHub's cache. Here is what to check."
 ---
+
 Cleaning the git history is step one. Step two is checking what already left the building.
 
 Cleaning the git history removes the sensitive data from the repository, but it does not immediately remove it from every system that may have already seen it. Search engines, the Internet Archive, and GitHub's own internal caching operate independently of your repository state. Before considering a cleanup complete, we needed to verify that the identifiers were never indexed externally.
