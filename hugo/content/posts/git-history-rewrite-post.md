@@ -1,7 +1,7 @@
 ---
 title: "cleaning sensitive data out of git history"
 date: 2026-04-04T01:00:00
-draft: false
+draft: true
 tags: ["git", "security", "aws", "git-filter-repo"]
 summary: "After a security review flagged AWS identifiers committed to a public repo, we used git-filter-repo to scrub them from all 46 commits — including file content and commit messages."
 ---
