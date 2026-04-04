@@ -117,7 +117,7 @@ The dashboard is available now at [tacedata.ca/projects/econ/interest-rate/](/pr
 
 ---
 
-*Next in the series: Stage 2 — embedding the dashboard in the Hugo site and setting up the project page that everything else will build from.*
+*Next in the series: [Stage 2 — Hugo integration](/posts/econ-stage-2-post/) — embedding the dashboard in the Hugo site and setting up the project page that everything else will build from.*
 
 ---
 

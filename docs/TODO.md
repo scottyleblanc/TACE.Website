@@ -109,3 +109,4 @@ Stages are defined in `docs/STAGES.md`.
 - AWS certification path — which cert, timeline, how it integrates with site content
 - Analytics — simple, privacy-respecting option (Plausible, Fathom, or none)
 - Favicon — generate proper favicon files from tace.logo.png using favicon.io or realfavicongenerator.net; add favicon.ico, favicon-16x16.png, favicon-32x32.png to hugo/static/; remove params.assets overrides from hugo.toml
+- IAM identity audit — resolve cross-contamination between AWS identities (oar-xxxx used for tacedata operations); ensure tacedata infrastructure actions use a dedicated tacedata IAM identity with appropriate Synthetics, CloudWatch, and canary management permissions
