@@ -72,7 +72,6 @@ Cleaning the git history removes data from the repository — not from systems t
 1. **Search engines** — searched Google, Bing, and DuckDuckGo for the specific identifier strings. No results.
 2. **Wayback Machine** — checked `web.archive.org` for snapshots of the repository taken before the cleanup. No snapshots.
 3. **GitHub code search** — searched GitHub directly for the identifier strings. Old blob objects were still indexed and returning results even after the force push. GitHub's search index does not immediately reflect history rewrites.
-4. **GitHub Actions workflow logs** — old workflow runs contain the full build and deploy output, including commands with the original bucket name and distribution ID hardcoded. The Actions tab on a public repository is visible to anyone. All 44 historical workflow runs were deleted via the GitHub CLI.
 
 A support ticket was raised with GitHub requesting a search index purge and object cache clear for the repository.
 

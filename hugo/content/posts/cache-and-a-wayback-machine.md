@@ -32,20 +32,6 @@ https://web.archive.org/web/*/github.com/your-username/your-repo
 
 If snapshots exist, review them to determine what state of the repository they captured. If a snapshot contains sensitive data, you can submit a removal request to the Internet Archive directly.
 
-## github actions workflow logs
-
-There is a fourth surface that is easy to miss: GitHub Actions workflow run logs. Every run records the full output of each step — including the commands that were executed. When the bucket name and distribution ID were hardcoded in `deploy.yml`, every workflow run logged them in plain text. The Actions tab on a public repository is visible to anyone, not just the repository owner.
-
-Cleaning the git history does not touch the workflow logs. They are stored independently and persist until explicitly deleted. All 44 historical runs were deleted via the GitHub CLI:
-
-```powershell
-gh run list --repo your-username/your-repo --limit 100 --json databaseId --jq '.[].databaseId' | ForEach-Object {
-    gh run delete $_ --repo your-username/your-repo
-}
-```
-
-This is worth checking any time sensitive data has appeared in a workflow — not just in committed files.
-
 ## what no results actually means
 
 In this case, both searches returned nothing — no search engine results and no Wayback Machine snapshots. That is a good outcome, but it reflects timing as much as process. The repository was new, had no public profile, and the cleanup happened before external systems had a chance to index the content.
