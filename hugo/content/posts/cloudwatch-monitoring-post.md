@@ -1,7 +1,7 @@
 ---
 title: "site monitoring with aws cloudwatch"
 date: 2026-04-03T15:00:00
-draft: true
+draft: false
 tags: ["aws", "cloudwatch", "monitoring", "synthetics"]
 summary: "Setting up availability monitoring for tacedata.ca using CloudWatch Synthetics — what it is, what it costs, and how we set it up."
 ---
