@@ -1,9 +1,9 @@
 # Hugo build output — generated, never committed
-hugo-eval/public/
-hugo-eval/resources/
+hugo/public/
+hugo/resources/
 
 # Hugo module cache
-hugo-eval/.hugo_build.lock
+hugo/.hugo_build.lock
 
 # OS
 .DS_Store
