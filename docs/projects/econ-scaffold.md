@@ -54,30 +54,30 @@ A **Diagnostics panel** exposes raw Twelve Data API responses for troubleshootin
 | Indicator | Source | Endpoint / Symbol | Key required |
 |---|---|---|---|
 | BoC Overnight Rate | Bank of Canada Valet API | `V39079` · `recent=10` | No |
-| GoC 5yr Bond Yield | Bank of Canada Valet API | `group/bond_yields_benchmark` · `recent=60` | No |
+| GoC 5yr Bond Yield | Bank of Canada Valet API | `group/bond_yields_benchmark` · 90-day date range | No |
 | GoC 10yr Bond Yield | Bank of Canada Valet API | same group fetch as 5yr | No |
 | Inflation (CPI) | Statistics Canada WDS API | vector `41690973` · `latestN=25` | No |
 | S&P 500 | Twelve Data | SPY · quote + time_series · outputsize=30 | Yes (free) |
-| TSX Canada | Twelve Data | EWC · quote + time_series · outputsize=30 | Yes (free) |
-| Crude Oil | Twelve Data | USO · quote + time_series · outputsize=30 | Yes (free) |
+| TSX Canada | Yahoo Finance | `^GSPTSE` · chart · interval=1d · range=3mo | No |
+| Crude Oil | FRED (St. Louis Fed) | `DCOILWTICO` · series/observations · 60-day range | Yes (free) |
 | CAD/USD | Twelve Data | CAD/USD · quote + time_series · outputsize=30 | Yes (free) |
 
 **Key facts about the current API implementation:**
 
-- Government APIs (BoC, StatCan) fire in parallel at load start — no quota, CORS-enabled
-- Twelve Data calls are sequenced: SP → pause(8000) → TSX → pause(8000) → Oil → pause(8000) → CAD
-- Each Twelve Data symbol makes two calls: `quote` (current + prev close) and `time_series` (30-day history)
-- Total Twelve Data calls per refresh: 8 (within the 8 calls/minute free tier ceiling)
-- Refresh is followed by a 90-second cooldown enforced in the browser
-- Full refresh takes ~32 seconds
-- The Twelve Data API key is stored in `localStorage` under key `td-key`; users must enter it once per browser
+- All data fetching runs in Lambda — no browser-side API calls, no CORS constraints
+- BoC, StatCan, Yahoo Finance, and FRED have no meaningful rate limits at our 30-minute schedule
+- Twelve Data (SPY, CAD/USD only): 2 symbols × 2 calls = 4 calls per run, well within 8 calls/minute free tier
+- No inter-symbol pause required at current Twelve Data volume
+- `indicators.json` is written to S3 on every Lambda run; CloudFront serves it with caching disabled on the `data/*` path
+- Lambda environment variables: `TD_API_KEY` (Twelve Data), `FRED_API_KEY` (FRED), `S3_BUCKET`, `S3_KEY`
 
-**Known data source constraints (workarounds in place):**
+**Known data source constraints:**
 
-- **TSX proxy:** GSPTSE and XIU.TO return 404 on Twelve Data free tier (US-listed instruments only). EWC (iShares MSCI Canada ETF, NYSE Arca) is used as proxy. Correlation >0.95 to TSX Composite. Priced in USD.
-- **Crude oil proxy:** WTI/USD time series is paywalled on free tier. USO (United States Oil Fund) used instead. Same directional signal.
-- **GoC bond yields:** Previously used individual series `BD.CDN.5YR.DQ.YLD` and `BD.CDN.10YR.DQ.YLD`, which go silent during BoC benchmark bond transitions. v0.3.0 switched to the `bond_yields_benchmark` group endpoint, which is maintained continuously. Stale data (>5 days old) triggers a "BoC feed delayed — last known value" warning on the card metadata.
-- **CPI sort order:** Statistics Canada WDS API does not guarantee observation order. v0.3.0 explicitly sorts by `refPer` descending before indexing. 25 periods requested (not 14) to support 13-month YoY sparkline computation.
+- **GoC bond yields — end-of-day only:** BoC publishes benchmark yields once per day (~5pm ET). No free source of real-time GoC yields exists — bond markets are OTC, real-time data requires Bloomberg/Refinitiv. End-of-day data is adequate for mortgage rate decision-making.
+- **GoC bond yields — benchmark transition gap:** During BoC benchmark bond transitions, the `BD.CDN.5YR.DQ.YLD` / `BD.CDN.10YR.DQ.YLD` series go silent. The `bond_yields_benchmark` group endpoint is maintained continuously but `recent=N` counts only valid observations — it skips post-resumption data when a gap exists. Fixed in Stage 2.4: fetch uses a 90-day calendar date range instead of `recent=N`. Stale data (>5 days old) triggers a warning on the card.
+- **TSX display:** `^GSPTSE` is an index (currently ~25,000–34,000 pts), not a per-share price. Displayed as integer points. Signal logic uses 30-day percentage change — unaffected by scale.
+- **WTI (FRED) weekends/holidays:** FRED uses `"."` for missing observations. Lambda filters these out before computing history.
+- **CPI sort order:** Statistics Canada WDS API does not guarantee observation order. Lambda sorts by `refPer` descending before indexing. 25 periods requested to support 13-month YoY sparkline.
 
 **CPI sparkline note:** Unlike all other cards, the CPI sparkline plots the 12-month YoY inflation *rate* (not raw index level). Green = rate falling (inflation cooling). Red = rate rising. This is intentional — plotting raw index level would be permanently red and meaningless.
 
@@ -165,15 +165,23 @@ Browser (CloudFront)
 }
 ```
 
-### Stage 2.4 — Data source upgrades
-**Goal:** Now that CORS is no longer a constraint, replace ETF proxies with direct sources where beneficial.
+### Stage 2.4 — Data source upgrades ✅ COMPLETE
 
-**Candidates:**
-- TSX: GSPTSE or XIU.TO via Twelve Data (if upgraded to paid) or an alternative source
-- Crude Oil: WTI/USD directly (Twelve Data paid, or FRED/EIA)
-- GoC bond yields: Evaluate Nasdaq Data Link / FRED as alternative to BoC Valet for greater reliability
+**Changes made:**
+- TSX: EWC proxy (Twelve Data, USD) → `^GSPTSE` via Yahoo Finance (real TSX Composite index, CAD, no API key)
+- Crude Oil: USO proxy (Twelve Data, USD) → `DCOILWTICO` via FRED (WTI spot price USD/barrel, free API key)
+- GoC bond yields: kept BoC Valet; fixed `recent=N` query bug — switched to 90-day calendar date range to correctly retrieve post-benchmark-transition data
+- Twelve Data reduced from 4 symbols (SPY, EWC, USO, CAD/USD) to 2 (SPY, CAD/USD)
+- `deploy.yml` fixed: added `--exclude "data/*"` to S3 sync to prevent Lambda-written `indicators.json` from being deleted on each deploy
+- Dashboard: card labels updated, TSX value display changed from USD price to index points, source attributions updated
 
-**Decision point:** Evaluate whether Twelve Data paid plan ($29/month) unlocks everything needed, or whether mixing sources (e.g. FRED for bond yields, Twelve Data for equities) is preferable. Blog post documents the evaluation.
+**Sources evaluated and rejected:**
+- Stooq (`^tsx`, `5cay.b`, `10cay.b`): good symbols, accessible from browser, blocked from Lambda/AWS IPs — requires email approval from operator
+- OECD Data Explorer: Canadian bond yield data available but monthly frequency only
+- FRED for GoC bond yields: monthly data only — not suitable for daily sparklines
+- Yahoo Finance for GoC bond yields: `CA5YT=RR` / `CA10YT=RR` are Reuters real-time feeds, not accessible via public API
+
+**Why BoC Valet for bond yields:** No free source of real-time GoC bond yields exists. Bond markets are OTC; real-time data requires Bloomberg Terminal or Refinitiv (~$24K/year). BoC publishes end-of-day yields — authoritative, free, and adequate for mortgage rate decision-making.
 
 ### Stage 2.5 — Historical storage
 **Goal:** Lambda writes a timestamped snapshot to DynamoDB each run. Dashboard gains 3-month and 6-month sparkline options.

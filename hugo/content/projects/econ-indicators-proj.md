@@ -19,12 +19,12 @@ Eight economic indicators with a documented relationship to Canadian mortgage ra
 
 **Market and price indicators** — move daily, reflect real-time confidence:
 
-| Indicator | Proxy | What it signals |
+| Indicator | Source | What it signals |
 |---|---|---|
-| S&P 500 | SPY ETF | Broad economic confidence; sustained declines push central banks toward cuts |
-| TSX Composite | EWC ETF | Canadian equity market, weighted toward financials, energy, materials |
-| Crude Oil | USO ETF | Input cost and leading inflation indicator; spikes flow to CPI within months |
-| CAD/USD | CAD/USD forex | Weak CAD raises import costs and constrains BoC rate cuts |
+| S&P 500 | SPY ETF (Twelve Data) | Broad economic confidence; sustained declines push central banks toward cuts |
+| TSX Composite | ^GSPTSE (Yahoo Finance) | Canadian equity market, weighted toward financials, energy, materials |
+| Crude Oil | WTI spot price (FRED) | Input cost and leading inflation indicator; spikes flow to CPI within months |
+| CAD/USD | CAD/USD forex (Twelve Data) | Weak CAD raises import costs and constrains BoC rate cuts |
 
 **Macro and rate indicators** — slower-moving, structural signals:
 
@@ -49,7 +49,9 @@ flowchart TD
     subgraph apis["External APIs"]
         BOC("Bank of Canada Valet API\nBoC overnight rate · GoC 5yr · 10yr bond yields"):::gov
         SC("Statistics Canada WDS API\nCPI — vector 41690973"):::gov
-        TD("Twelve Data\nSPY · EWC · USO · CAD/USD"):::market
+        YF("Yahoo Finance\nTSX Composite — ^GSPTSE"):::market
+        FR("FRED — St. Louis Fed\nWTI crude oil — DCOILWTICO"):::gov
+        TD("Twelve Data\nSPY · CAD/USD"):::market
     end
 
     LM("Lambda — econ-indicators\nPython 3.12"):::aws
@@ -60,8 +62,10 @@ flowchart TD
     EB -->|"triggers every 30 min"| LM
     LM -->|"no auth required"| BOC
     LM -->|"no auth required"| SC
-    LM -->|"API key · sequenced"| TD
-    BOC & SC & TD -->|"JSON"| LM
+    LM -->|"no auth required"| YF
+    LM -->|"API key"| FR
+    LM -->|"API key"| TD
+    BOC & SC & YF & FR & TD -->|"JSON"| LM
     LM -->|"PutObject · max-age=1800"| S3
     BR -->|"GET /data/indicators.json"| CF
     CF -->|"GetObject · OAC signed"| S3
@@ -72,6 +76,7 @@ flowchart TD
     classDef gov      fill:#1d4ed8,stroke:#1e3a8a,color:#fff,rx:8,ry:8
     classDef market   fill:#16a34a,stroke:#14532d,color:#fff,rx:8,ry:8
     classDef browser  fill:#475569,stroke:#334155,color:#fff,rx:8,ry:8
+
 ```
 
 <a href="/projects/econ/interest-rate/" class="launch-btn">Launch Dashboard</a>
@@ -82,9 +87,11 @@ flowchart TD
 |---|---|---|
 | Bank of Canada Valet API | BoC overnight rate, GoC 5yr and 10yr bond yields | None |
 | Statistics Canada WDS API | All-items CPI (vector 41690973) | None |
-| Twelve Data | SPY, EWC, USO, CAD/USD — quote and 30-day history | API key (server-side only) |
+| Yahoo Finance | TSX Composite (^GSPTSE) — daily index, 3-month history | None |
+| FRED (St. Louis Fed) | WTI crude oil spot price (DCOILWTICO) — daily, 60-day range | API key (free) |
+| Twelve Data | SPY, CAD/USD — quote and 30-day history | API key (free) |
 
-Government APIs are fetched without rate limit concerns. Twelve Data calls are sequenced with pauses between symbols to stay within the free-tier ceiling of 8 calls per minute — the sequencing runs in Lambda, invisible to the visitor.
+All fetching runs in Lambda — no browser API calls, no CORS constraints, no rate limit exposure to visitors.
 
 ## Build Series
 
@@ -93,12 +100,13 @@ This project is documented stage by stage as a blog series:
 - [Post 1 — What and Why](/posts/econ-stage-1-post/) — the original problem, what was built, and where the browser-only constraints came from
 - [Post 2 — Hugo Integration](/posts/econ-stage-2-post/) — moving the dashboard into the site and the iframe-vs-link decision
 - [Post 3 — Server-Side Data Fetching](/posts/econ-stage-3-post/) — Lambda architecture, what disappeared from the browser, and error handling philosophy
+- [Post 4 — Data Source Upgrades](/posts/econ-stage-4-post/) — replacing ETF proxies, investigating free data sources, and fixing a BoC query bug
 
 ## Current Stage
 
-Stage 3 is live. The dashboard fetches a pre-built JSON file served through CloudFront — no API key prompt, no rate limit sequencing, no 32-second load time.
+Stage 4 is live. ETF proxies for TSX and crude oil are replaced with direct sources. GoC bond yields use a corrected BoC Valet query. Twelve Data is now used only for S&P 500 and CAD/USD.
 
-Stage 4 will evaluate replacing the ETF proxies with direct data sources now that CORS is no longer a constraint.
+Stage 5 will add historical storage — Lambda writes timestamped snapshots to DynamoDB, and the dashboard gains 3-month and 6-month sparkline options.
 
 ## Tech Used
 
@@ -107,5 +115,7 @@ Stage 4 will evaluate replacing the ETF proxies with direct data sources now tha
 - AWS Lambda · EventBridge · S3 · CloudFront
 - Bank of Canada Valet API
 - Statistics Canada WDS API
-- Twelve Data API
+- Yahoo Finance (TSX Composite)
+- FRED — St. Louis Fed (WTI crude oil)
+- Twelve Data API (S&P 500, CAD/USD)
 - Hugo (this site)

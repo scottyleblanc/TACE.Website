@@ -145,19 +145,18 @@ Two tracks:
 
 ---
 
-## Stage 2.4 — Econ Dashboard: Data Source Upgrades (In Progress)
+## Stage 2.4 — Econ Dashboard: Data Source Upgrades (Complete — 2026-04-05)
 
-Goal: replace ETF proxies with direct sources now that CORS is no longer a constraint.
-
-- [ ] Evaluate Twelve Data paid plan ($29/month) vs. mixing free sources (FRED, EIA, Nasdaq Data Link)
-- [ ] Decision: TSX — GSPTSE or XIU.TO (Twelve Data paid) vs. alternative
-- [ ] Decision: Crude Oil — WTI/USD directly (Twelve Data paid, or FRED/EIA)
-- [ ] Decision: GoC bond yields — keep BoC Valet or switch to FRED/Nasdaq Data Link
-- [ ] Implement approved source changes in `lambda/indicators.py`
-- [ ] Update dashboard HTML if any field names or schema changes
-- [ ] Update `econ-scaffold.md` — schema section, data sources table, known constraints
-- [ ] Blog post: `econ-stage-4-post.md`
-- [ ] Tag: econ-v0.5.0
+- [x] Evaluate data source options — decision: free sources only, no paid Twelve Data
+- [x] Decision: TSX — `^GSPTSE` via Yahoo Finance (real index, CAD, no API key)
+- [x] Decision: Crude Oil — `DCOILWTICO` via FRED (WTI spot price, free API key)
+- [x] Decision: GoC bond yields — keep BoC Valet; fixed `recent=N` query bug with date range
+- [x] Implement approved source changes in `lambda/indicators.py`
+- [x] Update dashboard HTML — card labels, source attributions, TSX value format (pts)
+- [x] Fix `deploy.yml` — add `--exclude "data/*"` to S3 sync to preserve Lambda-written JSON
+- [x] Update `econ-scaffold.md` — data sources table, known constraints
+- [x] Blog post: `econ-stage-4-post.md`
+- [x] Tag: v2.5.0
 
 ---
 
