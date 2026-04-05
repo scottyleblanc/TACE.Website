@@ -123,16 +123,16 @@ Stages are defined in `docs/STAGES.md`.
 - [x] GitHub Actions deploy step added to `deploy.yml`
 - [x] Deploy role `iam-permissions-policy.json` updated: added `lambda:UpdateFunctionCode`
 - [x] Setup runbook: `config/runbook-econ-dashboard.md`
-- [ ] Create Lambda execution IAM role in AWS
-- [ ] Create Lambda function (`<ECON_LAMBDA_FUNCTION_NAME>`) in AWS
-- [ ] Set Lambda environment variables (TD_API_KEY, S3_BUCKET, S3_KEY)
-- [ ] Create EventBridge schedule (every 30 minutes)
-- [ ] Add CloudFront cache behavior for `/data/*` (TTL: 1800s)
-- [ ] Add `ECON_LAMBDA_FUNCTION_NAME` GitHub Actions variable
-- [ ] Update deploy role inline policy (add lambda:UpdateFunctionCode)
-- [ ] Test Lambda manually — verify indicators.json written to S3
-- [ ] Validate dashboard end-to-end on live site
-- [ ] Publish econ-stage-3-post.md (set draft: false)
+- [x] Create Lambda execution IAM role in AWS
+- [x] Create Lambda function (`econ-indicators`) in AWS
+- [x] Set Lambda environment variables (TD_API_KEY, S3_BUCKET, S3_KEY)
+- [x] Create EventBridge schedule (every 30 minutes)
+- [x] Add CloudFront cache behavior for `data/*`
+- [x] Add `ECON_LAMBDA_FUNCTION_NAME` GitHub Actions variable
+- [x] Update deploy role inline policy (add lambda:UpdateFunctionCode)
+- [x] Test Lambda manually — verify indicators.json written to S3
+- [x] Validate dashboard end-to-end on live site
+- [x] Publish econ-stage-3-post.md (set draft: false)
 - [ ] Tag: v0.4.0
 
 ---

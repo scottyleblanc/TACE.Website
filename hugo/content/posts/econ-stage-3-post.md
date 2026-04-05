@@ -1,7 +1,7 @@
 ---
 title: "economic dashboard series: stage 3 — server-side data fetching"
-date: 2026-04-04T20:00:00
-draft: true
+date: 2026-04-05T08:00:00
+draft: false
 tags: ["aws", "lambda", "eventbridge", "s3", "python", "twelve-data", "boc", "statscanada", "portfolio", "economics", "canada"]
 summary: "third post in the series: moving all data fetching out of the browser and into AWS Lambda."
 ---
