@@ -152,7 +152,7 @@
     <div class="card-chg" id="chg-tsx"></div>
     <div class="spark"><canvas id="spark-tsx"></canvas></div>
     <div class="sig sig-loading" id="sig-tsx">Loading&hellip;</div>
-    <div class="card-meta">TSX Composite Index &middot; Source: Stooq</div>
+    <div class="card-meta">TSX Composite Index &middot; Source: Yahoo Finance</div>
   </div>
 
   <!-- Crude Oil -->
@@ -210,7 +210,7 @@
     <div class="card-chg" id="chg-b5"></div>
     <div class="spark"><canvas id="spark-b5"></canvas></div>
     <div class="sig sig-loading" id="sig-b5">Loading&hellip;</div>
-    <div class="card-meta" id="meta-b5">Drives fixed mortgage pricing &middot; Source: Stooq</div>
+    <div class="card-meta" id="meta-b5">Drives fixed mortgage pricing &middot; Source: Bank of Canada</div>
   </div>
 
   <!-- GoC 10yr Bond Yield -->
@@ -221,7 +221,7 @@
     <div class="spread-badge" id="spread-badge" style="margin-bottom:8px"></div>
     <div class="spark"><canvas id="spark-b10"></canvas></div>
     <div class="sig sig-loading" id="sig-b10">Loading&hellip;</div>
-    <div class="card-meta" id="meta-b10">Yield curve signal &middot; Source: Stooq</div>
+    <div class="card-meta" id="meta-b10">Yield curve signal &middot; Source: Bank of Canada</div>
   </div>
 
 </div>
@@ -418,7 +418,7 @@
     sv('chg-b5', fmtChg(b5.cur, b5.prev, '%'));
     setDot('b5', b5.cur > b5.prev ? 'up' : b5.cur < b5.prev ? 'down' : 'flat');
     drawSpark('spark-b5', b5.history, b5.cur <= b5.history[0] ? '#4ade80' : '#f87171');
-    st('meta-b5', `Latest business day: ${b5.date}${staleFlag} \u00b7 Source: Stooq`);
+    st('meta-b5', `Latest business day: ${b5.date}${staleFlag} \u00b7 Source: Bank of Canada`);
     const diff5 = b5.cur - b5.history[0];
     let sig5, cls5;
     if      (diff5 >  0.30) { sig5 = `Up +${ff(diff5)}% over month \u2014 fixed rates rising. Consider locking.`;  cls5 = 'sig-lock';    }
@@ -433,7 +433,7 @@
     sv('chg-b10', fmtChg(b10.cur, b10.prev, '%'));
     setDot('b10', b10.cur > b10.prev ? 'up' : b10.cur < b10.prev ? 'down' : 'flat');
     drawSpark('spark-b10', b10.history, b10.cur <= b10.history[0] ? '#4ade80' : '#f87171');
-    st('meta-b10', `Latest business day: ${b10.date}${staleFlag} \u00b7 Source: Stooq`);
+    st('meta-b10', `Latest business day: ${b10.date}${staleFlag} \u00b7 Source: Bank of Canada`);
     const sb = $('spread-badge');
     if (sb) {
       sb.textContent       = `10yr\u20135yr spread: ${sprd >= 0 ? '+' : ''}${ff(sprd)}%`;
