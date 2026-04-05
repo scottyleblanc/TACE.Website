@@ -83,8 +83,17 @@ def fetch_bonds():
     Single fetch for both series; returns nested b5/b10 objects.
     The group endpoint is maintained continuously through benchmark transitions.
     Individual series (BD.CDN.5YR.DQ.YLD etc.) can go silent for weeks.
-    Data is end-of-day from BoC — no free real-time source exists for GoC yields."""
-    d   = http_get(f"{BOC_BASE}/observations/group/bond_yields_benchmark/json?recent=60")
+    Data is end-of-day from BoC — no free real-time source exists for GoC yields.
+
+    Uses a date range (90 calendar days) rather than recent=N. The recent=N
+    parameter counts only valid observations — during a benchmark transition gap
+    it skips the resumption data entirely and returns stale pre-gap values."""
+    today      = datetime.now(timezone.utc).date()
+    start_date = today - timedelta(days=90)
+    d   = http_get(
+        f"{BOC_BASE}/observations/group/bond_yields_benchmark/json"
+        f"?start_date={start_date}&end_date={today}"
+    )
     obs = [
         o for o in d["observations"]
         if o.get("BD.CDN.5YR.DQ.YLD", {}).get("v") and o.get("BD.CDN.10YR.DQ.YLD", {}).get("v")
