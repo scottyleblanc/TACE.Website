@@ -24,17 +24,31 @@ The browser-side design had a fundamental problem: it placed every upstream API 
 
 The alternative is straightforward: a Lambda function runs on a schedule, fetches all eight indicators server-to-server, and writes the results to S3 as a single JSON file. The dashboard fetches that file on load — one request, no API key, no rate limits, no CORS. Data is never more than 30 minutes stale.
 
-```
-EventBridge cron (every 30 minutes)
-  → Lambda (Python)
-      → Bank of Canada Valet API  (BoC rate, 5yr yield, 10yr yield)
-      → Statistics Canada WDS API (CPI)
-      → Twelve Data               (SPY, EWC, USO, CAD/USD)
-  → writes /data/indicators.json to S3
+```mermaid
+flowchart TD
+    EB["EventBridge\ncron — every 30 minutes"]
 
-Browser (CloudFront)
-  → fetches /data/indicators.json
-  → renders dashboard from cached JSON
+    subgraph apis["External APIs"]
+        BOC["Bank of Canada Valet API\nBoC overnight rate · GoC 5yr · 10yr bond yields"]
+        SC["Statistics Canada WDS API\nCPI — vector 41690973"]
+        TD["Twelve Data\nSPY · EWC · USO · CAD/USD"]
+    end
+
+    LM["Lambda — econ-indicators\nPython 3.12"]
+    S3["S3\ntacedata-site/data/indicators.json"]
+    CF["CloudFront\ndata/* cache behavior"]
+    BR["Browser\ndashboard"]
+
+    EB -->|"triggers every 30 min"| LM
+    LM -->|"no auth required"| BOC
+    LM -->|"no auth required"| SC
+    LM -->|"API key · sequenced"| TD
+    BOC & SC & TD -->|"JSON"| LM
+    LM -->|"PutObject · max-age=1800"| S3
+    BR -->|"GET /data/indicators.json"| CF
+    CF -->|"GetObject · OAC signed"| S3
+    S3 -->|"indicators.json"| CF
+    CF -->|"indicators.json"| BR
 ```
 
 The signal computation, rendering logic, and all card HTML stay exactly where they are. The dashboard stops being a data fetcher and becomes a pure display layer.

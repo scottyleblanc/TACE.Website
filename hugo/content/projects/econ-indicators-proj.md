@@ -37,40 +37,69 @@ Eight economic indicators with a documented relationship to Canadian mortgage ra
 
 Each card shows: current value, day-over-day change, 30-day sparkline, and a plain-English signal — `lock`, `wait`, `watch`, or `neutral`. An **Overall read** panel weighs all eight signals and produces a single paragraph recommendation.
 
-## Current Limitations
+## Architecture
 
-The dashboard at Stages 1 and 2 runs entirely in the browser. That design works, but it carries real constraints:
+Data fetching runs entirely server-side. An AWS Lambda function runs on a 30-minute schedule, pulls all eight indicators from their upstream sources, and writes a single JSON file to S3. The dashboard fetches that file on load — one request, sub-100ms, no API key required.
 
-- **API key required.** Twelve Data market data requires a free-tier key. The user must enter it once; it is stored in the browser's localStorage. It never leaves the browser, but it is a friction point.
-- **Slow load.** The free tier allows 8 calls per minute. Four symbols × 2 calls each = 8 calls, sequenced with 8-second pauses between symbols. A full refresh takes ~32 seconds.
-- **90-second cooldown.** Enforced in the browser between refreshes to stay within rate limits.
-- **ETF proxies.** GSPTSE (TSX) and WTI crude are not available on the Twelve Data free tier. EWC (iShares MSCI Canada ETF) and USO (United States Oil Fund) are used as proxies. Directionally reliable; not the real thing.
+```mermaid
+flowchart TD
+    EB["EventBridge\ncron — every 30 minutes"]
 
-These are known constraints, not oversights. The next stage moves all data fetching server-side, which eliminates all four.
+    subgraph apis["External APIs"]
+        BOC["Bank of Canada Valet API\nBoC overnight rate · GoC 5yr · 10yr bond yields"]
+        SC["Statistics Canada WDS API\nCPI — vector 41690973"]
+        TD["Twelve Data\nSPY · EWC · USO · CAD/USD"]
+    end
+
+    LM["Lambda — econ-indicators\nPython 3.12"]
+    S3["S3\ntacedata-site/data/indicators.json"]
+    CF["CloudFront\ndata/* cache behavior"]
+    BR["Browser\ndashboard"]
+
+    EB -->|"triggers every 30 min"| LM
+    LM -->|"no auth required"| BOC
+    LM -->|"no auth required"| SC
+    LM -->|"API key · sequenced"| TD
+    BOC & SC & TD -->|"JSON"| LM
+    LM -->|"PutObject · max-age=1800"| S3
+    BR -->|"GET /data/indicators.json"| CF
+    CF -->|"GetObject · OAC signed"| S3
+    S3 -->|"indicators.json"| CF
+    CF -->|"indicators.json"| BR
+```
 
 <a href="/projects/econ/interest-rate/" class="launch-btn">Launch Dashboard</a>
 
 ## Data Sources
 
-Government data (BoC Overnight Rate, GoC bond yields, CPI) comes from the Bank of Canada Valet API and Statistics Canada WDS API — both public, no API key required. Market data (SPY, EWC, USO, CAD/USD) comes from Twelve Data — free tier, API key required (entered once per browser, stored locally).
+| Source | Data | Auth |
+|---|---|---|
+| Bank of Canada Valet API | BoC overnight rate, GoC 5yr and 10yr bond yields | None |
+| Statistics Canada WDS API | All-items CPI (vector 41690973) | None |
+| Twelve Data | SPY, EWC, USO, CAD/USD — quote and 30-day history | API key (server-side only) |
 
-A full description of data source constraints and workarounds is in the blog series below.
+Government APIs are fetched without rate limit concerns. Twelve Data calls are sequenced with pauses between symbols to stay within the free-tier ceiling of 8 calls per minute — the sequencing runs in Lambda, invisible to the visitor.
 
 ## Build Series
 
-This project is being documented in stages as a blog series:
+This project is documented stage by stage as a blog series:
 
-- [Post 1 — What and Why](/posts/fin-dash-stage-1-post/) — the original problem, what was built, and the architectural intent
+- [Post 1 — What and Why](/posts/econ-stage-1-post/) — the original problem, what was built, and where the browser-only constraints came from
+- [Post 2 — Hugo Integration](/posts/econ-stage-2-post/) — moving the dashboard into the site and the iframe-vs-link decision
+- [Post 3 — Server-Side Data Fetching](/posts/econ-stage-3-post/) — Lambda architecture, what disappeared from the browser, and error handling philosophy
 
 ## Current Stage
 
-The dashboard is fully functional as a browser-side application. Upcoming stages will move data fetching server-side (AWS Lambda + EventBridge), eliminating the API key requirement and the 32-second load time.
+Stage 3 is live. The dashboard fetches a pre-built JSON file served through CloudFront — no API key prompt, no rate limit sequencing, no 32-second load time.
+
+Stage 4 will evaluate replacing the ETF proxies with direct data sources now that CORS is no longer a constraint.
 
 ## Tech Used
 
 - HTML / CSS / JavaScript (Canvas 2D for sparklines)
+- Python 3.12 (Lambda)
+- AWS Lambda · EventBridge · S3 · CloudFront
 - Bank of Canada Valet API
 - Statistics Canada WDS API
 - Twelve Data API
 - Hugo (this site)
-- AWS S3 + CloudFront (hosting)
