@@ -67,7 +67,7 @@ Set the three required environment variables on the Lambda function.
 ```powershell
 aws lambda update-function-configuration `
   --function-name <ECON_LAMBDA_FUNCTION_NAME> `
-  --environment "Variables={TD_API_KEY=<TWELVE_DATA_API_KEY>,S3_BUCKET=<S3_BUCKET_NAME>,S3_KEY=data/indicators.json}" `
+  --environment "Variables={TD_API_KEY=<TWELVE_DATA_API_KEY>,S3_BUCKET=<S3_BUCKET_NAME>,S3_KEY=tacedata-site/data/indicators.json}" `
   --region ca-central-1 `
   --profile tace-aws-admin
 ```

@@ -5,7 +5,7 @@
       "Sid": "S3WriteIndicators",
       "Effect": "Allow",
       "Action": "s3:PutObject",
-      "Resource": "arn:aws:s3:::<S3_BUCKET_NAME>/data/indicators.json"
+      "Resource": "arn:aws:s3:::<S3_BUCKET_NAME>/tacedata-site/data/indicators.json"
     },
     {
       "Sid": "CloudWatchLogs",
