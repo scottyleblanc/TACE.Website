@@ -21,10 +21,12 @@ The project is documented publicly as a staged build: a blog series on tacedata.
 | Static site generator | Hugo |
 | Hosting | AWS S3 + CloudFront |
 | Publish trigger | Git push → GitHub Actions → S3 sync |
-| Current dashboard file | `index_v0_3_0.html` (single-file, no build step) |
-| Dashboard version | v0.3.0 |
+| Current dashboard file | `hugo/static/projects/econ/interest-rate/index.html` |
+| Dashboard version | v0.4.0 |
+| Dashboard URL | `/projects/econ/interest-rate/` |
+| Data feed | `https://tacedata.ca/data/indicators.json` (Lambda → S3 → CloudFront) |
 
-The dashboard currently lives as a standalone HTML file, deployed separately from the Hugo site. It will be integrated into the Hugo site as Stage 2 of the build.
+The dashboard is integrated into the Hugo site and fetches data from a server-side Lambda pipeline.
 
 ---
 
@@ -111,23 +113,11 @@ The project is being built and documented in stages. Each stage is a blog post o
 ### Stage 1 — Document the origin ✅ COMPLETE
 Blog post written. Covers the original problem, what was built, the constraints that emerged, and the architectural intent going forward.
 
-### Stage 2 — Hugo integration (NEXT)
-**Goal:** Move the dashboard from a standalone file into the Hugo site as a proper project page. Style it to match tacedata.ca's design language. Set up the project page structure that subsequent stages will build from. No AWS work in this stage — the dashboard continues to fetch data from the browser.
+### Stage 2 — Hugo integration ✅ COMPLETE
+Dashboard at `/projects/econ/interest-rate/`. Project page at `/projects/econ-indicators/`. Blog post published.
 
-**Deliverables:**
-- Dashboard embedded in Hugo site at an appropriate URL (e.g. `/projects/indicators/` or `/tools/indicators/`)
-- Project page with overview, live embed, link to blog series
-- Hugo partial or shortcode if appropriate for embedding
-- Dashboard visually coherent with the site's design system
-
-**What does NOT change in this stage:**
-- Dashboard data fetching logic
-- API sources
-- Signal thresholds
-- The `localStorage` key prompt (still required until Stage 3)
-
-### Stage 3 — AWS data fetching migration
-**Goal:** Move all data fetching server-side. Browser stops calling upstream APIs directly.
+### Stage 3 — AWS data fetching migration ✅ COMPLETE
+Lambda `econ-indicators` (Python 3.12) runs every 30 minutes via EventBridge, writes `tacedata-site/data/indicators.json` to S3. Dashboard v0.4.0 fetches that file on load — no API key, no cooldown, no CORS constraints.
 
 **Architecture:**
 ```
@@ -158,28 +148,20 @@ Browser (CloudFront)
 - All card HTML and CSS
 - The observation log (localStorage, unaffected)
 
-**GitHub Actions addition:**
-```yaml
-- name: Deploy Lambda
-  run: |
-    zip -j function.zip lambda/indicators.py
-    aws lambda update-function-code \
-      --function-name <LAMBDA-FUNCTION-NAME> \
-      --zip-file fileb://function.zip
-```
-
-**Lambda output schema** (indicative — finalise before implementation):
+**Lambda output schema (final — as implemented):**
 ```json
 {
-  "generated_at": "2026-04-04T14:00:00Z",
-  "boc": { "rate": 2.75, "prev": 3.00, "date": "2026-03-18" },
-  "b5":  { "current": 3.12, "prev": 3.09, "history": [...30 values...], "date": "2026-04-03" },
-  "b10": { "current": 3.28, "prev": 3.25, "history": [...30 values...], "date": "2026-04-03" },
-  "cpi": { "yoy": 2.3, "mom": 0.1, "yoy_history": [...13 values...], "ref_date": "2026-02" },
-  "sp":  { "cur": 548.21, "prev": 541.10, "history": [...30 values...] },
-  "tsx": { "cur": 43.18,  "prev": 42.95,  "history": [...30 values...] },
-  "oil": { "cur": 18.42,  "prev": 18.10,  "history": [...30 values...] },
-  "cad": { "cur": 0.7312, "prev": 0.7298, "history": [...30 values...] }
+  "generated_at": "2026-04-05T00:54:55Z",
+  "boc":  { "cur": 2.25, "prev": 2.25, "date": "2026-03-20" },
+  "bonds": {
+    "b5":  { "cur": 2.93, "prev": 2.94, "history": [...30 values...], "date": "...", "stale": false },
+    "b10": { "cur": 3.39, "prev": 3.40, "history": [...30 values...], "date": "...", "stale": false }
+  },
+  "cpi": { "yoy": 1.78, "mom": 0.55, "yoy_history": [...13 values...], "ref_date": "2026-02" },
+  "sp":  { "cur": 655.83, "prev": 655.24, "history": [...30 values...] },
+  "tsx": { "cur": 55.32,  "prev": 55.18,  "history": [...30 values...] },
+  "oil": { "cur": 137.92, "prev": 124.09, "history": [...30 values...] },
+  "cad": { "cur": 0.7171, "prev": 0.7172, "history": [...30 values...] }
 }
 ```
 
@@ -249,10 +231,14 @@ Twelve Data API key: Lambda environment variable only — never in source. AWS c
 
 | File | Description |
 |---|---|
-| `index_v0_3_0.html` | Current dashboard — v0.3.0 |
-| `README.md` | Technical reference — kept in sync with all changes |
-| `project-scaffold.md` | This file — passed to Claude Code at the start of each working session |
-| `stage-1-post.md` | Published blog post — Stage 1 origin story |
+| `hugo/static/projects/econ/interest-rate/index.html` | Dashboard — v0.4.0 |
+| `lambda/indicators.py` | Lambda handler — fetches all 8 indicators, writes indicators.json to S3 |
+| `hugo/content/projects/econ-indicators-proj.md` | Project page at `/projects/econ-indicators/` |
+| `hugo/content/posts/econ-stage-1-post.md` | Blog post — Stage 1 origin story |
+| `hugo/content/posts/econ-stage-2-post.md` | Blog post — Stage 2 Hugo integration |
+| `hugo/content/posts/econ-stage-3-post.md` | Blog post — Stage 3 server-side data fetching |
+| `config/runbook-econ-dashboard.md` | AWS setup runbook (placeholders) |
+| `docs/projects/econ-scaffold.md` | This file |
 
 ---
 

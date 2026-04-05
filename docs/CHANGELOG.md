@@ -6,6 +6,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-04-05
+
+### Added
+- Lambda function `econ-indicators` (Python 3.12) — fetches all 8 indicators server-side, writes `tacedata-site/data/indicators.json` to S3 on a 30-minute EventBridge schedule
+- Dashboard v0.4.0 — replaces all browser-side fetch logic with a single `fetch('/data/indicators.json')`; removes API key overlay, cooldown timer, diagnostics panel; adds error banner for feed failures
+- `lambda/indicators.py` — Lambda handler with BoC, StatCan, and Twelve Data fetchers
+- `config/lambda-execution-policy.json` — Lambda execution role IAM policy (S3 write + CloudWatch Logs)
+- `config/lambda-trust-policy.json` — Lambda execution role trust policy
+- `config/runbook-econ-dashboard.md` — setup runbook for Stage 3 AWS infrastructure
+- Blog post: "economic dashboard series: stage 3 — server-side data fetching"
+- Architecture diagram (Mermaid) added to Stage 3 post and project page
+
+### Changed
+- `.github/workflows/deploy.yml` — added Lambda deploy step (`update-function-code`)
+- `config/iam-permissions-policy.json` — added `lambda:UpdateFunctionCode` for GitHub Actions deploy role
+- Project page `econ-indicators-proj.md` — updated to Stage 3 state; architecture diagram added; build series links completed
+
+---
+
 ## [0.16.0] - 2026-04-04
 
 ### Added

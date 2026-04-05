@@ -76,20 +76,31 @@ aws lambda update-function-configuration `
 
 ## 4. Create EventBridge Schedule
 
-Triggers Lambda every 30 minutes. Using the scheduler (not EventBridge rules) for cron support.
+Using EventBridge Rules (not Scheduler — no separate execution role required).
 
 ```powershell
-aws scheduler create-schedule `
+aws events put-rule `
   --name econ-indicators-30min `
   --schedule-expression "cron(0/30 * * * ? *)" `
-  --flexible-time-window '{"Mode": "OFF"}' `
-  --target "{\"Arn\": \"arn:aws:lambda:ca-central-1:<AWS_ACCOUNT_ID>:function:<ECON_LAMBDA_FUNCTION_NAME>\", \"RoleArn\": \"arn:aws:iam::<AWS_ACCOUNT_ID>:role/<SCHEDULER_EXECUTION_ROLE_NAME>\"}" `
+  --state ENABLED `
+  --region ca-central-1 `
+  --profile tace-aws-admin
+
+aws lambda add-permission `
+  --function-name <ECON_LAMBDA_FUNCTION_NAME> `
+  --statement-id EventBridgeInvoke `
+  --action lambda:InvokeFunction `
+  --principal events.amazonaws.com `
+  --source-arn arn:aws:events:ca-central-1:<AWS_ACCOUNT_ID>:rule/econ-indicators-30min `
+  --region ca-central-1 `
+  --profile tace-aws-admin
+
+aws events put-targets `
+  --rule econ-indicators-30min `
+  --targets '[{"Id":"<ECON_LAMBDA_FUNCTION_NAME>","Arn":"arn:aws:lambda:ca-central-1:<AWS_ACCOUNT_ID>:function:<ECON_LAMBDA_FUNCTION_NAME>"}]' `
   --region ca-central-1 `
   --profile tace-aws-admin
 ```
-
-Alternatively, create a Lambda trigger via the Lambda console (Add trigger → EventBridge Scheduler).
-The scheduler requires its own execution role with `lambda:InvokeFunction` permission.
 
 ---
 
@@ -97,10 +108,10 @@ The scheduler requires its own execution role with `lambda:InvokeFunction` permi
 
 In the AWS CloudFront console:
 - Distribution: `<CLOUDFRONT_DISTRIBUTION_ID>`
-- Add behavior: Path pattern `/data/*`
-- Cache policy: Caching Disabled (or custom TTL: min=0, default=1800, max=1800)
+- Add behavior: Path pattern `data/*` (no leading slash — CloudFront rejects `/data/*`)
+- Cache policy: Caching Disabled
 - Origin: same S3 origin as the default behavior
-- Compress: Yes
+- Compress: Yes (optional — not shown in all console views, safe to skip)
 
 This ensures visitors always get data from the most recent Lambda run (max 30 minutes stale).
 
@@ -148,7 +159,7 @@ aws lambda invoke `
 Get-Content response.json
 
 # Verify S3 write
-aws s3 cp s3://<S3_BUCKET_NAME>/data/indicators.json - `
+aws s3 cp s3://<S3_BUCKET_NAME>/tacedata-site/data/indicators.json - `
   --region ca-central-1 `
   --profile tace-aws-admin
 ```
