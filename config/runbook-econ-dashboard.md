@@ -124,7 +124,7 @@ The GitHub Actions deploy role needs `lambda:UpdateFunctionCode` in addition to 
 
 ```powershell
 aws iam put-role-policy `
-  --role-name <DEPLOY_ROLE_NAME> `
+  --role-name <GITHUB_DEPLOY_ROLE_NAME> `
   --policy-name tacedata-deploy-policy `
   --policy-document file://config/iam-permissions-policy.json `
   --profile tace-aws-admin
