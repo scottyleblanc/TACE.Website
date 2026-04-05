@@ -42,19 +42,20 @@ Each card shows: current value, day-over-day change, 30-day sparkline, and a pla
 Data fetching runs entirely server-side. An AWS Lambda function runs on a 30-minute schedule, pulls all eight indicators from their upstream sources, and writes a single JSON file to S3. The dashboard fetches that file on load — one request, sub-100ms, no API key required.
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '18px'}}}%%
 flowchart TD
-    EB["EventBridge\ncron — every 30 minutes"]
+    EB("EventBridge\ncron — every 30 minutes"):::aws
 
     subgraph apis["External APIs"]
-        BOC["Bank of Canada Valet API\nBoC overnight rate · GoC 5yr · 10yr bond yields"]
-        SC["Statistics Canada WDS API\nCPI — vector 41690973"]
-        TD["Twelve Data\nSPY · EWC · USO · CAD/USD"]
+        BOC("Bank of Canada Valet API\nBoC overnight rate · GoC 5yr · 10yr bond yields"):::gov
+        SC("Statistics Canada WDS API\nCPI — vector 41690973"):::gov
+        TD("Twelve Data\nSPY · EWC · USO · CAD/USD"):::market
     end
 
-    LM["Lambda — econ-indicators\nPython 3.12"]
-    S3["S3\ntacedata-site/data/indicators.json"]
-    CF["CloudFront\ndata/* cache behavior"]
-    BR["Browser\ndashboard"]
+    LM("Lambda — econ-indicators\nPython 3.12"):::aws
+    S3("S3\ndata/indicators.json"):::aws
+    CF("CloudFront\ndata/* cache behavior"):::aws
+    BR("Browser\ndashboard"):::browser
 
     EB -->|"triggers every 30 min"| LM
     LM -->|"no auth required"| BOC
@@ -66,6 +67,11 @@ flowchart TD
     CF -->|"GetObject · OAC signed"| S3
     S3 -->|"indicators.json"| CF
     CF -->|"indicators.json"| BR
+
+    classDef aws      fill:#FF9900,stroke:#c97a00,color:#000,rx:8,ry:8
+    classDef gov      fill:#1d4ed8,stroke:#1e3a8a,color:#fff,rx:8,ry:8
+    classDef market   fill:#16a34a,stroke:#14532d,color:#fff,rx:8,ry:8
+    classDef browser  fill:#475569,stroke:#334155,color:#fff,rx:8,ry:8
 ```
 
 <a href="/projects/econ/interest-rate/" class="launch-btn">Launch Dashboard</a>
