@@ -36,7 +36,7 @@ jobs:
 
       - name: Deploy to S3
         run: |
-          aws s3 sync hugo/public/ s3://${{ vars.S3_BUCKET_NAME }}/tacedata-site/ --delete
+          aws s3 sync hugo/public/ s3://${{ vars.S3_BUCKET_NAME }}/tacedata-site/ --delete --exclude "data/*"
 
       - name: Invalidate CloudFront cache
         run: |

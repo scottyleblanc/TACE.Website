@@ -147,22 +147,22 @@
 
   <!-- TSX Composite -->
   <div class="card">
-    <div class="card-lbl"><span class="dot" id="dot-tsx"></span>TSX Canada (EWC)</div>
+    <div class="card-lbl"><span class="dot" id="dot-tsx"></span>TSX Canada</div>
     <div class="card-val" id="val-tsx"><div class="skel"></div></div>
     <div class="card-chg" id="chg-tsx"></div>
     <div class="spark"><canvas id="spark-tsx"></canvas></div>
     <div class="sig sig-loading" id="sig-tsx">Loading&hellip;</div>
-    <div class="card-meta">EWC &mdash; iShares MSCI Canada ETF (US-listed proxy, priced USD) &middot; Source: Twelve Data</div>
+    <div class="card-meta">TSX Composite Index &middot; Source: Stooq</div>
   </div>
 
   <!-- Crude Oil -->
   <div class="card">
-    <div class="card-lbl"><span class="dot" id="dot-oil"></span>Crude Oil (USO ETF)</div>
+    <div class="card-lbl"><span class="dot" id="dot-oil"></span>Crude Oil (WTI)</div>
     <div class="card-val" id="val-oil"><div class="skel"></div></div>
     <div class="card-chg" id="chg-oil"></div>
     <div class="spark"><canvas id="spark-oil"></canvas></div>
     <div class="sig sig-loading" id="sig-oil">Loading&hellip;</div>
-    <div class="card-meta">USO tracks WTI crude &middot; Source: Twelve Data</div>
+    <div class="card-meta">WTI crude oil spot price &middot; Source: FRED</div>
   </div>
 
   <!-- CAD/USD -->
@@ -210,7 +210,7 @@
     <div class="card-chg" id="chg-b5"></div>
     <div class="spark"><canvas id="spark-b5"></canvas></div>
     <div class="sig sig-loading" id="sig-b5">Loading&hellip;</div>
-    <div class="card-meta" id="meta-b5">Drives fixed mortgage pricing &middot; Source: Bank of Canada</div>
+    <div class="card-meta" id="meta-b5">Drives fixed mortgage pricing &middot; Source: Stooq</div>
   </div>
 
   <!-- GoC 10yr Bond Yield -->
@@ -221,7 +221,7 @@
     <div class="spread-badge" id="spread-badge" style="margin-bottom:8px"></div>
     <div class="spark"><canvas id="spark-b10"></canvas></div>
     <div class="sig sig-loading" id="sig-b10">Loading&hellip;</div>
-    <div class="card-meta" id="meta-b10">Yield curve signal &middot; Source: Bank of Canada</div>
+    <div class="card-meta" id="meta-b10">Yield curve signal &middot; Source: Stooq</div>
   </div>
 
 </div>
@@ -267,15 +267,15 @@
       </tr>
       <tr>
         <td>TSX Canada</td>
-        <td>EWC ETF closing price (USD) &mdash; US-listed proxy for Canadian large-caps. % change is vs previous close.</td>
-        <td>Daily closing price over 30 trading days.</td>
-        <td class="spark-green">Price higher than 30 days ago</td>
-        <td class="spark-red">Price lower than 30 days ago</td>
+        <td>TSX Composite Index (points). % change is vs previous close.</td>
+        <td>Daily index value over 30 trading days.</td>
+        <td class="spark-green">Index higher than 30 days ago</td>
+        <td class="spark-red">Index lower than 30 days ago</td>
       </tr>
       <tr>
         <td>Crude Oil</td>
-        <td>USO ETF closing price (USD) &mdash; proxy for WTI crude. % change is vs previous close.</td>
-        <td>Daily closing price over 30 trading days.</td>
+        <td>WTI crude oil spot price (USD/barrel). % change is vs previous trading day.</td>
+        <td>Daily spot price over 30 trading days.</td>
         <td class="spark-green">Price higher than 30 days ago</td>
         <td class="spark-red">Price lower than 30 days ago</td>
       </tr>
@@ -411,14 +411,14 @@
   function renderBonds(bonds) {
     const { b5, b10 } = bonds;
     const sprd      = b10.cur - b5.cur;
-    const staleFlag = b5.stale ? ' \u00b7 [WARNING] BoC feed delayed \u2014 last known value' : '';
+    const staleFlag = b5.stale ? ' \u00b7 [WARNING] Bond data delayed \u2014 last known value' : '';
 
     // ── 5yr card
     sv('val-b5', `${ff(b5.cur)}<span class="unit">%</span>`);
     sv('chg-b5', fmtChg(b5.cur, b5.prev, '%'));
     setDot('b5', b5.cur > b5.prev ? 'up' : b5.cur < b5.prev ? 'down' : 'flat');
     drawSpark('spark-b5', b5.history, b5.cur <= b5.history[0] ? '#4ade80' : '#f87171');
-    st('meta-b5', `Latest business day: ${b5.date}${staleFlag} \u00b7 Source: Bank of Canada`);
+    st('meta-b5', `Latest business day: ${b5.date}${staleFlag} \u00b7 Source: Stooq`);
     const diff5 = b5.cur - b5.history[0];
     let sig5, cls5;
     if      (diff5 >  0.30) { sig5 = `Up +${ff(diff5)}% over month \u2014 fixed rates rising. Consider locking.`;  cls5 = 'sig-lock';    }
@@ -433,7 +433,7 @@
     sv('chg-b10', fmtChg(b10.cur, b10.prev, '%'));
     setDot('b10', b10.cur > b10.prev ? 'up' : b10.cur < b10.prev ? 'down' : 'flat');
     drawSpark('spark-b10', b10.history, b10.cur <= b10.history[0] ? '#4ade80' : '#f87171');
-    st('meta-b10', `Latest business day: ${b10.date}${staleFlag} \u00b7 Source: Bank of Canada`);
+    st('meta-b10', `Latest business day: ${b10.date}${staleFlag} \u00b7 Source: Stooq`);
     const sb = $('spread-badge');
     if (sb) {
       sb.textContent       = `10yr\u20135yr spread: ${sprd >= 0 ? '+' : ''}${ff(sprd)}%`;
@@ -601,7 +601,7 @@
       if (d.sp)    { sigs.push(renderEquity('sp',  d.sp,  cur => `${Math.round(cur).toLocaleString()}<span class="unit">SPY</span>`, spSignal)); }
       else         { setSig('sp',  `${UNAVAIL} S&P 500 feed failed.`, 'sig-loading'); sigs.push('neutral'); }
 
-      if (d.tsx)   { sigs.push(renderEquity('tsx', d.tsx, cur => `$${ff(cur)}<span class="unit">USD</span>`, tsxSignal)); }
+      if (d.tsx)   { sigs.push(renderEquity('tsx', d.tsx, cur => `${Math.round(cur).toLocaleString()}<span class="unit">pts</span>`, tsxSignal)); }
       else         { setSig('tsx', `${UNAVAIL} TSX feed failed.`, 'sig-loading'); sigs.push('neutral'); }
 
       if (d.oil)   { sigs.push(renderEquity('oil', d.oil, cur => `$${ff(cur)}<span class="unit">USD</span>`, oilSignal)); }

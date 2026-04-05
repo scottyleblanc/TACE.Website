@@ -4,33 +4,47 @@ Fetches all 8 indicators and writes indicators.json to S3.
 Triggered by EventBridge on a cron schedule.
 
 Environment variables (set in Lambda console, never in source):
-  TD_API_KEY   — Twelve Data API key
+  TD_API_KEY   — Twelve Data API key (SPY, CAD/USD)
+  FRED_API_KEY — FRED (St. Louis Fed) API key (WTI crude oil)
   S3_BUCKET    — target bucket name
   S3_KEY       — target object key (default: data/indicators.json)
+
+Data sources:
+  BoC Valet API   — overnight rate
+  Statistics Canada WDS API — CPI
+  Stooq           — TSX Composite, GoC 5yr yield, GoC 10yr yield (no key required)
+  FRED            — WTI crude oil spot price (DCOILWTICO)
+  Twelve Data     — S&P 500 (SPY), CAD/USD (free tier, 2 symbols)
 """
 
+import csv
+import io
 import json
 import os
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-TD_API_KEY = os.environ["TD_API_KEY"]
-S3_BUCKET  = os.environ["S3_BUCKET"]
-S3_KEY     = os.environ.get("S3_KEY", "data/indicators.json")
+TD_API_KEY   = os.environ["TD_API_KEY"]
+FRED_API_KEY = os.environ["FRED_API_KEY"]
+S3_BUCKET    = os.environ["S3_BUCKET"]
+S3_KEY       = os.environ.get("S3_KEY", "data/indicators.json")
 
 TD_BASE    = "https://api.twelvedata.com"
 BOC_BASE   = "https://www.bankofcanada.ca/valet"
 STATCAN    = "https://www150.statcan.gc.ca/t1/wds/rest"
+FRED_BASE  = "https://api.stlouisfed.org/fred"
+STOOQ_BASE = "https://stooq.com/q/d/l"
 
-# Twelve Data free tier: 8 calls/minute. 4 symbols × 2 calls = 8 calls.
-# 8-second pause between symbols keeps burst under the per-minute ceiling.
-TD_PAUSE_S = 8
+# Twelve Data free tier: 8 calls/minute.
+# Stage 2.4: only SPY and CAD/USD remain (2 symbols × 2 calls = 4 calls).
+# No inter-symbol pause required at this volume.
+TD_PAUSE_S = 0
 
 
 # ── HTTP helpers ──────────────────────────────────────────────────────────────
@@ -40,6 +54,13 @@ def http_get(url, timeout=15):
     req = urllib.request.Request(url, headers={"User-Agent": "tacedata-indicators/1.0"})
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         return json.loads(resp.read().decode())
+
+
+def http_get_text(url, timeout=15):
+    """GET request, returns raw text (used for Stooq CSV responses)."""
+    req = urllib.request.Request(url, headers={"User-Agent": "tacedata-indicators/1.0"})
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return resp.read().decode()
 
 
 def http_post(url, body, timeout=15):
@@ -55,6 +76,34 @@ def http_post(url, body, timeout=15):
         return json.loads(resp.read().decode())
 
 
+# ── Stooq CSV helper ──────────────────────────────────────────────────────────
+
+def fetch_stooq_csv(symbol, days_back=60):
+    """Fetch daily OHLC from Stooq for `symbol`.
+    Returns list of (date_str, close_float) sorted oldest→newest.
+    Requests `days_back` calendar days of history (~40 trading days).
+    Stooq returns CSV with columns: Date, Open, High, Low, Close, Volume.
+    """
+    today = datetime.now(timezone.utc).date()
+    start = today - timedelta(days=days_back)
+    url = (
+        f"{STOOQ_BASE}/?s={urllib.parse.quote(symbol)}"
+        f"&d1={start.strftime('%Y%m%d')}&d2={today.strftime('%Y%m%d')}&i=d"
+    )
+    text = http_get_text(url)
+    reader = csv.DictReader(io.StringIO(text))
+    rows = []
+    for row in reader:
+        try:
+            rows.append((row["Date"], float(row["Close"])))
+        except (KeyError, ValueError):
+            continue
+    rows.sort(key=lambda r: r[0])  # ensure oldest→newest (Stooq order can vary)
+    if len(rows) < 2:
+        raise RuntimeError(f"Stooq returned insufficient data for {symbol}: {len(rows)} rows")
+    return rows
+
+
 # ── Data fetchers ─────────────────────────────────────────────────────────────
 
 def fetch_boc_rate():
@@ -67,26 +116,24 @@ def fetch_boc_rate():
     return {"cur": cur, "prev": prev, "date": date}
 
 
-def fetch_bonds():
-    """GoC 5yr and 10yr bond yields — bond_yields_benchmark group endpoint.
-    Single fetch for both series; returns nested b5/b10 objects.
-    The group endpoint is maintained continuously through benchmark transitions.
-    Individual series (BD.CDN.5YR.DQ.YLD etc.) can go silent for weeks."""
-    d   = http_get(f"{BOC_BASE}/observations/group/bond_yields_benchmark/json?recent=60")
-    obs = [
-        o for o in d["observations"]
-        if o.get("BD.CDN.5YR.DQ.YLD", {}).get("v") and o.get("BD.CDN.10YR.DQ.YLD", {}).get("v")
-    ]
-    h5  = [float(o["BD.CDN.5YR.DQ.YLD"]["v"])  for o in obs]
-    h10 = [float(o["BD.CDN.10YR.DQ.YLD"]["v"]) for o in obs]
-    date = obs[-1]["d"]
+def fetch_bonds_stooq():
+    """GoC 5yr and 10yr bond yields from Stooq (5cay.b and 10cay.b).
+    Market-sourced daily yields — no benchmark transition gaps.
+    Replaces BoC Valet bond_yields_benchmark endpoint used in Stage 2.3."""
+    rows5  = fetch_stooq_csv("5cay.b")
+    rows10 = fetch_stooq_csv("10cay.b")
 
-    # Stale flag: more than 5 business days without an update signals a benchmark transition gap.
-    stale = _is_stale(date, days=5)
+    h5   = [r[1] for r in rows5]
+    h10  = [r[1] for r in rows10]
+    date5  = rows5[-1][0]
+    date10 = rows10[-1][0]
+
+    stale5  = _is_stale(date5,  days=5)
+    stale10 = _is_stale(date10, days=5)
 
     return {
-        "b5":  {"cur": h5[-1],  "prev": h5[-2],  "history": h5[-30:],  "date": date, "stale": stale},
-        "b10": {"cur": h10[-1], "prev": h10[-2], "history": h10[-30:], "date": date, "stale": stale},
+        "b5":  {"cur": h5[-1],  "prev": h5[-2],  "history": h5[-30:],  "date": date5,  "stale": stale5},
+        "b10": {"cur": h10[-1], "prev": h10[-2], "history": h10[-30:], "date": date10, "stale": stale10},
     }
 
 
@@ -126,6 +173,46 @@ def fetch_cpi():
         "mom":         round(mom, 4),
         "yoy_history": yoy_history,
         "ref_date":    ref_date,
+    }
+
+
+def fetch_tsx():
+    """TSX Composite Index from Stooq (^tsx).
+    Returns {cur, prev, history, date} — values are index points."""
+    rows    = fetch_stooq_csv("^tsx")
+    history = [r[1] for r in rows]
+    return {
+        "cur":     history[-1],
+        "prev":    history[-2],
+        "history": history[-30:],
+        "date":    rows[-1][0],
+    }
+
+
+def fetch_wti():
+    """WTI crude oil spot price from FRED (DCOILWTICO).
+    Returns {cur, prev, history, date} — values are USD per barrel.
+    FRED uses '.' for missing observations (holidays/weekends) — filtered out."""
+    today = datetime.now(timezone.utc).date()
+    start = today - timedelta(days=60)
+    url = (
+        f"{FRED_BASE}/series/observations"
+        f"?series_id=DCOILWTICO"
+        f"&observation_start={start.strftime('%Y-%m-%d')}"
+        f"&api_key={FRED_API_KEY}"
+        f"&file_type=json"
+        f"&sort_order=asc"
+    )
+    d   = http_get(url)
+    obs = [(o["date"], float(o["value"])) for o in d["observations"] if o["value"] != "."]
+    if len(obs) < 2:
+        raise RuntimeError(f"FRED returned insufficient WTI data: {len(obs)} observations")
+    history = [v for _, v in obs]
+    return {
+        "cur":     history[-1],
+        "prev":    history[-2],
+        "history": history[-30:],
+        "date":    obs[-1][0],
     }
 
 
@@ -189,36 +276,32 @@ def write_to_s3(payload):
 
 def handler(event, context):
     """Lambda entry point. Fetches all indicators and writes indicators.json to S3."""
-    errors = {}
+    errors  = {}
     payload = {"generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
 
-    # Government APIs — no quota, fetch first
-    try:
-        payload["boc"] = fetch_boc_rate()
-    except Exception as e:
-        errors["boc"] = str(e)
-        payload["boc"] = None
+    # No-quota / free sources — fetch first, no rate concerns
+    for key, fn in [
+        ("boc",   fetch_boc_rate),
+        ("bonds", fetch_bonds_stooq),
+        ("cpi",   fetch_cpi),
+        ("tsx",   fetch_tsx),
+        ("oil",   fetch_wti),
+    ]:
+        try:
+            payload[key] = fn()
+        except Exception as e:
+            errors[key] = str(e)
+            payload[key] = None
 
-    try:
-        payload["bonds"] = fetch_bonds()
-    except Exception as e:
-        errors["bonds"] = str(e)
-        payload["bonds"] = None
-
-    try:
-        payload["cpi"] = fetch_cpi()
-    except Exception as e:
-        errors["cpi"] = str(e)
-        payload["cpi"] = None
-
-    # Twelve Data — sequenced with pauses to stay within 8 calls/minute
-    for key, symbol in [("sp", "SPY"), ("tsx", "EWC"), ("oil", "USO"), ("cad", "CAD/USD")]:
+    # Twelve Data — SPY and CAD/USD only (4 calls, within 8/min free tier)
+    for key, symbol in [("sp", "SPY"), ("cad", "CAD/USD")]:
         try:
             payload[key] = fetch_td_equity(symbol)
         except Exception as e:
             errors[key] = str(e)
             payload[key] = None
-        time.sleep(TD_PAUSE_S)
+        if TD_PAUSE_S:
+            time.sleep(TD_PAUSE_S)
 
     if errors:
         payload["errors"] = errors
