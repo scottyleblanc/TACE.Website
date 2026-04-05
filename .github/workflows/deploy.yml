@@ -43,3 +43,11 @@ jobs:
           aws cloudfront create-invalidation \
             --distribution-id ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }} \
             --paths "/*"
+
+      - name: Deploy Lambda
+        run: |
+          zip -j function.zip lambda/indicators.py
+          aws lambda update-function-code \
+            --function-name ${{ vars.ECON_LAMBDA_FUNCTION_NAME }} \
+            --zip-file fileb://function.zip \
+            --region ca-central-1

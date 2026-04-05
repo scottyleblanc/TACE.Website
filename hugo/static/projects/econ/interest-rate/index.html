@@ -28,28 +28,17 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: var(--mono); font-size: 13px; min-height: 100vh; padding: 32px 24px 64px; }
 
-  #key-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.82); z-index: 200; align-items: center; justify-content: center; }
-  #key-overlay.show { display: flex; }
-  .key-box { background: var(--surface); border: 1px solid var(--bdr2); padding: 32px; max-width: 480px; width: 92%; }
-  .key-box h2 { font-family: var(--serif); font-weight: 300; font-size: 22px; color: var(--accent); margin-bottom: 10px; }
-  .key-box p { font-size: 12px; color: var(--muted2); line-height: 1.8; margin-bottom: 20px; }
-  .key-box a { color: var(--accent); text-decoration: none; }
-  .key-box input { display: block; width: 100%; background: var(--bg); border: 1px solid var(--bdr2); color: var(--text); font-family: var(--mono); font-size: 13px; padding: 10px 12px; outline: none; margin-bottom: 6px; }
-  .key-box input:focus { border-color: var(--accent); }
-  #key-err { font-size: 11px; color: var(--red); min-height: 18px; margin-bottom: 10px; }
-  .key-acts { display: flex; gap: 10px; }
-  .btn-p { flex: 1; background: transparent; border: 1px solid var(--accent); color: var(--accent); font-family: var(--mono); font-size: 11px; padding: 10px; cursor: pointer; letter-spacing: .08em; text-transform: uppercase; }
-  .btn-p:hover { background: rgba(201,185,154,.08); }
-  .btn-g { background: transparent; border: 1px solid var(--bdr); color: var(--muted2); font-family: var(--mono); font-size: 11px; padding: 10px 16px; cursor: pointer; letter-spacing: .08em; text-transform: uppercase; }
-
-  .hdr { max-width: 1280px; margin: 0 auto 36px; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-bottom: 1px solid var(--bdr); padding-bottom: 20px; }
+  .hdr { max-width: 1280px; margin: 0 auto 20px; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-bottom: 1px solid var(--bdr); padding-bottom: 20px; }
   .hdr h1 { font-family: var(--serif); font-weight: 300; font-size: 28px; color: var(--accent); letter-spacing: -.5px; line-height: 1.1; }
   .hdr p { color: var(--muted); font-size: 11px; margin-top: 5px; letter-spacing: .05em; text-transform: uppercase; }
   .hdr-acts { display: flex; gap: 8px; align-items: center; }
   .hbtn { background: transparent; border: 1px solid var(--bdr2); color: var(--muted2); font-family: var(--mono); font-size: 11px; padding: 8px 14px; cursor: pointer; letter-spacing: .06em; text-transform: uppercase; transition: all .15s; white-space: nowrap; }
   .hbtn:hover { border-color: var(--accent); color: var(--accent); }
   .hbtn:disabled { opacity: .4; cursor: wait; }
-  #cooldown-msg { font-size: 10px; color: var(--amber); letter-spacing: .04em; display: none; }
+
+  .error-banner { max-width: 1280px; margin: 0 auto 16px; padding: 16px 20px; background: rgba(248,113,113,.12); border: 1px solid var(--red); border-left: 4px solid var(--red); color: var(--red); font-size: 12px; line-height: 1.7; display: none; }
+  .error-banner.show { display: block; }
+  .error-banner strong { display: block; font-size: 13px; margin-bottom: 6px; letter-spacing: .03em; text-transform: uppercase; }
 
   .grid { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
   @media (max-width: 800px)  { .grid { grid-template-columns: repeat(2, 1fr); } }
@@ -63,17 +52,14 @@
   .card-chg { font-size: 12px; margin-bottom: 14px; min-height: 18px; }
   .up { color: var(--green); } .down { color: var(--red); } .flat { color: var(--muted2); }
 
-  /* BoC calendar strip */
   .boc-next { margin-bottom: 12px; padding: 8px 10px; background: rgba(96,165,250,.08); border-left: 2px solid var(--blue); font-size: 11px; color: var(--blue); letter-spacing: .03em; }
 
-  /* Bond card dual values */
   .bond-row { display: flex; gap: 20px; align-items: flex-end; margin-bottom: 4px; flex-wrap: wrap; }
   .bond-col label { display: block; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
   .bond-val { font-family: var(--serif); font-size: 28px; font-weight: 300; color: var(--text); display: flex; align-items: baseline; gap: 5px; }
   .bond-val.dim { color: var(--muted2); }
   .spread-badge { font-size: 10px; letter-spacing: .06em; padding: 4px 9px; border: 1px solid var(--bdr2); color: var(--muted2); align-self: flex-end; margin-bottom: 2px; white-space: nowrap; }
 
-  /* CPI sub-values */
   .cpi-row { display: flex; gap: 20px; margin-bottom: 4px; flex-wrap: wrap; }
   .cpi-col label { display: block; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
   .cpi-val { font-family: var(--serif); font-size: 28px; font-weight: 300; color: var(--text); display: flex; align-items: baseline; gap: 5px; }
@@ -111,13 +97,6 @@
   .ndate { color: var(--muted); letter-spacing: .04em; }
   .ntext { color: var(--muted2); margin-top: 4px; line-height: 1.6; }
 
-  .diag { max-width: 1280px; margin: 14px auto 0; background: var(--surface); border: 1px solid var(--bdr); padding: 20px; }
-  .diag > label { display: block; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
-  .diag-acts { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
-  .dbtn { background: transparent; border: 1px solid var(--bdr2); color: var(--muted2); font-family: var(--mono); font-size: 10px; padding: 6px 14px; cursor: pointer; letter-spacing: .08em; text-transform: uppercase; }
-  .dbtn:hover { border-color: var(--accent); color: var(--accent); }
-  #diag-out { font-size: 11px; color: var(--muted2); line-height: 1.7; white-space: pre-wrap; word-break: break-all; max-height: 320px; overflow-y: auto; border-top: 1px solid var(--bdr); padding-top: 10px; display: none; }
-
   .howto { max-width: 1280px; margin: 24px auto 0; border-top: 1px solid var(--bdr); padding-top: 20px; }
   .howto-title { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
   .howto-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
@@ -139,34 +118,19 @@
 </head>
 <body>
 
-<div id="key-overlay">
-  <div class="key-box">
-    <h2>Twelve Data API key</h2>
-    <p>
-      S&amp;P 500, TSX, crude oil (USO), and CAD/USD data comes from Twelve Data's free API.<br>
-      Get your key in ~2 minutes at <a href="https://twelvedata.com/register" target="_blank">twelvedata.com/register</a> — no credit card needed.<br><br>
-      Free tier: 800 calls/day, 8 calls/minute.<br>
-      Your key is stored only in your browser and sent only to Twelve Data.
-    </p>
-    <input id="key-input" type="text" placeholder="Paste your Twelve Data API key here" spellcheck="false" autocomplete="off">
-    <div id="key-err"></div>
-    <div class="key-acts">
-      <button class="btn-p" id="key-save-btn">Save &amp; load data</button>
-      <button class="btn-g"  id="key-cancel-btn">Cancel</button>
-    </div>
-  </div>
-</div>
-
 <div class="hdr">
   <div>
     <h1>Economic Indicators</h1>
-    <p>Mortgage decision aid — Canada</p>
+    <p>Mortgage decision aid &mdash; Canada</p>
   </div>
   <div class="hdr-acts">
-    <span id="cooldown-msg"></span>
-    <button class="hbtn" id="key-btn">⚙ API key</button>
-    <button class="hbtn" id="refresh-btn">↻ Refresh</button>
+    <button class="hbtn" id="refresh-btn">&#8635; Refresh</button>
   </div>
+</div>
+
+<div id="error-banner" class="error-banner">
+  <strong>[Data Feed Error]</strong>
+  <span id="error-detail"></span>
 </div>
 
 <div class="grid">
@@ -177,8 +141,8 @@
     <div class="card-val" id="val-sp"><div class="skel"></div></div>
     <div class="card-chg" id="chg-sp"></div>
     <div class="spark"><canvas id="spark-sp"></canvas></div>
-    <div class="sig sig-loading" id="sig-sp">Loading…</div>
-    <div class="card-meta">Via SPY ETF · Source: Twelve Data</div>
+    <div class="sig sig-loading" id="sig-sp">Loading&hellip;</div>
+    <div class="card-meta">Via SPY ETF &middot; Source: Twelve Data</div>
   </div>
 
   <!-- TSX Composite -->
@@ -187,8 +151,8 @@
     <div class="card-val" id="val-tsx"><div class="skel"></div></div>
     <div class="card-chg" id="chg-tsx"></div>
     <div class="spark"><canvas id="spark-tsx"></canvas></div>
-    <div class="sig sig-loading" id="sig-tsx">Loading…</div>
-    <div class="card-meta">EWC — iShares MSCI Canada ETF (US-listed proxy, priced USD) · Source: Twelve Data</div>
+    <div class="sig sig-loading" id="sig-tsx">Loading&hellip;</div>
+    <div class="card-meta">EWC &mdash; iShares MSCI Canada ETF (US-listed proxy, priced USD) &middot; Source: Twelve Data</div>
   </div>
 
   <!-- Crude Oil -->
@@ -197,8 +161,8 @@
     <div class="card-val" id="val-oil"><div class="skel"></div></div>
     <div class="card-chg" id="chg-oil"></div>
     <div class="spark"><canvas id="spark-oil"></canvas></div>
-    <div class="sig sig-loading" id="sig-oil">Loading…</div>
-    <div class="card-meta">USO tracks WTI crude · Source: Twelve Data</div>
+    <div class="sig sig-loading" id="sig-oil">Loading&hellip;</div>
+    <div class="card-meta">USO tracks WTI crude &middot; Source: Twelve Data</div>
   </div>
 
   <!-- CAD/USD -->
@@ -207,17 +171,17 @@
     <div class="card-val" id="val-cad"><div class="skel"></div></div>
     <div class="card-chg" id="chg-cad"></div>
     <div class="spark"><canvas id="spark-cad"></canvas></div>
-    <div class="sig sig-loading" id="sig-cad">Loading…</div>
-    <div class="card-meta">CAD/USD · Source: Twelve Data</div>
+    <div class="sig sig-loading" id="sig-cad">Loading&hellip;</div>
+    <div class="card-meta">CAD/USD &middot; Source: Twelve Data</div>
   </div>
 
   <!-- BoC Overnight Rate -->
   <div class="card">
     <div class="card-lbl"><span class="dot" id="dot-boc"></span>BoC Overnight Rate</div>
-    <div class="boc-next" id="boc-next">Next decision: loading…</div>
+    <div class="boc-next" id="boc-next">Next decision: loading&hellip;</div>
     <div class="card-val" id="val-boc"><div class="skel"></div></div>
     <div class="card-chg" id="chg-boc"></div>
-    <div class="sig sig-loading" id="sig-boc">Loading…</div>
+    <div class="sig sig-loading" id="sig-boc">Loading&hellip;</div>
     <div class="card-meta" id="meta-boc">Bank of Canada policy rate</div>
   </div>
 
@@ -235,8 +199,8 @@
       </div>
     </div>
     <div class="spark"><canvas id="spark-cpi"></canvas></div>
-    <div class="sig sig-loading" id="sig-cpi">Loading…</div>
-    <div class="card-meta" id="meta-cpi">All-items CPI · Source: Statistics Canada</div>
+    <div class="sig sig-loading" id="sig-cpi">Loading&hellip;</div>
+    <div class="card-meta" id="meta-cpi">All-items CPI &middot; Source: Statistics Canada</div>
   </div>
 
   <!-- GoC 5yr Bond Yield -->
@@ -245,8 +209,8 @@
     <div class="card-val" id="val-b5"><div class="skel"></div></div>
     <div class="card-chg" id="chg-b5"></div>
     <div class="spark"><canvas id="spark-b5"></canvas></div>
-    <div class="sig sig-loading" id="sig-b5">Loading…</div>
-    <div class="card-meta" id="meta-b5">Drives fixed mortgage pricing · Source: Bank of Canada</div>
+    <div class="sig sig-loading" id="sig-b5">Loading&hellip;</div>
+    <div class="card-meta" id="meta-b5">Drives fixed mortgage pricing &middot; Source: Bank of Canada</div>
   </div>
 
   <!-- GoC 10yr Bond Yield -->
@@ -256,15 +220,15 @@
     <div class="card-chg" id="chg-b10"></div>
     <div class="spread-badge" id="spread-badge" style="margin-bottom:8px"></div>
     <div class="spark"><canvas id="spark-b10"></canvas></div>
-    <div class="sig sig-loading" id="sig-b10">Loading…</div>
-    <div class="card-meta" id="meta-b10">Yield curve signal · Source: Bank of Canada</div>
+    <div class="sig sig-loading" id="sig-b10">Loading&hellip;</div>
+    <div class="card-meta" id="meta-b10">Yield curve signal &middot; Source: Bank of Canada</div>
   </div>
 
 </div>
 
 <div class="verdict">
   <div class="v-title">Overall read</div>
-  <div class="v-body" id="verdict-text">Gathering signals…</div>
+  <div class="v-body" id="verdict-text">Gathering signals&hellip;</div>
   <div class="v-tags" id="verdict-tags"></div>
 </div>
 <div class="ts" id="ts"></div>
@@ -276,7 +240,7 @@
     <div class="howto-item"><strong>BoC rate falling</strong>Variable payments drop. Stay variable and ride cuts down.</div>
     <div class="howto-item"><strong>5yr yield rising</strong>Fixed mortgage rates follow in weeks. Lock before they do.</div>
     <div class="howto-item"><strong>5yr yield falling</strong>Fixed rate pressure easing. No rush to lock.</div>
-    <div class="howto-item"><strong>10yr &lt; 5yr (inverted spread)</strong>Yield curve inverted — recession signal. Rate cuts likely ahead.</div>
+    <div class="howto-item"><strong>10yr &lt; 5yr (inverted spread)</strong>Yield curve inverted &mdash; recession signal. Rate cuts likely ahead.</div>
     <div class="howto-item"><strong>CPI rising above 2%</strong>Inflation above target. BoC less likely to cut, may raise.</div>
     <div class="howto-item"><strong>CPI falling below 2%</strong>Inflation cooling. BoC more likely to hold or cut.</div>
     <div class="howto-item"><strong>S&amp;P / TSX falling hard</strong>Recession signals rising. BoC likely to cut. May favour variable.</div>
@@ -290,11 +254,7 @@
   <table>
     <thead>
       <tr>
-        <th>Card</th>
-        <th>Value shown</th>
-        <th>Sparkline plots</th>
-        <th>Green</th>
-        <th>Red</th>
+        <th>Card</th><th>Value shown</th><th>Sparkline plots</th><th>Green</th><th>Red</th>
       </tr>
     </thead>
     <tbody>
@@ -307,21 +267,21 @@
       </tr>
       <tr>
         <td>TSX Canada</td>
-        <td>EWC ETF closing price (USD) — US-listed proxy for Canadian large-caps. % change is vs previous close.</td>
+        <td>EWC ETF closing price (USD) &mdash; US-listed proxy for Canadian large-caps. % change is vs previous close.</td>
         <td>Daily closing price over 30 trading days.</td>
         <td class="spark-green">Price higher than 30 days ago</td>
         <td class="spark-red">Price lower than 30 days ago</td>
       </tr>
       <tr>
         <td>Crude Oil</td>
-        <td>USO ETF closing price (USD) — proxy for WTI crude. % change is vs previous close.</td>
+        <td>USO ETF closing price (USD) &mdash; proxy for WTI crude. % change is vs previous close.</td>
         <td>Daily closing price over 30 trading days.</td>
         <td class="spark-green">Price higher than 30 days ago</td>
         <td class="spark-red">Price lower than 30 days ago</td>
       </tr>
       <tr>
         <td>CAD / USD</td>
-        <td>CAD/USD forex rate — how many USD one Canadian dollar buys. % change is vs previous close.</td>
+        <td>CAD/USD forex rate &mdash; how many USD one Canadian dollar buys. % change is vs previous close.</td>
         <td>Daily rate over 30 trading days.</td>
         <td class="spark-green">CAD stronger than 30 days ago</td>
         <td class="spark-red">CAD weaker than 30 days ago</td>
@@ -329,9 +289,8 @@
       <tr>
         <td>BoC Rate</td>
         <td>Bank of Canada target overnight rate (%). Change shown is vs previous decision.</td>
-        <td>No sparkline — rate changes only 8 times per year.</td>
-        <td>—</td>
-        <td>—</td>
+        <td>No sparkline &mdash; rate changes only 8 times per year.</td>
+        <td>&mdash;</td><td>&mdash;</td>
       </tr>
       <tr>
         <td>Inflation (CPI)</td>
@@ -349,7 +308,7 @@
       </tr>
       <tr>
         <td>GoC 10yr Yield</td>
-        <td>Government of Canada 10-year bond yield (%), with 10yr–5yr spread. Change shown is vs previous business day.</td>
+        <td>Government of Canada 10-year bond yield (%), with 10yr&ndash;5yr spread. Change shown is vs previous business day.</td>
         <td>Daily yield over last 30 business days.</td>
         <td class="spark-green">Yield lower than 30 days ago</td>
         <td class="spark-red">Yield higher than 30 days ago</td>
@@ -365,45 +324,13 @@
   <div id="notes-list"></div>
 </div>
 
-<div class="diag">
-  <label>TSX feed diagnostics</label>
-  <div class="diag-acts">
-    <button class="dbtn" id="diag-quote-btn">Test quote (GSPTSE — expected 404)</button>
-    <button class="dbtn" id="diag-series-btn">Test time_series (GSPTSE — expected 404)</button>
-    <button class="dbtn" id="diag-xiu-btn">Test XIU.TO (fallback ETF)</button>
-    <button class="dbtn" id="diag-clear-btn">Clear</button>
-  </div>
-  <div id="diag-out"></div>
-</div>
-
-
 <script>
 (function () {
   'use strict';
 
-  const getKey  = () => localStorage.getItem('td-key') || '';
-  const saveKey = k  => localStorage.setItem('td-key', k);
   const $  = id => document.getElementById(id);
   const sv = (id, html) => { const e = $(id); if (e) e.innerHTML = html; };
   const st = (id, txt)  => { const e = $(id); if (e) e.textContent = txt; };
-
-  // ── Key overlay
-  function openKey(msg) {
-    $('key-input').value = getKey();
-    $('key-err').textContent = msg || '';
-    $('key-overlay').classList.add('show');
-    setTimeout(() => $('key-input').focus(), 60);
-  }
-  function closeKey() { $('key-overlay').classList.remove('show'); }
-  function submitKey() {
-    const k = $('key-input').value.trim();
-    if (!k) { $('key-err').textContent = 'Please enter your API key.'; return; }
-    saveKey(k); closeKey(); loadAll();
-  }
-  $('key-save-btn').addEventListener('click', submitKey);
-  $('key-cancel-btn').addEventListener('click', closeKey);
-  $('key-input').addEventListener('keydown', e => { if (e.key === 'Enter') submitKey(); });
-  $('key-btn').addEventListener('click', () => openKey());
 
   // ── BoC 2026 announcement dates (fixed schedule, published annually by BoC)
   // Source: bankofcanada.ca/press/upcoming-events/
@@ -423,7 +350,7 @@
         const fmt  = new Date(d + 'T12:00:00Z').toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
         if (diff === 0) return `Decision today (${fmt}) at 9:45 ET`;
         if (diff === 1) return `Decision tomorrow (${fmt}) at 9:45 ET`;
-        return `Next decision: ${fmt} · ${diff} days away`;
+        return `Next decision: ${fmt} \u00b7 ${diff} days away`;
       }
     }
     return 'Next date: see bankofcanada.ca for 2027 schedule';
@@ -449,14 +376,14 @@
     ctx.closePath(); ctx.fillStyle = color + '1a'; ctx.fill();
   }
 
-  // ── Formatters — Twelve Data returns price values as strings, always parseFloat first
+  // ── Formatters
   function ff(n, d) { return parseFloat(n).toFixed(d == null ? 2 : d); }
   function fmtChg(cur, prev, unit) {
     const c = parseFloat(cur), p = parseFloat(prev);
     if (isNaN(c) || isNaN(p)) return '';
     const d = c - p, pct = (d / Math.abs(p)) * 100;
     const s = d > 0 ? '+' : '', cls = d > 1e-5 ? 'up' : d < -1e-5 ? 'down' : 'flat';
-    const a = d > 1e-5 ? '▲' : d < -1e-5 ? '▼' : '—';
+    const a = d > 1e-5 ? '\u25b2' : d < -1e-5 ? '\u25bc' : '\u2014';
     return `<span class="${cls}">${a} ${s}${ff(d)}${unit || ''} (${s}${pct.toFixed(1)}%)</span>`;
   }
   function setDot(id, dir) {
@@ -467,290 +394,154 @@
     const e = $('sig-' + id); if (!e) return;
     e.textContent = txt; e.className = 'sig ' + cls;
   }
-  function isStale(dateStr, days) {
-    return (Date.now() - new Date(dateStr + 'T12:00:00Z').getTime()) > days * 86400000;
-  }
-  const pause = ms => new Promise(res => setTimeout(res, ms));
 
-  // ── Twelve Data API
-  const TD = 'https://api.twelvedata.com';
-  const RATE_MSG = 'Rate limited by Twelve Data — wait ~60 sec then refresh.';
-  const FAIL_MSG = 'Could not load — refresh to retry.';
+  // ── Card renderers — read from indicators.json payload
 
-  async function tdFetch(url) {
-    const r = await fetch(url);
-    const d = await r.json();
-    if (d.code === 401 || d.code === 403) throw Object.assign(new Error('AUTH'),       { auth: true });
-    if (d.code === 429)                   throw Object.assign(new Error('RATE_LIMIT'), { rateLimit: true });
-    if (d.status === 'error')             throw new Error(d.message || 'API error');
-    return d;
+  function renderBoC(boc) {
+    st('boc-next', bocNextDate());
+    sv('val-boc', `${ff(boc.cur)}<span class="unit">%</span>`);
+    sv('chg-boc', fmtChg(boc.cur, boc.prev, '%'));
+    setDot('boc', boc.cur > boc.prev ? 'up' : boc.cur < boc.prev ? 'down' : 'flat');
+    st('meta-boc', `Last decision: ${boc.date} \u00b7 Source: Bank of Canada`);
+    if      (boc.cur > boc.prev) { setSig('boc', 'Rate RISING \u2014 variable payments increasing. Strong case to lock in fixed.', 'sig-lock');    return 'lock'; }
+    else if (boc.cur < boc.prev) { setSig('boc', 'Rate FALLING \u2014 variable payments dropping. Consider staying variable.',    'sig-wait');    return 'wait'; }
+    else                         { setSig('boc', 'Rate HELD \u2014 no immediate change to variable payments.',                    'sig-neutral'); return 'neutral'; }
   }
-  async function tdQuote(symbol, exchange) {
-    const ex = exchange ? `&exchange=${encodeURIComponent(exchange)}` : '';
-    const d = await tdFetch(`${TD}/quote?symbol=${encodeURIComponent(symbol)}${ex}&apikey=${getKey()}`);
-    return { cur: d.close, prev: d.previous_close };
-  }
-  async function tdSeries(symbol, exchange) {
-    const ex = exchange ? `&exchange=${encodeURIComponent(exchange)}` : '';
-    const d = await tdFetch(`${TD}/time_series?symbol=${encodeURIComponent(symbol)}${ex}&interval=1day&outputsize=30&apikey=${getKey()}`);
-    return d.values.map(v => parseFloat(v.close)).reverse();
-  }
-  function handleAuth() { openKey('Key rejected by Twelve Data — please check and re-enter.'); }
 
-  // ── BoC Overnight Rate (Bank of Canada Valet API, no key)
-  async function loadBoC() {
-    st('boc-next', bocNextDate()); // always show calendar regardless of API result
-    try {
-      const r = await fetch('https://www.bankofcanada.ca/valet/observations/V39079/json?recent=10');
-      const d = await r.json();
-      const obs  = d.observations.filter(o => o.V39079?.v);
-      const cur  = parseFloat(obs[obs.length - 1].V39079.v);
-      const prev = parseFloat(obs[obs.length - 2].V39079.v);
-      const date = obs[obs.length - 1].d;
-      sv('val-boc', `${ff(cur)}<span class="unit">%</span>`);
-      sv('chg-boc', fmtChg(cur, prev, '%'));
-      setDot('boc', cur > prev ? 'up' : cur < prev ? 'down' : 'flat');
-      st('meta-boc', `Last decision: ${date} · Source: Bank of Canada`);
-      if      (cur > prev) { setSig('boc', 'Rate RISING — variable payments increasing. Strong case to lock in fixed.', 'sig sig-lock');    return 'lock'; }
-      else if (cur < prev) { setSig('boc', 'Rate FALLING — variable payments dropping. Consider staying variable.',    'sig sig-wait');    return 'wait'; }
-      else                 { setSig('boc', 'Rate HELD — no immediate change to variable payments.',                    'sig sig-neutral'); return 'neutral'; }
-    } catch {
-      sv('val-boc', `2.75<span class="unit">%</span>`);
-      st('meta-boc', '⚠ Cached — could not reach Bank of Canada');
-      setSig('boc', 'Rate data unavailable. Refresh to retry.', 'sig sig-loading');
-      return 'neutral';
+  function renderBonds(bonds) {
+    const { b5, b10 } = bonds;
+    const sprd      = b10.cur - b5.cur;
+    const staleFlag = b5.stale ? ' \u00b7 [WARNING] BoC feed delayed \u2014 last known value' : '';
+
+    // ── 5yr card
+    sv('val-b5', `${ff(b5.cur)}<span class="unit">%</span>`);
+    sv('chg-b5', fmtChg(b5.cur, b5.prev, '%'));
+    setDot('b5', b5.cur > b5.prev ? 'up' : b5.cur < b5.prev ? 'down' : 'flat');
+    drawSpark('spark-b5', b5.history, b5.cur <= b5.history[0] ? '#4ade80' : '#f87171');
+    st('meta-b5', `Latest business day: ${b5.date}${staleFlag} \u00b7 Source: Bank of Canada`);
+    const diff5 = b5.cur - b5.history[0];
+    let sig5, cls5;
+    if      (diff5 >  0.30) { sig5 = `Up +${ff(diff5)}% over month \u2014 fixed rates rising. Consider locking.`;  cls5 = 'sig-lock';    }
+    else if (diff5 >  0.10) { sig5 = `Edging up +${ff(diff5)}% \u2014 fixed rates may rise soon.`;                 cls5 = 'sig-watch';   }
+    else if (diff5 < -0.30) { sig5 = `Down ${ff(diff5)}% over month \u2014 fixed rates improving. No rush.`;       cls5 = 'sig-wait';    }
+    else if (diff5 < -0.10) { sig5 = `Drifting down ${ff(diff5)}% \u2014 fixed rates may ease.`;                   cls5 = 'sig-wait';    }
+    else                    { sig5 = `Stable (${ff(diff5)}% over month) \u2014 fixed rate pricing not moving.`;    cls5 = 'sig-neutral'; }
+    setSig('b5', sig5, cls5);
+
+    // ── 10yr card
+    sv('val-b10', `${ff(b10.cur)}<span class="unit">%</span>`);
+    sv('chg-b10', fmtChg(b10.cur, b10.prev, '%'));
+    setDot('b10', b10.cur > b10.prev ? 'up' : b10.cur < b10.prev ? 'down' : 'flat');
+    drawSpark('spark-b10', b10.history, b10.cur <= b10.history[0] ? '#4ade80' : '#f87171');
+    st('meta-b10', `Latest business day: ${b10.date}${staleFlag} \u00b7 Source: Bank of Canada`);
+    const sb = $('spread-badge');
+    if (sb) {
+      sb.textContent       = `10yr\u20135yr spread: ${sprd >= 0 ? '+' : ''}${ff(sprd)}%`;
+      sb.style.color       = sprd < 0 ? 'var(--amber)' : 'var(--muted2)';
+      sb.style.borderColor = sprd < 0 ? 'var(--amber)' : 'var(--bdr2)';
     }
-  }
-
-  // ── GoC Bond Yields (Bank of Canada Valet API, no key)
-  // One fetch for both series; results distributed to two separate cards.
-  // Returns [b5Result, b10Result] for independent verdict weighting.
-  async function loadBonds() {
-    try {
-      // Use the bond_yields_benchmark group endpoint — maintained continuously through benchmark bond transitions.
-      // Individual series (BD.CDN.5YR.DQ.YLD etc) can go silent for weeks when the BoC switches benchmark issues.
-      const r   = await fetch('https://www.bankofcanada.ca/valet/observations/group/bond_yields_benchmark/json?recent=60');
-      const d   = await r.json();
-      const obs = d.observations.filter(o => o['BD.CDN.5YR.DQ.YLD']?.v && o['BD.CDN.10YR.DQ.YLD']?.v);
-      const h5  = obs.map(o => parseFloat(o['BD.CDN.5YR.DQ.YLD'].v));
-      const h10 = obs.map(o => parseFloat(o['BD.CDN.10YR.DQ.YLD'].v));
-      const c5  = h5[h5.length-1],  p5  = h5[h5.length-2];
-      const c10 = h10[h10.length-1], p10 = h10[h10.length-2];
-      const sprd = c10 - c5;
-      const date = obs[obs.length-1].d;
-      const staleFlag = isStale(date, 5) ? ' · ⚠ BoC feed delayed — last known value' : '';
-
-      // ── 5yr card — drives fixed mortgage rates
-      sv('val-b5', `${ff(c5)}<span class="unit">%</span>`);
-      sv('chg-b5', fmtChg(c5, p5, '%'));
-      setDot('b5', c5 > p5 ? 'up' : c5 < p5 ? 'down' : 'flat');
-      drawSpark('spark-b5', h5, c5 <= h5[0] ? '#4ade80' : '#f87171');
-      st('meta-b5', `Latest business day: ${date}${staleFlag} · Source: Bank of Canada`);
-      const diff5 = c5 - h5[0];
-      let sig5, cls5;
-      if      (diff5 >  0.30) { sig5 = `Up +${ff(diff5)}% over month — fixed rates rising. Consider locking.`;  cls5 = 'sig sig-lock';    }
-      else if (diff5 >  0.10) { sig5 = `Edging up +${ff(diff5)}% — fixed rates may rise soon.`;                 cls5 = 'sig sig-watch';   }
-      else if (diff5 < -0.30) { sig5 = `Down ${ff(diff5)}% over month — fixed rates improving. No rush.`;       cls5 = 'sig sig-wait';    }
-      else if (diff5 < -0.10) { sig5 = `Drifting down ${ff(diff5)}% — fixed rates may ease.`;                   cls5 = 'sig sig-wait';    }
-      else                    { sig5 = `Stable (${ff(diff5)}% over month) — fixed rate pricing not moving.`;    cls5 = 'sig sig-neutral'; }
-      setSig('b5', sig5, cls5);
-
-      // ── 10yr card — yield curve / recession signal
-      sv('val-b10', `${ff(c10)}<span class="unit">%</span>`);
-      sv('chg-b10', fmtChg(c10, p10, '%'));
-      setDot('b10', c10 > p10 ? 'up' : c10 < p10 ? 'down' : 'flat');
-      drawSpark('spark-b10', h10, c10 <= h10[0] ? '#4ade80' : '#f87171');
-      st('meta-b10', `Latest business day: ${date}${staleFlag} · Source: Bank of Canada`);
-      const sb = $('spread-badge');
-      if (sb) {
-        sb.textContent       = `10yr–5yr spread: ${sprd >= 0 ? '+' : ''}${ff(sprd)}%`;
-        sb.style.color       = sprd < 0 ? 'var(--amber)' : 'var(--muted2)';
-        sb.style.borderColor = sprd < 0 ? 'var(--amber)' : 'var(--bdr2)';
-      }
-      const diff10 = c10 - h10[0];
-      let sig10, cls10;
-      if (sprd < 0) {
-        sig10 = `Yield curve INVERTED (10yr ${ff(c10)}% < 5yr ${ff(c5)}%) — recession signal. Rate cuts likely ahead.`;
-        cls10 = 'sig sig-watch';
-      } else if (diff10 > 0.30) {
-        sig10 = `Up +${ff(diff10)}% over month — long-term inflation expectations rising.`;
-        cls10 = 'sig sig-watch';
-      } else if (diff10 < -0.30) {
-        sig10 = `Down ${ff(diff10)}% over month — long-term confidence weakening, easing pressure ahead.`;
-        cls10 = 'sig sig-wait';
-      } else {
-        sig10 = `Spread +${ff(sprd)}% (normal). 10yr stable (${ff(diff10)}% over month) — no curve signal.`;
-        cls10 = 'sig sig-neutral';
-      }
-      setSig('b10', sig10, cls10);
-
-      const r5  = cls5.includes('lock')  ? 'lock'  : cls5.includes('wait')  ? 'wait'  : cls5.includes('watch')  ? 'watch'  : 'neutral';
-      const r10 = cls10.includes('lock') ? 'lock' : cls10.includes('wait') ? 'wait' : cls10.includes('watch') ? 'watch' : 'neutral';
-      return [r5, r10];
-    } catch {
-      ['b5','b10'].forEach(id => {
-        sv('val-' + id, 'Unavailable');
-        setSig(id, 'Could not load bond data — check connection and refresh.', 'sig sig-loading');
-      });
-      return ['neutral', 'neutral'];
+    const diff10 = b10.cur - b10.history[0];
+    let sig10, cls10;
+    if (sprd < 0) {
+      sig10 = `Yield curve INVERTED (10yr ${ff(b10.cur)}% < 5yr ${ff(b5.cur)}%) \u2014 recession signal. Rate cuts likely ahead.`;
+      cls10 = 'sig-watch';
+    } else if (diff10 > 0.30) {
+      sig10 = `Up +${ff(diff10)}% over month \u2014 long-term inflation expectations rising.`;
+      cls10 = 'sig-watch';
+    } else if (diff10 < -0.30) {
+      sig10 = `Down ${ff(diff10)}% over month \u2014 long-term confidence weakening, easing pressure ahead.`;
+      cls10 = 'sig-wait';
+    } else {
+      sig10 = `Spread +${ff(sprd)}% (normal). 10yr stable (${ff(diff10)}% over month) \u2014 no curve signal.`;
+      cls10 = 'sig-neutral';
     }
+    setSig('b10', sig10, cls10);
+
+    const r5  = cls5.includes('lock')  ? 'lock'  : cls5.includes('wait')  ? 'wait'  : cls5.includes('watch')  ? 'watch'  : 'neutral';
+    const r10 = cls10.includes('lock') ? 'lock'  : cls10.includes('wait') ? 'wait'  : cls10.includes('watch') ? 'watch'  : 'neutral';
+    return [r5, r10];
   }
 
-  // ── CPI — Statistics Canada WDS API (no key, CORS-enabled)
-  // Vector v41690973 = All-items CPI, Canada, not seasonally adjusted (table 18-10-0004-01)
-  // WDS returns observations newest-first; value is the index level (base 2002=100)
-  // We calculate YoY and MoM % change from the raw index values
-  async function loadCPI() {
-    try {
-      const r = await fetch(
-        'https://www150.statcan.gc.ca/t1/wds/rest/getDataFromVectorsAndLatestNPeriods',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify([{ vectorId: 41690973, latestN: 25 }])
-        }
-      );
-      const json = await r.json();
-      // Sort observations newest-first by refPer — API order is not guaranteed
-      const obs  = json[0].object.vectorDataPoint
-                     .slice()
-                     .sort((a, b) => b.refPer.localeCompare(a.refPer));
-      // obs[0] = most recent month, obs[1] = previous month, obs[12] = same month last year
-      const cur     = parseFloat(obs[0].value);
-      const prevMo  = parseFloat(obs[1].value);   // previous month
-      const prevYr  = parseFloat(obs[12].value);  // same month 1 year ago
-      const refDate = (obs[0].refPer || '').slice(0, 7); // trim to YYYY-MM (API returns YYYY-MM-01)
-
-      const yoy = ((cur - prevYr) / prevYr) * 100;
-      const mom = ((cur - prevMo) / prevMo) * 100;
-
-      // Sparkline: 12-month YoY rate for each of the last 13 months, oldest→newest.
-      // Requires 25 periods of index data (each YoY needs the value 12 months prior).
-      // A falling line = inflation rate cooling = good for variable rate holders.
-      const yoyHist = [];
-      for (let i = 12; i >= 0; i--) {
-        const val  = parseFloat(obs[i].value);
-        const yr   = parseFloat(obs[i + 12].value);
-        yoyHist.push(((val - yr) / yr) * 100);
-      }
-      const yoyFirst = yoyHist[0], yoyLast = yoyHist[yoyHist.length - 1];
-
-      sv('val-cpi-yoy', `${ff(yoy, 1)}<span class="unit">% YoY</span>`);
-      sv('val-cpi-mom', `${ff(mom, 2)}<span class="unit">% MoM</span>`);
-      setDot('cpi', yoy > 2.5 ? 'up' : yoy < 1.5 ? 'down' : 'flat');
-      // Green = YoY rate falling (inflation cooling); red = YoY rate rising
-      drawSpark('spark-cpi', yoyHist, yoyLast <= yoyFirst ? '#4ade80' : '#f87171');
-      st('meta-cpi', `All-items CPI · ${refDate} · Source: Statistics Canada`);
-
-      let sig, cls;
-      if      (yoy > 3.0) { sig = `CPI ${ff(yoy,1)}% YoY — well above 2% target. BoC unlikely to cut; may raise.`;    cls = 'sig sig-lock';    }
-      else if (yoy > 2.5) { sig = `CPI ${ff(yoy,1)}% YoY — above target. Limits BoC room to cut rates.`;               cls = 'sig sig-watch';   }
-      else if (yoy < 1.5) { sig = `CPI ${ff(yoy,1)}% YoY — below target. Supports further rate cuts.`;                 cls = 'sig sig-wait';    }
-      else if (yoy < 2.0) { sig = `CPI ${ff(yoy,1)}% YoY — near target, trending lower. Rate cuts remain possible.`;   cls = 'sig sig-wait';    }
-      else                { sig = `CPI ${ff(yoy,1)}% YoY — at target. BoC has flexibility to hold or cut as needed.`;  cls = 'sig sig-neutral'; }
-      setSig('cpi', sig, cls);
-      return cls.includes('lock') ? 'lock' : cls.includes('wait') ? 'wait' : cls.includes('watch') ? 'watch' : 'neutral';
-    } catch {
-      sv('val-cpi-yoy', 'Unavailable'); sv('val-cpi-mom', '');
-      setSig('cpi', 'Could not load CPI data — check connection and refresh.', 'sig sig-loading');
-      return 'neutral';
-    }
+  function renderCPI(cpi) {
+    sv('val-cpi-yoy', `${ff(cpi.yoy, 1)}<span class="unit">% YoY</span>`);
+    sv('val-cpi-mom', `${ff(cpi.mom, 2)}<span class="unit">% MoM</span>`);
+    setDot('cpi', cpi.yoy > 2.5 ? 'up' : cpi.yoy < 1.5 ? 'down' : 'flat');
+    const yoyFirst = cpi.yoy_history[0], yoyLast = cpi.yoy_history[cpi.yoy_history.length - 1];
+    drawSpark('spark-cpi', cpi.yoy_history, yoyLast <= yoyFirst ? '#4ade80' : '#f87171');
+    st('meta-cpi', `All-items CPI \u00b7 ${cpi.ref_date} \u00b7 Source: Statistics Canada`);
+    let sig, cls;
+    if      (cpi.yoy > 3.0) { sig = `CPI ${ff(cpi.yoy,1)}% YoY \u2014 well above 2% target. BoC unlikely to cut; may raise.`;    cls = 'sig-lock';    }
+    else if (cpi.yoy > 2.5) { sig = `CPI ${ff(cpi.yoy,1)}% YoY \u2014 above target. Limits BoC room to cut rates.`;               cls = 'sig-watch';   }
+    else if (cpi.yoy < 1.5) { sig = `CPI ${ff(cpi.yoy,1)}% YoY \u2014 below target. Supports further rate cuts.`;                 cls = 'sig-wait';    }
+    else if (cpi.yoy < 2.0) { sig = `CPI ${ff(cpi.yoy,1)}% YoY \u2014 near target, trending lower. Rate cuts remain possible.`;   cls = 'sig-wait';    }
+    else                    { sig = `CPI ${ff(cpi.yoy,1)}% YoY \u2014 at target. BoC has flexibility to hold or cut as needed.`;  cls = 'sig-neutral'; }
+    setSig('cpi', sig, cls);
+    return cls.includes('lock') ? 'lock' : cls.includes('wait') ? 'wait' : cls.includes('watch') ? 'watch' : 'neutral';
   }
 
-  // ── Generic equity/ETF loader for Twelve Data
-  async function loadEquity(id, symbol, exchange, labelFn, sigFn) {
-    try {
-      const q    = await tdQuote(symbol, exchange);
-      await pause(500);
-      const hist = await tdSeries(symbol, exchange);
-      const cur = parseFloat(q.cur), prev = parseFloat(q.prev);
-      sv('val-' + id, labelFn(cur));
-      sv('chg-' + id, fmtChg(cur, prev));
-      drawSpark('spark-' + id, hist, cur >= hist[0] ? '#4ade80' : '#f87171');
-      setDot(id, cur > prev ? 'up' : 'down');
-      const pct = ((cur - hist[0]) / hist[0]) * 100;
-      const { sig, cls } = sigFn(pct);
-      setSig(id, sig, cls);
-      return cls.replace('sig ', '');
-    } catch (e) {
-      if (e.auth)      { handleAuth(); return 'neutral'; }
-      if (e.rateLimit) { setSig(id, RATE_MSG, 'sig sig-watch'); sv('val-' + id, 'Paused'); return 'neutral'; }
-      sv('val-' + id, 'Unavailable'); setSig(id, FAIL_MSG, 'sig sig-loading'); return 'neutral';
-    }
-  }
-
-  // ── S&P 500 via SPY ETF
+  // ── Equity signal functions (unchanged from v0.3.0)
   function spSignal(pct) {
-    if      (pct < -10) return { sig: `FALLING sharply (${pct.toFixed(1)}% over month) — recession signals. Rate cuts may follow.`, cls: 'sig sig-wait'    };
-    else if (pct <  -3) return { sig: `Declining ${pct.toFixed(1)}% — softening confidence. Watch for BoC response.`,               cls: 'sig sig-watch'   };
-    else if (pct >   5) return { sig: `Rising +${pct.toFixed(1)}% — strong confidence. Rates likely to stay elevated.`,             cls: 'sig sig-neutral' };
-    else                return { sig: `Stable (${pct.toFixed(1)}% over month) — no strong directional signal.`,                     cls: 'sig sig-neutral' };
+    if      (pct < -10) return { sig: `FALLING sharply (${pct.toFixed(1)}% over month) \u2014 recession signals. Rate cuts may follow.`, cls: 'sig sig-wait'    };
+    else if (pct <  -3) return { sig: `Declining ${pct.toFixed(1)}% \u2014 softening confidence. Watch for BoC response.`,               cls: 'sig sig-watch'   };
+    else if (pct >   5) return { sig: `Rising +${pct.toFixed(1)}% \u2014 strong confidence. Rates likely to stay elevated.`,             cls: 'sig sig-neutral' };
+    else                return { sig: `Stable (${pct.toFixed(1)}% over month) \u2014 no strong directional signal.`,                     cls: 'sig sig-neutral' };
   }
-  const loadSP = () => loadEquity('sp',  'SPY',    null,  cur => `${Math.round(cur).toLocaleString()}<span class="unit">SPY</span>`,   spSignal);
-
-  // ── TSX via EWC (iShares MSCI Canada ETF, NYSE Arca — US-listed)
-  // GSPTSE and XIU.TO both return 404 on Twelve Data free plan.
-  // Free tier only covers US-listed instruments and forex pairs.
-  // EWC tracks Canadian large-cap equities; correlation to TSX Composite >0.95.
-  // Priced in USD. Works on free tier (NYSE Arca listed).
   function tsxSignal(pct) {
-    if      (pct < -10) return { sig: `FALLING sharply (${pct.toFixed(1)}% over month) — Canadian recession signals. Rate cuts may follow.`, cls: 'sig sig-wait'    };
-    else if (pct <  -3) return { sig: `Declining ${pct.toFixed(1)}% — softening Canadian confidence. Watch for BoC response.`,                cls: 'sig sig-watch'   };
-    else if (pct >   5) return { sig: `Rising +${pct.toFixed(1)}% — strong Canadian confidence. Rates likely to stay elevated.`,              cls: 'sig sig-neutral' };
-    else                return { sig: `Stable (${pct.toFixed(1)}% over month) — no strong directional signal.`,                               cls: 'sig sig-neutral' };
+    if      (pct < -10) return { sig: `FALLING sharply (${pct.toFixed(1)}% over month) \u2014 Canadian recession signals. Rate cuts may follow.`, cls: 'sig sig-wait'    };
+    else if (pct <  -3) return { sig: `Declining ${pct.toFixed(1)}% \u2014 softening Canadian confidence. Watch for BoC response.`,                cls: 'sig sig-watch'   };
+    else if (pct >   5) return { sig: `Rising +${pct.toFixed(1)}% \u2014 strong Canadian confidence. Rates likely to stay elevated.`,              cls: 'sig sig-neutral' };
+    else                return { sig: `Stable (${pct.toFixed(1)}% over month) \u2014 no strong directional signal.`,                               cls: 'sig sig-neutral' };
   }
-  const loadTSX = () => loadEquity('tsx', 'EWC',    null,  cur => `$${ff(cur)}<span class="unit">USD</span>`, tsxSignal);
-
-  // ── Crude Oil via USO ETF
   function oilSignal(pct) {
-    if      (pct >  15) return { sig: `Spiking +${pct.toFixed(1)}% over month — inflation pressure. BoC less likely to cut.`, cls: 'sig sig-lock'    };
-    else if (pct >   5) return { sig: `Rising +${pct.toFixed(1)}% — modest inflation pressure. Watch BoC.`,                   cls: 'sig sig-watch'   };
-    else if (pct < -10) return { sig: `Falling ${pct.toFixed(1)}% — reduced inflation pressure. Supports cuts.`,              cls: 'sig sig-wait'    };
-    else                return { sig: `Stable (${pct.toFixed(1)}% over month) — no significant inflation signal.`,            cls: 'sig sig-neutral' };
-  }
-  const loadOil = () => loadEquity('oil', 'USO',    null,  cur => `$${ff(cur)}<span class="unit">USD</span>`,                         oilSignal);
-
-  // ── CAD/USD
-  async function loadCAD() {
-    try {
-      const q    = await tdQuote('CAD/USD');
-      await pause(500);
-      const hist = await tdSeries('CAD/USD');
-      const cur = parseFloat(q.cur), prev = parseFloat(q.prev);
-      sv('val-cad', `${ff(cur, 4)}<span class="unit">USD</span>`);
-      sv('chg-cad', fmtChg(cur, prev));
-      drawSpark('spark-cad', hist, cur >= hist[0] ? '#4ade80' : '#f87171');
-      setDot('cad', cur > prev ? 'up' : 'down');
-      const pct = ((cur - hist[0]) / hist[0]) * 100;
-      if      (pct < -3) { setSig('cad', `CAD weakening ${pct.toFixed(1)}% over month — stress signal. BoC may respond.`, 'sig sig-watch');   return 'watch'; }
-      else if (pct >  3) { setSig('cad', `CAD strengthening +${pct.toFixed(1)}% — foreign confidence rising.`,             'sig sig-neutral'); return 'neutral'; }
-      else               { setSig('cad', `CAD stable (${pct.toFixed(1)}% over month) — no significant stress signal.`,     'sig sig-neutral'); return 'neutral'; }
-    } catch (e) {
-      if (e.auth)      { handleAuth(); return 'neutral'; }
-      if (e.rateLimit) { setSig('cad', RATE_MSG, 'sig sig-watch'); sv('val-cad', 'Paused'); return 'neutral'; }
-      sv('val-cad', 'Unavailable'); setSig('cad', FAIL_MSG, 'sig sig-loading'); return 'neutral';
-    }
+    if      (pct >  15) return { sig: `Spiking +${pct.toFixed(1)}% over month \u2014 inflation pressure. BoC less likely to cut.`, cls: 'sig sig-lock'    };
+    else if (pct >   5) return { sig: `Rising +${pct.toFixed(1)}% \u2014 modest inflation pressure. Watch BoC.`,                   cls: 'sig sig-watch'   };
+    else if (pct < -10) return { sig: `Falling ${pct.toFixed(1)}% \u2014 reduced inflation pressure. Supports cuts.`,              cls: 'sig sig-wait'    };
+    else                return { sig: `Stable (${pct.toFixed(1)}% over month) \u2014 no significant inflation signal.`,            cls: 'sig sig-neutral' };
   }
 
-  // ── Overall verdict
+  // renderEquity: generic loader for SP, TSX, Oil — preserves v0.3.0 return behaviour
+  function renderEquity(id, data, labelFn, sigFn) {
+    sv('val-' + id, labelFn(data.cur));
+    sv('chg-' + id, fmtChg(data.cur, data.prev));
+    drawSpark('spark-' + id, data.history, data.cur >= data.history[0] ? '#4ade80' : '#f87171');
+    setDot(id, data.cur > data.prev ? 'up' : 'down');
+    const pct = ((data.cur - data.history[0]) / data.history[0]) * 100;
+    const { sig, cls } = sigFn(pct);
+    setSig(id, sig, cls);
+    return cls.replace('sig ', ''); // preserves v0.3.0 return value
+  }
+
+  // renderCAD: inline — returns verdict string directly (matches v0.3.0 loadCAD behaviour)
+  function renderCAD(cad) {
+    sv('val-cad', `${ff(cad.cur, 4)}<span class="unit">USD</span>`);
+    sv('chg-cad', fmtChg(cad.cur, cad.prev));
+    drawSpark('spark-cad', cad.history, cad.cur >= cad.history[0] ? '#4ade80' : '#f87171');
+    setDot('cad', cad.cur > cad.prev ? 'up' : 'down');
+    const pct = ((cad.cur - cad.history[0]) / cad.history[0]) * 100;
+    if      (pct < -3) { setSig('cad', `CAD weakening ${pct.toFixed(1)}% over month \u2014 stress signal. BoC may respond.`, 'sig sig-watch');   return 'watch'; }
+    else if (pct >  3) { setSig('cad', `CAD strengthening +${pct.toFixed(1)}% \u2014 foreign confidence rising.`,             'sig sig-neutral'); return 'neutral'; }
+    else               { setSig('cad', `CAD stable (${pct.toFixed(1)}% over month) \u2014 no significant stress signal.`,     'sig sig-neutral'); return 'neutral'; }
+  }
+
+  // ── Overall verdict (unchanged from v0.3.0)
   function buildVerdict(sigs) {
     const locks   = sigs.filter(s => s === 'lock').length;
     const waits   = sigs.filter(s => s === 'wait').length;
     const watches = sigs.filter(s => s === 'watch').length;
     let txt, tags = [];
     if (locks >= 2) {
-      txt = `Multiple signals pointing toward locking in a fixed rate — rising rates or inflation pressure detected across ${locks} indicator${locks > 1 ? 's' : ''}. If your variable rate is creating payment stress, this environment favours locking.`;
+      txt = `Multiple signals pointing toward locking in a fixed rate \u2014 rising rates or inflation pressure detected across ${locks} indicator${locks > 1 ? 's' : ''}. If your variable rate is creating payment stress, this environment favours locking.`;
       tags.push({ l: `${locks} lock signal${locks > 1 ? 's' : ''}`, c: 'lock' });
       if (waits) tags.push({ l: `${waits} counter-signal${waits > 1 ? 's' : ''}`, c: 'wait' });
     } else if (waits >= 2) {
-      txt = `Multiple signals suggest rates may ease — ${waits} indicator${waits > 1 ? 's' : ''} point toward possible cuts ahead. If you can absorb payment variability, staying variable may save money over the coming months.`;
+      txt = `Multiple signals suggest rates may ease \u2014 ${waits} indicator${waits > 1 ? 's' : ''} point toward possible cuts ahead. If you can absorb payment variability, staying variable may save money over the coming months.`;
       tags.push({ l: `${waits} stay-variable signal${waits > 1 ? 's' : ''}`, c: 'wait' });
       if (locks) tags.push({ l: `${locks} lock signal${locks > 1 ? 's' : ''}`, c: 'lock' });
     } else if (watches >= 2) {
-      txt = `Mixed picture — some pressure building but no clear direction yet. Watch the BoC rate, bond yields and CPI closely before making a decision.`;
+      txt = `Mixed picture \u2014 some pressure building but no clear direction yet. Watch the BoC rate, bond yields and CPI closely before making a decision.`;
       tags.push({ l: `${watches} watch signal${watches > 1 ? 's' : ''}`, c: 'watch' });
     } else {
-      txt = `Signals are mixed or neutral — no strong pressure in either direction. Use this time to assess your personal tolerance for variable rate risk rather than reacting to market noise.`;
+      txt = `Signals are mixed or neutral \u2014 no strong pressure in either direction. Use this time to assess your personal tolerance for variable rate risk rather than reacting to market noise.`;
       tags.push({ l: 'No dominant signal', c: '' });
     }
     st('verdict-text', txt);
@@ -774,142 +565,72 @@
   }
   $('note-save-btn').addEventListener('click', saveNote);
 
-  // ── Refresh throttle
-  // Twelve Data calls per refresh: SPY×2 + EWC×2 + USO×2 + CAD/USD×2 = 8 calls
-  // Sequenced with 8s gaps between symbols. 90s cooldown prevents burst overrun.
-  const COOLDOWN_MS = 90_000;
-  let lastRefresh = 0, cooldownTimer = null;
+  // ── Error banner
+  function showError(msg) { st('error-detail', msg); $('error-banner').classList.add('show'); }
+  function hideError()    { $('error-banner').classList.remove('show'); }
 
-  function startCooldown() {
-    const cd = $('cooldown-msg'), btn = $('refresh-btn');
-    btn.disabled = true; cd.style.display = 'inline';
-    let remaining = Math.ceil(COOLDOWN_MS / 1000);
-    cd.textContent = `next refresh in ${remaining}s`;
-    clearInterval(cooldownTimer);
-    cooldownTimer = setInterval(() => {
-      remaining--;
-      if (remaining <= 0) {
-        clearInterval(cooldownTimer);
-        cd.style.display = 'none'; cd.textContent = '';
-        btn.disabled = false; btn.textContent = '↻ Refresh';
-      } else {
-        cd.textContent = `next refresh in ${remaining}s`;
-      }
-    }, 1000);
-  }
+  const UNAVAIL = '[DATA UNAVAILABLE]';
 
-  // ── Main load
-  // BoC, Bond, CPI use government APIs (no TD quota) — fire first in parallel.
-  // Twelve Data calls sequenced with 8s gaps between symbols.
+  // ── Main load — fetch /data/indicators.json, render all cards
   async function loadAll() {
-    if (!getKey()) { openKey(); return; }
-    const now = Date.now();
-    if (now - lastRefresh < COOLDOWN_MS && lastRefresh > 0) {
-      const wait = Math.ceil((COOLDOWN_MS - (now - lastRefresh)) / 1000);
-      const cd = $('cooldown-msg');
-      cd.style.display = 'inline'; cd.textContent = `please wait ${wait}s`;
-      setTimeout(() => { cd.style.display = 'none'; cd.textContent = ''; }, 2500);
-      return;
-    }
-    lastRefresh = Date.now();
     const btn = $('refresh-btn');
-    btn.disabled = true; btn.textContent = '↻ Loading…';
+    btn.disabled = true; btn.textContent = '\u21bb Loading\u2026';
+    hideError();
 
-    // Government APIs — parallel, no quota
-    const [bocResult, [b5Result, b10Result], cpiResult] = await Promise.all([
-      loadBoC(), loadBonds(), loadCPI()
-    ]);
+    try {
+      const resp = await fetch('/data/indicators.json');
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const d = await resp.json();
 
-    // Twelve Data — sequenced to stay within 8 calls/minute
-    const spResult  = await loadSP();
-    await pause(8000);
-    const tsxResult = await loadTSX();
-    await pause(8000);
-    const oilResult = await loadOil();
-    await pause(8000);
-    const cadResult = await loadCAD();
+      // Partial Lambda failures surfaced via the errors key
+      if (d.errors && Object.keys(d.errors).length) {
+        showError(`Lambda could not fetch: ${Object.keys(d.errors).join(', ')}. Details: ${JSON.stringify(d.errors)}`);
+      }
 
-    buildVerdict([bocResult, b5Result, b10Result, cpiResult, spResult, tsxResult, oilResult, cadResult]);
-    st('ts', 'Last updated: ' + new Date().toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short' }));
-    startCooldown();
+      const sigs = [];
+
+      if (d.boc)   { sigs.push(renderBoC(d.boc)); }
+      else         { setSig('boc', `${UNAVAIL} BoC rate feed failed \u2014 see error above.`, 'sig-loading'); sigs.push('neutral'); }
+
+      if (d.bonds) { sigs.push(...renderBonds(d.bonds)); }
+      else         { ['b5','b10'].forEach(id => setSig(id, `${UNAVAIL} Bond yield feed failed.`, 'sig-loading')); sigs.push('neutral', 'neutral'); }
+
+      if (d.cpi)   { sigs.push(renderCPI(d.cpi)); }
+      else         { setSig('cpi', `${UNAVAIL} CPI feed failed.`, 'sig-loading'); sigs.push('neutral'); }
+
+      if (d.sp)    { sigs.push(renderEquity('sp',  d.sp,  cur => `${Math.round(cur).toLocaleString()}<span class="unit">SPY</span>`, spSignal)); }
+      else         { setSig('sp',  `${UNAVAIL} S&P 500 feed failed.`, 'sig-loading'); sigs.push('neutral'); }
+
+      if (d.tsx)   { sigs.push(renderEquity('tsx', d.tsx, cur => `$${ff(cur)}<span class="unit">USD</span>`, tsxSignal)); }
+      else         { setSig('tsx', `${UNAVAIL} TSX feed failed.`, 'sig-loading'); sigs.push('neutral'); }
+
+      if (d.oil)   { sigs.push(renderEquity('oil', d.oil, cur => `$${ff(cur)}<span class="unit">USD</span>`, oilSignal)); }
+      else         { setSig('oil', `${UNAVAIL} Crude oil feed failed.`, 'sig-loading'); sigs.push('neutral'); }
+
+      if (d.cad)   { sigs.push(renderCAD(d.cad)); }
+      else         { setSig('cad', `${UNAVAIL} CAD/USD feed failed.`, 'sig-loading'); sigs.push('neutral'); }
+
+      buildVerdict(sigs);
+
+      const genAt = d.generated_at
+        ? new Date(d.generated_at).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Halifax' }) + ' ADT'
+        : 'unknown';
+      st('ts', `Data generated: ${genAt}`);
+
+    } catch (err) {
+      showError(`[FEED UNREACHABLE] Could not load /data/indicators.json \u2014 ${err.message}. The data pipeline may be down. All signals are unavailable.`);
+      ['boc','b5','b10','cpi','sp','tsx','oil','cad'].forEach(id =>
+        setSig(id, `${UNAVAIL} Feed unreachable \u2014 see error banner above.`, 'sig-loading')
+      );
+      st('verdict-text', 'Data unavailable \u2014 cannot compute signals.');
+      $('verdict-tags').innerHTML = '';
+      st('ts', '');
+    } finally {
+      btn.disabled = false; btn.textContent = '\u21bb Refresh';
+    }
   }
 
   $('refresh-btn').addEventListener('click', loadAll);
-
-  // ── Diagnostics
-  const diagOut = $('diag-out');
-  function diagLog(msg) {
-    diagOut.style.display = 'block';
-    diagOut.textContent += msg + '\n';
-  }
-  function diagClear() { diagOut.textContent = ''; diagOut.style.display = 'none'; }
-
-  async function diagFetch(label, url) {
-    diagLog(`── ${label}`);
-    diagLog(`   URL: ${url.replace(/apikey=[^&]+/, 'apikey=REDACTED')}`);
-    try {
-      const r   = await fetch(url);
-      const raw = await r.text();
-      diagLog(`   HTTP status: ${r.status}`);
-      try {
-        const d = JSON.parse(raw);
-        diagLog(`   Response: ${JSON.stringify(d, null, 2).slice(0, 800)}`);
-      } catch {
-        diagLog(`   Response (raw): ${raw.slice(0, 400)}`);
-      }
-    } catch (e) {
-      diagLog(`   Network error: ${e.message}`);
-    }
-    diagLog('');
-  }
-
-  $('diag-quote-btn').addEventListener('click', async () => {
-    if (!getKey()) { diagLog('No API key saved — click ⚙ API key first.'); return; }
-    diagClear();
-    diagLog(`Testing at ${new Date().toLocaleTimeString()}\n`);
-    await diagFetch(
-      'quote  GSPTSE exchange=TSX',
-      `${TD}/quote?symbol=GSPTSE&exchange=TSX&apikey=${getKey()}`
-    );
-    await diagFetch(
-      'quote  GSPTSE no exchange param',
-      `${TD}/quote?symbol=GSPTSE&apikey=${getKey()}`
-    );
-  });
-
-  $('diag-series-btn').addEventListener('click', async () => {
-    if (!getKey()) { diagLog('No API key saved — click ⚙ API key first.'); return; }
-    diagClear();
-    diagLog(`Testing at ${new Date().toLocaleTimeString()}\n`);
-    await diagFetch(
-      'time_series  GSPTSE exchange=TSX',
-      `${TD}/time_series?symbol=GSPTSE&exchange=TSX&interval=1day&outputsize=5&apikey=${getKey()}`
-    );
-    await diagFetch(
-      'time_series  GSPTSE no exchange param',
-      `${TD}/time_series?symbol=GSPTSE&interval=1day&outputsize=5&apikey=${getKey()}`
-    );
-  });
-
-  $('diag-xiu-btn').addEventListener('click', async () => {
-    if (!getKey()) { diagLog('No API key saved — click ⚙ API key first.'); return; }
-    diagClear();
-    diagLog(`Testing XIU.TO fallback at ${new Date().toLocaleTimeString()}\n`);
-    await diagFetch(
-      'quote  XIU.TO exchange=TSX',
-      `${TD}/quote?symbol=XIU.TO&exchange=TSX&apikey=${getKey()}`
-    );
-    await diagFetch(
-      'quote  XIU.TO no exchange param',
-      `${TD}/quote?symbol=XIU.TO&apikey=${getKey()}`
-    );
-    await diagFetch(
-      'time_series  XIU.TO outputsize=5',
-      `${TD}/time_series?symbol=XIU.TO&interval=1day&outputsize=5&apikey=${getKey()}`
-    );
-  });
-
-  $('diag-clear-btn').addEventListener('click', diagClear);
 
   // ── Init
   renderNotes();

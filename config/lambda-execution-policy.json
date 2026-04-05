@@ -1,0 +1,21 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "S3WriteIndicators",
+      "Effect": "Allow",
+      "Action": "s3:PutObject",
+      "Resource": "arn:aws:s3:::<S3_BUCKET_NAME>/data/indicators.json"
+    },
+    {
+      "Sid": "CloudWatchLogs",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "arn:aws:logs:ca-central-1:<AWS_ACCOUNT_ID>:log-group:/aws/lambda/<ECON_LAMBDA_FUNCTION_NAME>:*"
+    }
+  ]
+}

@@ -102,6 +102,41 @@ Stages are defined in `docs/STAGES.md`.
 
 ---
 
+## Stage 6 — Economic Indicators Dashboard
+
+### Stage 1 — Document origin (Complete — 2026-04-04)
+- [x] Blog post published: `econ-stage-1-post.md`
+
+### Stage 2 — Hugo integration (Complete — 2026-04-04)
+- [x] Dashboard deployed at `/projects/econ/interest-rate/` (v0.3.0 static HTML)
+- [x] Project page at `/projects/econ-indicators/` with context and launch button
+- [x] Blog post published: `econ-stage-2-post.md`
+- [x] Cross-links between Stage 1 and Stage 2 posts
+
+### Stage 3 — Server-side data fetching (In progress)
+- [x] `indicators.json` schema confirmed
+- [x] Lambda written: `lambda/indicators.py`
+- [x] Dashboard rewritten: v0.4.0 — single JSON fetch, no API key, no cooldown, error banner
+- [x] Blog post drafted: `econ-stage-3-post.md` (draft: true — publish when Lambda is live)
+- [x] Lambda execution IAM policy: `config/lambda-execution-policy.json`
+- [x] Lambda trust policy: `config/lambda-trust-policy.json`
+- [x] GitHub Actions deploy step added to `deploy.yml`
+- [x] Deploy role `iam-permissions-policy.json` updated: added `lambda:UpdateFunctionCode`
+- [x] Setup runbook: `config/runbook-econ-dashboard.md`
+- [ ] Create Lambda execution IAM role in AWS
+- [ ] Create Lambda function (`<ECON_LAMBDA_FUNCTION_NAME>`) in AWS
+- [ ] Set Lambda environment variables (TD_API_KEY, S3_BUCKET, S3_KEY)
+- [ ] Create EventBridge schedule (every 30 minutes)
+- [ ] Add CloudFront cache behavior for `/data/*` (TTL: 1800s)
+- [ ] Add `ECON_LAMBDA_FUNCTION_NAME` GitHub Actions variable
+- [ ] Update deploy role inline policy (add lambda:UpdateFunctionCode)
+- [ ] Test Lambda manually — verify indicators.json written to S3
+- [ ] Validate dashboard end-to-end on live site
+- [ ] Publish econ-stage-3-post.md (set draft: false)
+- [ ] Tag: v0.4.0
+
+---
+
 ## Parking Lot — Open
 
 - Confirm 5 domain variants in Websavers dashboard before July 14, 2026 — keep minimum 3, let remainder lapse
@@ -110,3 +145,4 @@ Stages are defined in `docs/STAGES.md`.
 - Analytics — simple, privacy-respecting option (Plausible, Fathom, or none)
 - Favicon — generate proper favicon files from tace.logo.png using favicon.io or realfavicongenerator.net; add favicon.ico, favicon-16x16.png, favicon-32x32.png to hugo/static/; remove params.assets overrides from hugo.toml
 - IAM identity audit — resolve cross-contamination between AWS identities (oar-xxxx used for tacedata operations); ensure tacedata infrastructure actions use a dedicated tacedata IAM identity with appropriate Synthetics, CloudWatch, and canary management permissions
+- Scheduled rebuild — add a GitHub Actions workflow on a daily cron schedule to trigger a Hugo rebuild; enables future-dated posts to publish automatically without a manual push

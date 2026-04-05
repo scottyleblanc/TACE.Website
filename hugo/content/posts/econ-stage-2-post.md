@@ -6,7 +6,7 @@ tags: ["hugo", "aws", "portfolio", "economics", "canada"]
 summary: "second post in the series: giving the dashboard a proper home on tacedata.ca and the decisions that went into it."
 ---
 
-# A Proper Home — Moving the Dashboard Into the Hugo Site
+### A Proper Home — Moving the Dashboard Into the Hugo Site
 
 *This is the second post in a series documenting the build-out of a Canadian economic indicators dashboard. [Stage 1](/posts/econ-stage-1-post/) covered the original problem, what was built, and where the constraints came from.*
 
@@ -18,7 +18,7 @@ Stage 2 has a narrow goal: give the dashboard a proper home on tacedata.ca. That
 
 ---
 
-## The first question: how should it be embedded?
+### The first question: how should it be embedded?
 
 There is a meaningful difference between *embedding* a tool and *linking* to one. Hugo is a static site generator. The tacedata.ca site is built around PaperMod, a clean, document-oriented theme — navigation header, text-first layout, light and dark modes.
 
@@ -30,7 +30,7 @@ The right answer was simple: link to it. The project page carries the context �
 
 ---
 
-## Where things ended up
+### Where things ended up
 
 The dashboard lives at `/projects/econ/interest-rate/` as a static HTML file under Hugo's `static/` directory. Files placed there are passed through unchanged — no template wrapping, no PaperMod chrome, just the file served as-is. That is the right choice for a self-contained app with its own design language.
 
@@ -40,7 +40,7 @@ A button at the bottom of the limitations section links through to the dashboard
 
 ---
 
-## What didn't change
+### What didn't change
 
 Everything inside the dashboard HTML is identical to v0.3.0. This is deliberate.
 
@@ -50,13 +50,13 @@ The principle worth keeping for any staged build: do one thing per stage, and le
 
 ---
 
-## What comes next
+### What comes next
 
 Stage 3 moves all data fetching server-side. A Lambda function on an EventBridge schedule fetches all eight indicators, writes a JSON file to S3, and the dashboard becomes a simple display layer that reads a cached file on load rather than calling eight upstream APIs directly.
 
 That eliminates the API key requirement, the 32-second load time, the 90-second cooldown, and the CORS restrictions that forced the ETF proxy choices. It also opens the door to better data sources — direct TSX data, direct WTI/USD pricing, and a more robust bond yield feed not subject to BoC benchmark transition gaps.
 
-That is the next post.
+That is the [next post](/posts/econ-stage-3-post/).
 
 ---
 

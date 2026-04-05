@@ -6,7 +6,7 @@ tags: ["ai", "claude", "canada", "mortgage", "economics", "html", "twelve-data",
 summary: "first post in a series documenting the build-out of a Canadian economic indicators dashboard."
 ---
 
-# From a Real Question to a Working Tool — and Why That's Just the Beginning
+### From a Real Question to a Working Tool — and Why That's Just the Beginning
 
 *This is the first post in a series documenting the build-out of a Canadian economic indicators dashboard. The series covers the full arc: a genuine financial question, a working prototype built with AI, the constraints that emerged from that design, and the architectural decisions made to overcome them — using AWS, Hugo, GitHub Actions, and AI as collaborative tools throughout.*
 
@@ -16,7 +16,7 @@ With a proper foundation now in place — a Hugo site, AWS infrastructure, and a
 
 ---
 
-## The original problem
+### The original problem
 
 Earlier this year, facing a mortgage renewal, I had a straightforward but genuinely difficult question: should I lock in a fixed rate, or stay variable and ride out wherever the Bank of Canada takes things?  I also had basic questions about foundational economics - what is the bond yield?  Why does the relationship between 10yr and 5yr bond prices? and how inflation factor in? (etc)  Why does it feel like the Strait of Hormuz will have an impact on my personal finances?
 
@@ -44,7 +44,7 @@ That framework was useful on its own. But the obvious next question: could this 
 
 ---
 
-## What got built
+### What got built
 
 The answer was yes, and faster than expected. Working with Claude iteratively over several sessions, a single-file HTML dashboard came together that pulls live data for all eight indicators and translates each one into a plain-English signal.
 
@@ -69,7 +69,7 @@ For anyone who wants to run it: it's a single HTML file, no installation, no ser
 
 ---
 
-## Where it started to break
+### Where it started to break
 
 The dashboard works. It solves the original problem. But once you start using it across devices, or think about sharing it, or look closely at where the data actually comes from, the constraints become visible.
 
@@ -89,7 +89,7 @@ None of these are failures. They're the natural ceiling of a browser-only design
 
 ---
 
-## What this is really about
+### What this is really about
 
 There's a pattern worth naming directly, because it's the real subject of this series.
 
@@ -105,7 +105,7 @@ But all three are solvable with a different architecture. And solving them is th
 
 ---
 
-## What comes next
+### What comes next
 
 The dashboard currently lives as a standalone HTML file. The next stage moves it into the Hugo site properly, then migrates data fetching to AWS — a Lambda function that runs on a schedule, fetches all eight indicators server-side, writes the results to S3, and lets the dashboard become a pure display layer.
 
