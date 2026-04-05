@@ -3,9 +3,13 @@
 Active build checklist. Items move to STAGES.md (complete section) when done.
 Stages are defined in `docs/STAGES.md`.
 
+Two tracks:
+- **Track 1 (1.x)** — Website build (Hugo, AWS pipeline, DNS, content, monitoring, security)
+- **Track 2 (2.x)** — Economic Indicators Dashboard (econ-scaffold stages)
+
 ---
 
-## Stage 1 — Hugo Evaluation (Complete)
+## Stage 1.1 — Hugo Evaluation (Complete)
 
 - [x] Install Hugo Extended locally (`winget install Hugo.Hugo.Extended`)
 - [x] Run `hugo new site hugo-eval` to initialize site structure
@@ -19,7 +23,7 @@ Stages are defined in `docs/STAGES.md`.
 
 ---
 
-## Stage 2 — Email Migration (Complete)
+## Stage 1.2 — Email Migration (Complete)
 
 - [x] Create Fastmail account; add tacedata.ca as custom domain (scott.leblanc@tacedata.ca)
 - [x] Add Fastmail TXT record to Websavers DNS for domain verification
@@ -30,7 +34,7 @@ Stages are defined in `docs/STAGES.md`.
 
 ---
 
-## Stage 3 — AWS Pipeline (Complete)
+## Stage 1.3 — AWS Pipeline (Complete)
 
 - [x] Create S3 bucket for Hugo output (private, CloudFront access only) — <S3_BUCKET_NAME>/tacedata-site/
 - [x] Create CloudFront distribution pointing at S3 bucket — <CLOUDFRONT_DOMAIN>
@@ -43,7 +47,7 @@ Stages are defined in `docs/STAGES.md`.
 
 ---
 
-## Stage 4 — Content (Complete — 2026-04-03)
+## Stage 1.4 — Content (Complete — 2026-04-03)
 
 - [x] Contact page published
 - [x] Economy Dashboard deployed at `/ai/projects/econ/` (static HTML, no auth required)
@@ -55,7 +59,7 @@ Stages are defined in `docs/STAGES.md`.
 
 ---
 
-## Stage 5 — Domain Cutover (Complete — 2026-04-03)
+## Stage 1.5 — Domain Cutover (Complete — 2026-04-03)
 
 - [x] Create Route 53 hosted zone for `tacedata.ca`
 - [x] Replicate all existing DNS records into Route 53 — including Fastmail MX records
@@ -77,7 +81,7 @@ Stages are defined in `docs/STAGES.md`.
 
 ---
 
-## Post-Launch — Monitoring (Complete — 2026-04-03)
+## Stage 1.6 — Monitoring (Complete — 2026-04-03)
 
 - [x] CloudWatch Synthetics canary — checks https://tacedata.ca every 5 minutes
 - [x] CloudWatch Alarm — 2 consecutive failures triggers SNS email alert
@@ -88,7 +92,7 @@ Stages are defined in `docs/STAGES.md`.
 
 ---
 
-## Post-Launch — Security Remediation (Complete — 2026-04-04)
+## Stage 1.7 — Security Remediation (Complete — 2026-04-04)
 
 - [x] Security review conducted — 2 HIGH, 2 MEDIUM, 2 LOW, 1 INFO findings
 - [x] [HIGH] Scrub AWS resource identifiers from current files
@@ -102,22 +106,27 @@ Stages are defined in `docs/STAGES.md`.
 
 ---
 
-## Stage 6 — Economic Indicators Dashboard
+## Stage 2.1 — Econ Dashboard: Document Origin (Complete — 2026-04-04)
 
-### Stage 1 — Document origin (Complete — 2026-04-04)
 - [x] Blog post published: `econ-stage-1-post.md`
 
-### Stage 2 — Hugo integration (Complete — 2026-04-04)
+---
+
+## Stage 2.2 — Econ Dashboard: Hugo Integration (Complete — 2026-04-04)
+
 - [x] Dashboard deployed at `/projects/econ/interest-rate/` (v0.3.0 static HTML)
 - [x] Project page at `/projects/econ-indicators/` with context and launch button
 - [x] Blog post published: `econ-stage-2-post.md`
-- [x] Cross-links between Stage 1 and Stage 2 posts
+- [x] Cross-links between Stage 2.1 and Stage 2.2 posts
 
-### Stage 3 — Server-side data fetching (In progress)
+---
+
+## Stage 2.3 — Econ Dashboard: Server-Side Data Fetching (Complete — 2026-04-05)
+
 - [x] `indicators.json` schema confirmed
 - [x] Lambda written: `lambda/indicators.py`
 - [x] Dashboard rewritten: v0.4.0 — single JSON fetch, no API key, no cooldown, error banner
-- [x] Blog post drafted: `econ-stage-3-post.md` (draft: true — publish when Lambda is live)
+- [x] Blog post published: `econ-stage-3-post.md`
 - [x] Lambda execution IAM policy: `config/lambda-execution-policy.json`
 - [x] Lambda trust policy: `config/lambda-trust-policy.json`
 - [x] GitHub Actions deploy step added to `deploy.yml`
@@ -132,8 +141,47 @@ Stages are defined in `docs/STAGES.md`.
 - [x] Update deploy role inline policy (add lambda:UpdateFunctionCode)
 - [x] Test Lambda manually — verify indicators.json written to S3
 - [x] Validate dashboard end-to-end on live site
-- [x] Publish econ-stage-3-post.md (set draft: false)
-- [ ] Tag: v0.4.0
+- [x] Tag: econ-v0.4.0
+
+---
+
+## Stage 2.4 — Econ Dashboard: Data Source Upgrades (In Progress)
+
+Goal: replace ETF proxies with direct sources now that CORS is no longer a constraint.
+
+- [ ] Evaluate Twelve Data paid plan ($29/month) vs. mixing free sources (FRED, EIA, Nasdaq Data Link)
+- [ ] Decision: TSX — GSPTSE or XIU.TO (Twelve Data paid) vs. alternative
+- [ ] Decision: Crude Oil — WTI/USD directly (Twelve Data paid, or FRED/EIA)
+- [ ] Decision: GoC bond yields — keep BoC Valet or switch to FRED/Nasdaq Data Link
+- [ ] Implement approved source changes in `lambda/indicators.py`
+- [ ] Update dashboard HTML if any field names or schema changes
+- [ ] Update `econ-scaffold.md` — schema section, data sources table, known constraints
+- [ ] Blog post: `econ-stage-4-post.md`
+- [ ] Tag: econ-v0.5.0
+
+---
+
+## Stage 2.5 — Econ Dashboard: Historical Storage (Planned)
+
+Goal: Lambda writes a timestamped snapshot to DynamoDB each run. Dashboard gains 3-month and 6-month sparkline options.
+
+- [ ] DynamoDB table design
+- [ ] Lambda write logic (append snapshot each run)
+- [ ] Dashboard UI — period selector (30-day / 3-month / 6-month)
+- [ ] Blog post: `econ-stage-5-post.md`
+- [ ] Tag: econ-v0.6.0
+
+---
+
+## Stage 2.6 — Econ Dashboard: Threshold Alerting (Planned)
+
+Goal: Lambda detects threshold crossings and publishes to SNS → email.
+
+- [ ] Define trigger conditions (5yr yield +0.3% in a week, CPI > 3%, yield curve inversion)
+- [ ] Lambda threshold detection logic
+- [ ] SNS topic and email subscription
+- [ ] Blog post: `econ-stage-6-post.md`
+- [ ] Tag: econ-v0.7.0
 
 ---
 

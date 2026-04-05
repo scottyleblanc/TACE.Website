@@ -110,13 +110,13 @@ Verdict logic: `locks >= 2` → lock paragraph; `waits >= 2` → wait paragraph;
 
 The project is being built and documented in stages. Each stage is a blog post on tacedata.ca. **Do not skip stages or implement future-stage work speculatively.** Each stage must leave the dashboard fully functional — no broken intermediate states.
 
-### Stage 1 — Document the origin ✅ COMPLETE
+### Stage 2.1 — Document the origin ✅ COMPLETE
 Blog post written. Covers the original problem, what was built, the constraints that emerged, and the architectural intent going forward.
 
-### Stage 2 — Hugo integration ✅ COMPLETE
+### Stage 2.2 — Hugo integration ✅ COMPLETE
 Dashboard at `/projects/econ/interest-rate/`. Project page at `/projects/econ-indicators/`. Blog post published.
 
-### Stage 3 — AWS data fetching migration ✅ COMPLETE
+### Stage 2.3 — AWS data fetching migration ✅ COMPLETE
 Lambda `econ-indicators` (Python 3.12) runs every 30 minutes via EventBridge, writes `tacedata-site/data/indicators.json` to S3. Dashboard v0.4.0 fetches that file on load — no API key, no cooldown, no CORS constraints.
 
 **Architecture:**
@@ -165,7 +165,7 @@ Browser (CloudFront)
 }
 ```
 
-### Stage 4 — Data source upgrades
+### Stage 2.4 — Data source upgrades
 **Goal:** Now that CORS is no longer a constraint, replace ETF proxies with direct sources where beneficial.
 
 **Candidates:**
@@ -175,12 +175,12 @@ Browser (CloudFront)
 
 **Decision point:** Evaluate whether Twelve Data paid plan ($29/month) unlocks everything needed, or whether mixing sources (e.g. FRED for bond yields, Twelve Data for equities) is preferable. Blog post documents the evaluation.
 
-### Stage 5 — Historical storage
+### Stage 2.5 — Historical storage
 **Goal:** Lambda writes a timestamped snapshot to DynamoDB each run. Dashboard gains 3-month and 6-month sparkline options.
 
 **Scope:** DynamoDB table design, Lambda write logic, dashboard UI for period selection.
 
-### Stage 6 — Threshold alerting (optional)
+### Stage 2.6 — Threshold alerting (optional)
 **Goal:** Lambda detects threshold crossings and publishes to SNS → email.
 
 **Example triggers:** 5yr yield up >0.3% in a week; CPI crosses above 3%; yield curve inverts.
