@@ -14,6 +14,10 @@ Thumbs.db
 .idea/
 *.swp
 
+# Lambda invoke output — local testing artifact
+response.json
+function.zip
+
 scratch.txt
 *-security-findings.md
 *-Security-Review.md
