@@ -171,8 +171,8 @@ Goal: Lambda writes a timestamped snapshot to DynamoDB each run. Dashboard gains
 - [x] Dashboard UI — period selector (30D / 3M / 6M) in header
 - [x] Runbook updated — Steps 10–13 for Stage 5 AWS setup
 - [x] Blog post: `econ-stage-5-post.md`
-- [ ] AWS setup: create DynamoDB table, update Lambda execution role, add DYNAMODB_TABLE env var
-- [ ] Tag: v2.6.0
+- [x] AWS setup: create DynamoDB table, update Lambda execution role, add DYNAMODB_TABLE env var
+- [x] Tag: v2.6.0
 
 ---
 
