@@ -398,8 +398,9 @@ def handler(event, context):
         print(f"[indicators] DynamoDB write failed: {e}")
 
     # Regenerate history files once daily — midnight UTC hour only (00:00 and 00:30 runs)
+    # Pass {"force_history": true} in the Lambda event to trigger immediately (e.g. for testing)
     now_utc = datetime.now(timezone.utc)
-    if now_utc.hour == 0:
+    if now_utc.hour == 0 or event.get("force_history"):
         try:
             generate_history_files(ts_now)
         except Exception as e:
