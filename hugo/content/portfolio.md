@@ -18,7 +18,7 @@ A map of the work: what was built, how it was documented, and where to find it.
 
 | Stage | What | Post | Status |
 |---|---|---|---|
-| 2.6 | Threshold alerting — SNS email on signal crossings | — | Planned |
+| 2.6 | Threshold alerting — SNS email on signal crossings | [Post 6 — threshold alerting](/posts/econ-stage-6-post/) | Complete |
 | 2.5 | Historical storage — DynamoDB snapshots, extended sparklines | [Post 5 — historical storage](/posts/econ-stage-5-post/) | Complete |
 | 2.4 | Data source upgrades — replace ETF proxies | [Post 4 — data source upgrades](/posts/econ-stage-4-post/) | Complete |
 | 2.3 | Server-side data fetching — Lambda pipeline | [Post 3 — server-side data fetching](/posts/econ-stage-3-post/) | Complete |

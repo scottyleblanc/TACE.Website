@@ -207,10 +207,14 @@ Browser (CloudFront)
 
 **Cost addition:** ~$0.15/month (DynamoDB writes + storage + once-daily reads). Well within DynamoDB free tier for storage.
 
-### Stage 2.6 — Threshold alerting (optional)
-**Goal:** Lambda detects threshold crossings and publishes to SNS → email.
+### Stage 2.6 — Threshold alerting ✅ COMPLETE
 
-**Example triggers:** 5yr yield up >0.3% in a week; CPI crosses above 3%; yield curve inverts.
+**Changes made:**
+- `check_thresholds(payload, ts_now)` — runs after every Lambda invocation; compares current values against 7-day and 1-day DynamoDB snapshots
+- Six triggers: GoC 5yr yield up >+0.30%/7d, yield curve inversion, CPI above 3%, CPI below 2%, BoC rate change, S&P 500 down >10%/7d
+- Alert deduplication: 24-hour suppression via DynamoDB records (`pk="ALERT"`, `ts=trigger_id`)
+- `SNS_TOPIC_ARN` env var — if unset, alerting is skipped entirely (no error)
+- IAM policy updated: added `sns:Publish` on `econ-indicators-alerts`
 
 ---
 

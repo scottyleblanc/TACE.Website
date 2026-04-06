@@ -20,6 +20,12 @@
       "Resource": "arn:aws:dynamodb:ca-central-1:<AWS_ACCOUNT_ID>:table/econ-indicators-history"
     },
     {
+      "Sid": "SNSPublishAlerts",
+      "Effect": "Allow",
+      "Action": "sns:Publish",
+      "Resource": "arn:aws:sns:ca-central-1:<AWS_ACCOUNT_ID>:econ-indicators-alerts"
+    },
+    {
       "Sid": "CloudWatchLogs",
       "Effect": "Allow",
       "Action": [

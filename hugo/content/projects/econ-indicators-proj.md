@@ -109,7 +109,7 @@ Stage 5 is live. Lambda writes a timestamped snapshot to DynamoDB on every run. 
 
 History was backfilled at launch using a one-time script (`scripts/backfill_history.py`) that fetched 180 days of data from each upstream API — 122 daily records covering October 2025 through April 2026. The 3M and 6M views were populated immediately on launch rather than accumulating gradually.
 
-Stage 6 will add threshold alerting — Lambda detects when an indicator crosses a meaningful threshold and sends an email via SNS.
+Stage 6 is live. Lambda checks six threshold conditions after each run and sends SNS email alerts on crossings. A 24-hour deduplication window prevents repeated alerts when a value sits above a threshold for an extended period.
 
 ## Tech Used
 

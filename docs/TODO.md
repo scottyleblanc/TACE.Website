@@ -176,14 +176,17 @@ Goal: Lambda writes a timestamped snapshot to DynamoDB each run. Dashboard gains
 
 ---
 
-## Stage 2.6 — Econ Dashboard: Threshold Alerting (Planned)
+## Stage 2.6 — Econ Dashboard: Threshold Alerting (Complete — 2026-04-06)
 
 Goal: Lambda detects threshold crossings and publishes to SNS → email.
 
-- [ ] Define trigger conditions (5yr yield +0.3% in a week, CPI > 3%, yield curve inversion)
-- [ ] Lambda threshold detection logic
-- [ ] SNS topic and email subscription
-- [ ] Blog post: `econ-stage-6-post.md`
+- [x] Define trigger conditions — 6 triggers across 5yr yield, curve inversion, CPI, BoC rate, S&P 500
+- [x] Lambda threshold detection — `check_thresholds()`, `_alert_sent_recently()`, `_record_alert()`, `_publish_alert()`
+- [x] Alert deduplication — 24-hour suppression via DynamoDB ALERT records
+- [x] IAM policy updated — added `sns:Publish` on `econ-indicators-alerts`
+- [x] Runbook updated — Steps 14–18 for Stage 6 AWS setup
+- [x] Blog post: `econ-stage-6-post.md`
+- [ ] AWS setup: create SNS topic, subscribe email, update Lambda role policy, add SNS_TOPIC_ARN env var
 - [ ] Tag: v2.7.0
 
 ---

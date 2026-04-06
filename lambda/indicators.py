@@ -27,10 +27,11 @@ from datetime import datetime, timedelta, timezone
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-TD_API_KEY   = os.environ["TD_API_KEY"]
-FRED_API_KEY = os.environ["FRED_API_KEY"]
-S3_BUCKET    = os.environ["S3_BUCKET"]
-S3_KEY       = os.environ.get("S3_KEY", "data/indicators.json")
+TD_API_KEY    = os.environ["TD_API_KEY"]
+FRED_API_KEY  = os.environ["FRED_API_KEY"]
+S3_BUCKET     = os.environ["S3_BUCKET"]
+S3_KEY        = os.environ.get("S3_KEY", "data/indicators.json")
+SNS_TOPIC_ARN = os.environ.get("SNS_TOPIC_ARN", "")
 
 TD_BASE   = "https://api.twelvedata.com"
 BOC_BASE  = "https://www.bankofcanada.ca/valet"
@@ -252,6 +253,183 @@ def _is_stale(date_str, days):
     return age > days
 
 
+# ── Threshold alerting ────────────────────────────────────────────────────────
+
+# Alert dedup window — suppress repeat alerts for the same trigger within this period.
+ALERT_DEDUP_HOURS = 24
+
+# Threshold definitions — each entry is (trigger_id, label, threshold, direction, window_days)
+# direction: 'cross_above', 'cross_below', 'change_up', 'invert'
+THRESHOLDS = [
+    ("b5_up_7d",       "GoC 5yr yield up >+0.30% over 7 days",   0.30,  "change_up",    7),
+    ("b10_invert",     "Yield curve inverted (10yr < 5yr)",        0,     "invert",       1),
+    ("cpi_above_3",    "CPI YoY crossed above 3.0%",               3.0,   "cross_above",  1),
+    ("cpi_below_2",    "CPI YoY crossed below 2.0%",               2.0,   "cross_below",  1),
+    ("boc_changed",    "BoC overnight rate changed",               0,     "boc_change",   1),
+    ("sp_down_7d",     "S&P 500 down >10% over 7 days",           -10.0,  "change_pct",   7),
+]
+
+DASHBOARD_URL = "https://tacedata.ca/projects/econ/interest-rate/"
+
+
+def _get_7day_snapshot(table, days=7):
+    """Fetch the closest DynamoDB snapshot to N days ago. Returns item or None."""
+    from boto3.dynamodb.conditions import Key  # noqa: PLC0415
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    resp   = table.query(
+        KeyConditionExpression=Key("pk").eq("SNAPSHOT") & Key("ts").lte(cutoff),
+        Limit=1,
+        ScanIndexForward=False,
+    )
+    items = resp.get("Items", [])
+    return items[0] if items else None
+
+
+def _alert_sent_recently(table, trigger_id):
+    """True if this trigger fired within the dedup window."""
+    from boto3.dynamodb.conditions import Key  # noqa: PLC0415
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=ALERT_DEDUP_HOURS)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    resp   = table.query(
+        KeyConditionExpression=Key("pk").eq("ALERT") & Key("ts").eq(trigger_id),
+        Limit=1,
+    )
+    items = resp.get("Items", [])
+    if not items:
+        return False
+    return items[0].get("sent_at", "") >= cutoff
+
+
+def _record_alert(table, trigger_id, ts_now):
+    """Record that this trigger fired so duplicates are suppressed."""
+    ttl = int((datetime.now(timezone.utc) + timedelta(hours=ALERT_DEDUP_HOURS + 1)).timestamp())
+    table.put_item(Item={"pk": "ALERT", "ts": trigger_id, "sent_at": ts_now, "ttl": ttl})
+
+
+def _publish_alert(subject, message):
+    """Publish to SNS. No-op if SNS_TOPIC_ARN is not configured."""
+    if not SNS_TOPIC_ARN:
+        print(f"[indicators] alert suppressed (SNS_TOPIC_ARN not set): {subject}")
+        return
+    import boto3  # noqa: PLC0415
+    sns = boto3.client("sns", region_name="ca-central-1")
+    sns.publish(TopicArn=SNS_TOPIC_ARN, Subject=subject, Message=message)
+    print(f"[indicators] alert sent: {subject}")
+
+
+def check_thresholds(payload, ts_now):
+    """Compare current indicator values against thresholds and prior snapshots.
+    Sends SNS alerts for meaningful crossings. Non-fatal — errors are logged only."""
+    if not SNS_TOPIC_ARN:
+        return  # alerting not configured — skip entirely
+
+    import boto3  # noqa: PLC0415
+    dynamodb = boto3.resource("dynamodb")
+    table    = dynamodb.Table(DYNAMODB_TABLE)
+    prior_7d = _get_7day_snapshot(table, days=7)
+    prior_1d = _get_7day_snapshot(table, days=1)
+
+    alerts = []
+
+    # GoC 5yr yield up >+0.30% over 7 days
+    if payload.get("bonds") and prior_7d and prior_7d.get("b5"):
+        cur_b5   = payload["bonds"]["b5"]["cur"]
+        prev_b5  = float(prior_7d["b5"])
+        diff     = cur_b5 - prev_b5
+        if diff > 0.30:
+            alerts.append((
+                "b5_up_7d",
+                f"[econ-alert] GoC 5yr yield up +{diff:.2f}% over 7 days",
+                f"GoC 5yr Bond Yield has risen +{diff:.2f}% over the past 7 days.\n"
+                f"Current: {cur_b5:.2f}%  |  7 days ago: {prev_b5:.2f}%\n\n"
+                f"Fixed mortgage rates typically follow within 2-4 weeks.\n"
+                f"This may be a good time to review your rate decision.\n\n"
+                f"Dashboard: {DASHBOARD_URL}\n\n---\nNot financial advice.",
+            ))
+
+    # Yield curve inversion (10yr < 5yr)
+    if payload.get("bonds"):
+        b5  = payload["bonds"]["b5"]["cur"]
+        b10 = payload["bonds"]["b10"]["cur"]
+        if b10 < b5:
+            alerts.append((
+                "b10_invert",
+                "[econ-alert] Yield curve inverted — 10yr < 5yr",
+                f"The yield curve has inverted: 10yr ({b10:.2f}%) is below 5yr ({b5:.2f}%).\n\n"
+                f"An inverted yield curve is a recession signal. Rate cuts are likely ahead,\n"
+                f"which would favour staying variable over locking in fixed.\n\n"
+                f"Dashboard: {DASHBOARD_URL}\n\n---\nNot financial advice.",
+            ))
+
+    # CPI crossed above 3.0%
+    if payload.get("cpi") and prior_1d and prior_1d.get("cpi_yoy"):
+        cur_cpi  = payload["cpi"]["yoy"]
+        prev_cpi = float(prior_1d["cpi_yoy"])
+        if cur_cpi > 3.0 and prev_cpi <= 3.0:
+            alerts.append((
+                "cpi_above_3",
+                f"[econ-alert] CPI YoY crossed above 3.0% — now {cur_cpi:.1f}%",
+                f"CPI YoY has crossed above 3.0% (now {cur_cpi:.1f}%, was {prev_cpi:.1f}%).\n\n"
+                f"Inflation above the BoC's upper tolerance limits room for rate cuts.\n"
+                f"This may be a signal to consider locking in fixed.\n\n"
+                f"Dashboard: {DASHBOARD_URL}\n\n---\nNot financial advice.",
+            ))
+
+    # CPI crossed below 2.0%
+    if payload.get("cpi") and prior_1d and prior_1d.get("cpi_yoy"):
+        cur_cpi  = payload["cpi"]["yoy"]
+        prev_cpi = float(prior_1d["cpi_yoy"])
+        if cur_cpi < 2.0 and prev_cpi >= 2.0:
+            alerts.append((
+                "cpi_below_2",
+                f"[econ-alert] CPI YoY crossed below 2.0% — now {cur_cpi:.1f}%",
+                f"CPI YoY has crossed below 2.0% (now {cur_cpi:.1f}%, was {prev_cpi:.1f}%).\n\n"
+                f"Inflation below target opens room for BoC rate cuts.\n"
+                f"This may favour staying variable.\n\n"
+                f"Dashboard: {DASHBOARD_URL}\n\n---\nNot financial advice.",
+            ))
+
+    # BoC rate changed
+    if payload.get("boc"):
+        cur_boc  = payload["boc"]["cur"]
+        prev_boc = payload["boc"]["prev"]
+        if cur_boc != prev_boc:
+            direction = "raised" if cur_boc > prev_boc else "cut"
+            diff      = abs(cur_boc - prev_boc)
+            alerts.append((
+                "boc_changed",
+                f"[econ-alert] BoC {direction} overnight rate to {cur_boc:.2f}%",
+                f"The Bank of Canada has {direction} the overnight rate by {diff:.2f}%.\n"
+                f"New rate: {cur_boc:.2f}%  |  Previous: {prev_boc:.2f}%\n\n"
+                f"{'Variable rate payments will increase.' if direction == 'raised' else 'Variable rate payments will decrease.'}\n\n"
+                f"Dashboard: {DASHBOARD_URL}\n\n---\nNot financial advice.",
+            ))
+
+    # S&P 500 down >10% over 7 days
+    if payload.get("sp") and prior_7d and prior_7d.get("sp"):
+        cur_sp  = payload["sp"]["cur"]
+        prev_sp = float(prior_7d["sp"])
+        pct     = ((cur_sp - prev_sp) / prev_sp) * 100
+        if pct < -10.0:
+            alerts.append((
+                "sp_down_7d",
+                f"[econ-alert] S&P 500 down {pct:.1f}% over 7 days",
+                f"The S&P 500 has fallen {pct:.1f}% over the past 7 days.\n"
+                f"Current: {cur_sp:.2f}  |  7 days ago: {prev_sp:.2f}\n\n"
+                f"Sharp equity declines raise recession risk and may prompt BoC rate cuts,\n"
+                f"which would favour staying variable.\n\n"
+                f"Dashboard: {DASHBOARD_URL}\n\n---\nNot financial advice.",
+            ))
+
+    # Send non-duplicate alerts
+    for trigger_id, subject, message in alerts:
+        try:
+            if not _alert_sent_recently(table, trigger_id):
+                _publish_alert(subject, message)
+                _record_alert(table, trigger_id, ts_now)
+        except Exception as e:
+            print(f"[indicators] alert failed for {trigger_id}: {e}")
+
+
 # ── S3 write ──────────────────────────────────────────────────────────────────
 
 def write_to_s3(payload, key=None, cache_control=None):
@@ -396,6 +574,12 @@ def handler(event, context):
         write_snapshot_to_dynamo(payload, ts_now)
     except Exception as e:
         print(f"[indicators] DynamoDB write failed: {e}")
+
+    # Check thresholds and send alerts — non-fatal
+    try:
+        check_thresholds(payload, ts_now)
+    except Exception as e:
+        print(f"[indicators] threshold check failed: {e}")
 
     # Regenerate history files once daily — midnight UTC hour only (00:00 and 00:30 runs)
     # Pass {"force_history": true} in the Lambda event to trigger immediately (e.g. for testing)

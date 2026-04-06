@@ -241,3 +241,58 @@ After deploying updated Lambda code and completing setup:
 3. Wait for midnight UTC run (or manually invoke at 00:00 UTC) to trigger history file generation
 4. Verify history files written to S3: `aws s3 ls s3://<S3_BUCKET_NAME>/tacedata-site/data/ --region ca-central-1 --profile tace-aws-admin`
 5. Load dashboard — verify 3M and 6M period buttons appear and render sparklines (3M/6M will be empty until sufficient history accumulates)
+
+---
+
+## Stage 6 Setup — Threshold Alerting
+
+### 14. Create SNS Topic
+
+```powershell
+aws sns create-topic `
+  --name econ-indicators-alerts `
+  --region ca-central-1 `
+  --profile tace-aws-admin
+```
+
+Note the TopicArn from the output.
+
+### 15. Subscribe Email to Topic
+
+```powershell
+aws sns subscribe `
+  --topic-arn <SNS_TOPIC_ARN> `
+  --protocol email `
+  --notification-endpoint <YOUR_EMAIL> `
+  --region ca-central-1 `
+  --profile tace-aws-admin
+```
+
+Confirm the subscription via the email AWS sends before proceeding.
+
+### 16. Update Lambda Execution Role Policy
+
+```powershell
+aws iam put-role-policy `
+  --role-name econ-indicators-execution-role `
+  --policy-name econ-lambda-execution-policy `
+  --policy-document file://config/lambda-execution-policy.json `
+  --profile tace-aws-admin
+```
+
+Note: use inline JSON on Windows (file:// fails). Replace <AWS_ACCOUNT_ID> and <SNS_TOPIC_ARN> resource values.
+
+### 17. Add SNS_TOPIC_ARN Environment Variable
+
+```powershell
+aws lambda update-function-configuration `
+  --function-name <ECON_LAMBDA_FUNCTION_NAME> `
+  --environment "Variables={TD_API_KEY=<TD_API_KEY>,FRED_API_KEY=<FRED_API_KEY>,S3_BUCKET=<S3_BUCKET_NAME>,S3_KEY=tacedata-site/data/indicators.json,DYNAMODB_TABLE=econ-indicators-history,SNS_TOPIC_ARN=<SNS_TOPIC_ARN>}" `
+  --region ca-central-1 `
+  --profile tace-aws-admin
+```
+
+### 18. Validate Stage 6
+
+1. Invoke Lambda manually and confirm no errors in response
+2. To test alerting without waiting for a real crossing, temporarily lower a threshold value in the code, deploy, invoke, then revert

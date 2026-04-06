@@ -6,6 +6,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-04-06
+
+### Added
+- `lambda/indicators.py` — threshold alerting: `check_thresholds()` compares current values against 7-day and 1-day DynamoDB snapshots; `_publish_alert()` sends to SNS; `_alert_sent_recently()` / `_record_alert()` provide 24-hour deduplication via DynamoDB ALERT records
+- Six alert triggers: GoC 5yr yield up >0.30% / 7 days, yield curve inversion, CPI above 3%, CPI below 2%, BoC rate change, S&P 500 down >10% / 7 days
+- `SNS_TOPIC_ARN` env var — alerting disabled gracefully when not set
+- Runbook steps 14–18 in `config/runbook-econ-dashboard.md` — SNS topic creation, email subscription, IAM update, env var
+
+### Changed
+- `config/lambda-execution-policy.json` — added `sns:Publish` on `econ-indicators-alerts`
+
+---
+
 ## [0.19.0] - 2026-04-06
 
 ### Added
