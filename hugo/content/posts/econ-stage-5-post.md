@@ -109,6 +109,28 @@ The rest of the infrastructure — Lambda function, EventBridge rule, S3 bucket,
 
 ---
 
+### Backfilling Historical Data
+
+Going live with an empty table means the 3M and 6M sparklines would be blank for months while the Lambda accumulated records. That is a bad first impression of a feature that is supposed to show history.
+
+Each upstream API supports historical date ranges. A one-time backfill script (`scripts/backfill_history.py`) fetches 180 days of history from each source:
+
+| Source | How far back | Notes |
+|---|---|---|
+| Yahoo Finance | 1 year (`range=1y`) | TSX daily closes |
+| FRED | Arbitrary date range | WTI spot price, skips weekends |
+| Twelve Data | `outputsize=200` | SPY and CAD/USD — 200 trading days |
+| BoC Valet | Arbitrary date range | Rate and bond yields; rate forward-filled between decisions |
+| Statistics Canada | `latestN=30` | CPI monthly; YoY rate forward-filled across days in each month |
+
+The script builds a date spine from trading days, aligns all sources, and writes one DynamoDB item per calendar day with a `{date}T12:00:00Z` timestamp — clearly distinguishable from live 30-minute run records. It checks existing items before writing and skips any date already present, so it is safe to re-run.
+
+Result: 122 daily records written covering October 2025 through April 2026. The 3M and 6M sparklines were populated immediately on launch.
+
+One issue surfaced during setup: the history file generation uses a `force_history` event flag (`{"force_history": true}`) to allow immediate triggering without waiting for the midnight UTC run. This was added as a permanent testing convenience.
+
+---
+
 ### What Comes Next
 
 Stage 6 adds threshold alerting — Lambda detects when an indicator crosses a meaningful threshold (5yr yield up >0.3% in a week, CPI above 3%, yield curve inversion) and publishes to SNS for email notification.

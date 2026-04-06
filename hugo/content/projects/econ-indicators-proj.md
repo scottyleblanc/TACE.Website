@@ -107,6 +107,8 @@ This project is documented stage by stage as a blog series:
 
 Stage 5 is live. Lambda writes a timestamped snapshot to DynamoDB on every run. Once daily, it queries the last 90 and 180 days, aggregates to one entry per calendar day, and writes pre-built history files to S3. The dashboard period selector (30D / 3M / 6M) re-renders sparklines from those files.
 
+History was backfilled at launch using a one-time script (`scripts/backfill_history.py`) that fetched 180 days of data from each upstream API — 122 daily records covering October 2025 through April 2026. The 3M and 6M views were populated immediately on launch rather than accumulating gradually.
+
 Stage 6 will add threshold alerting — Lambda detects when an indicator crosses a meaningful threshold and sends an email via SNS.
 
 ## Tech Used
