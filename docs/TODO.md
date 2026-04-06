@@ -186,8 +186,8 @@ Goal: Lambda detects threshold crossings and publishes to SNS → email.
 - [x] IAM policy updated — added `sns:Publish` on `econ-indicators-alerts`
 - [x] Runbook updated — Steps 14–18 for Stage 6 AWS setup
 - [x] Blog post: `econ-stage-6-post.md`
-- [ ] AWS setup: create SNS topic, subscribe email, update Lambda role policy, add SNS_TOPIC_ARN env var
-- [ ] Tag: v2.7.0
+- [x] AWS setup: create SNS topic, subscribe email, update Lambda role policy, add SNS_TOPIC_ARN env var
+- [x] Tag: v2.7.0
 
 ---
 
