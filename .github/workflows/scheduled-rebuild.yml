@@ -1,0 +1,45 @@
+name: Scheduled Rebuild
+
+on:
+  schedule:
+    - cron: '0 8 * * *'   # 08:00 UTC daily (04:00 ET / 03:00 ET during DST)
+  workflow_dispatch:        # allow manual trigger from GitHub Actions UI
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: '0.158.0'
+          extended: true
+
+      - name: Build
+        run: hugo --source hugo --minify --baseURL "${{ vars.SITE_URL }}"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ca-central-1
+
+      - name: Deploy to S3
+        run: |
+          aws s3 sync hugo/public/ s3://${{ vars.S3_BUCKET_NAME }}/tacedata-site/ --delete --exclude "data/*"
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"

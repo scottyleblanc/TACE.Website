@@ -192,4 +192,4 @@ Goal: Lambda detects threshold crossings and publishes to SNS → email.
 - Analytics — simple, privacy-respecting option (Plausible, Fathom, or none)
 - Favicon — generate proper favicon files from tace.logo.png using favicon.io or realfavicongenerator.net; add favicon.ico, favicon-16x16.png, favicon-32x32.png to hugo/static/; remove params.assets overrides from hugo.toml
 - IAM identity audit — resolve cross-contamination between AWS identities (oar-xxxx used for tacedata operations); ensure tacedata infrastructure actions use a dedicated tacedata IAM identity with appropriate Synthetics, CloudWatch, and canary management permissions
-- Scheduled rebuild — add a GitHub Actions workflow on a daily cron schedule to trigger a Hugo rebuild; enables future-dated posts to publish automatically without a manual push
+- [x] Scheduled rebuild — `scheduled-rebuild.yml` runs daily at 08:00 UTC; future-dated posts publish automatically without a manual push

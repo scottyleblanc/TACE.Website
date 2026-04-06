@@ -6,6 +6,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-04-05
+
+### Added
+- `.github/workflows/scheduled-rebuild.yml` — daily cron workflow (08:00 UTC); triggers Hugo build, S3 sync, and CloudFront invalidation without a push. Enables future-dated posts to publish automatically. `workflow_dispatch` included for manual triggers from the GitHub Actions UI.
+
+---
+
 ## [0.17.0] - 2026-04-05
 
 ### Added
