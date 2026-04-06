@@ -45,11 +45,11 @@ TD_PAUSE_S = 0
 
 DYNAMODB_TABLE = os.environ.get("DYNAMODB_TABLE", "econ-indicators-history")
 
-# History files written to S3 once daily (midnight UTC run).
-# Served via the existing CloudFront data/* behavior.
+# History files share the same S3 prefix as indicators.json (e.g. tacedata-site/data/)
+_DATA_PREFIX = S3_KEY.rsplit("/", 1)[0]
 S3_HISTORY_KEYS = {
-    90:  "data/history-90d.json",
-    180: "data/history-180d.json",
+    90:  f"{_DATA_PREFIX}/history-90d.json",
+    180: f"{_DATA_PREFIX}/history-180d.json",
 }
 
 
