@@ -1,7 +1,7 @@
 ---
 title: "economic dashboard series: stage 6 — threshold alerting"
 date: 2026-04-05T16:00:00
-draft: true
+draft: false
 tags: ["aws", "lambda", "sns", "python", "portfolio", "economics", "canada"]
 summary: "sixth post in the series: adding threshold detection and SNS email alerts so meaningful indicator crossings surface without having to check the dashboard."
 ---

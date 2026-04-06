@@ -1,6 +1,6 @@
 ---
 title: "economic dashboard series: stage 5 — historical storage"
-date: 2026-04-06T14:00:00
+date: 2026-04-05T14:00:00
 draft: false
 tags: ["aws", "lambda", "dynamodb", "s3", "python", "portfolio", "economics", "canada"]
 summary: "fifth post in the series: adding a DynamoDB snapshot store so the dashboard can display 3-month and 6-month sparklines alongside the existing 30-day view."

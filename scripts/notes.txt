@@ -1,0 +1,14 @@
+
+aws lambda invoke `
+  --function-name econ-indicators `
+  --region ca-central-1 `
+  --profile tace-aws-admin `
+  --log-type Tail `
+  response.json
+
+Get-Content response.json
+
+aws sso login --profile tace-aws-admin
+
+
+aws sso login --profile tace-aws-admin
