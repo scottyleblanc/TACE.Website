@@ -39,44 +39,60 @@ Each card shows: current value, day-over-day change, 30-day sparkline, and a pla
 
 ## Architecture
 
-Data fetching runs entirely server-side. An AWS Lambda function runs on a 30-minute schedule, pulls all eight indicators from their upstream sources, and writes a single JSON file to S3. The dashboard fetches that file on load — one request, sub-100ms, no API key required.
+Data fetching runs entirely server-side. An AWS Lambda function runs on a 30-minute schedule, pulls all eight indicators from their upstream sources, and writes to S3. The dashboard fetches that file on load — one request, sub-100ms, no API key required.
+
+**Data pipeline — fetch and serve**
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'fontSize': '18px'}}}%%
-flowchart TD
-    EB("EventBridge\ncron — every 30 minutes"):::aws
+flowchart LR
+    EB("EventBridge\ncron 30 min"):::aws
 
     subgraph apis["External APIs"]
-        BOC("Bank of Canada Valet API\nBoC overnight rate · GoC 5yr · 10yr bond yields"):::gov
-        SC("Statistics Canada WDS API\nCPI — vector 41690973"):::gov
-        YF("Yahoo Finance\nTSX Composite — ^GSPTSE"):::market
-        FR("FRED — St. Louis Fed\nWTI crude oil — DCOILWTICO"):::gov
+        BOC("Bank of Canada\nBoC rate · 5yr · 10yr"):::gov
+        SC("Statistics Canada\nCPI"):::gov
+        YF("Yahoo Finance\nTSX ^GSPTSE"):::market
+        FR("FRED\nWTI crude oil"):::gov
         TD("Twelve Data\nSPY · CAD/USD"):::market
     end
 
-    LM("Lambda — econ-indicators\nPython 3.12"):::aws
-    S3("S3\ndata/indicators.json"):::aws
-    CF("CloudFront\ndata/* cache behavior"):::aws
+    LM("Lambda\necon-indicators"):::aws
+    S3("S3\ndata/indicators.json\ndata/history-*.json"):::aws
+    CF("CloudFront\ndata/*"):::aws
     BR("Browser\ndashboard"):::browser
 
-    EB -->|"triggers every 30 min"| LM
-    LM -->|"no auth required"| BOC
-    LM -->|"no auth required"| SC
-    LM -->|"no auth required"| YF
-    LM -->|"API key"| FR
-    LM -->|"API key"| TD
+    EB -->|"trigger"| LM
+    LM --> BOC & SC & YF & FR & TD
     BOC & SC & YF & FR & TD -->|"JSON"| LM
-    LM -->|"PutObject · max-age=1800"| S3
-    BR -->|"GET /data/indicators.json"| CF
-    CF -->|"GetObject · OAC signed"| S3
-    S3 -->|"indicators.json"| CF
-    CF -->|"indicators.json"| BR
+    LM -->|"PutObject"| S3
+    BR -->|"GET /data/*.json"| CF
+    CF -->|"OAC signed"| S3
+    S3 -->|"JSON"| CF
+    CF -->|"JSON"| BR
 
     classDef aws      fill:#FF9900,stroke:#c97a00,color:#000,rx:8,ry:8
     classDef gov      fill:#1d4ed8,stroke:#1e3a8a,color:#fff,rx:8,ry:8
     classDef market   fill:#16a34a,stroke:#14532d,color:#fff,rx:8,ry:8
     classDef browser  fill:#475569,stroke:#334155,color:#fff,rx:8,ry:8
+```
 
+**Storage and alerting**
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '18px'}}}%%
+flowchart LR
+    LM("Lambda\necon-indicators"):::aws
+    DB("DynamoDB\necon-indicators-history"):::aws
+    SNS("SNS\necon-indicators-alerts"):::aws
+    EM("Email"):::browser
+
+    LM -->|"PutItem snapshot\nevery run"| DB
+    DB -->|"7-day lookback\nfor threshold check"| LM
+    LM -->|"threshold crossing\n+ not duplicate"| SNS
+    SNS -->|"email alert"| EM
+
+    classDef aws      fill:#FF9900,stroke:#c97a00,color:#000,rx:8,ry:8
+    classDef browser  fill:#475569,stroke:#334155,color:#fff,rx:8,ry:8
 ```
 
 <a href="/projects/econ/interest-rate/" class="launch-btn">Launch Dashboard</a>
@@ -102,6 +118,7 @@ This project is documented stage by stage as a blog series:
 - [Post 3 — Server-Side Data Fetching](/posts/econ-stage-3-post/) — Lambda architecture, what disappeared from the browser, and error handling philosophy
 - [Post 4 — Data Source Upgrades](/posts/econ-stage-4-post/) — replacing ETF proxies, investigating free data sources, and fixing a BoC query bug
 - [Post 5 — Historical Storage](/posts/econ-stage-5-post/) — DynamoDB snapshot store, daily history file generation, and the 3M/6M period selector
+- [Post 6 — Threshold Alerting](/posts/econ-stage-6-post/) — SNS email alerts on indicator crossings, deduplication logic, and the six trigger conditions
 
 ## Current Stage
 
