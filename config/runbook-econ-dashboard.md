@@ -1,8 +1,12 @@
-# Runbook — Economic Indicators Lambda (Stage 3 / Stage 5)
+# Runbook — Economic Indicators Lambda (Stages 3 / 5 / 6)
 
 One-time setup for the econ dashboard server-side data pipeline.
 Run from the repo root unless otherwise noted.
 All commands use the `tace-aws-admin` AWS profile.
+
+**Windows note:** `file://` path arguments fail with the AWS CLI on Windows (Git Bash converts
+the path). Use inline JSON strings for all `--policy-document` and `--assume-role-policy-document`
+arguments. Commands below use inline JSON where applicable.
 
 ---
 
@@ -11,14 +15,16 @@ All commands use the `tace-aws-admin` AWS profile.
 - AWS CLI installed and configured
 - Profile `tace-aws-admin` available
 - Twelve Data API key (free tier — register at twelvedata.com)
+- FRED API key (free tier — register at fred.stlouisfed.org)
 - Lambda function code in `lambda/indicators.py` (deployed via GitHub Actions after initial setup)
 
 ---
 
-## 1. Create Lambda Execution Role
+## Stage 3 Setup — Core Lambda Pipeline
+
+### 1. Create Lambda Execution Role
 
 Trust policy: `config/lambda-trust-policy.json`
-Permissions policy: `config/lambda-execution-policy.json`
 
 ```powershell
 aws iam create-role `
@@ -26,11 +32,16 @@ aws iam create-role `
   --assume-role-policy-document file://config/lambda-trust-policy.json `
   --region ca-central-1 `
   --profile tace-aws-admin
+```
 
+Apply the permissions policy (inline JSON — see `config/lambda-execution-policy.json` for the
+current policy; replace placeholders before running):
+
+```powershell
 aws iam put-role-policy `
   --role-name <ECON_LAMBDA_EXECUTION_ROLE_NAME> `
   --policy-name econ-lambda-execution-policy `
-  --policy-document file://config/lambda-execution-policy.json `
+  --policy-document '<JSON from config/lambda-execution-policy.json with placeholders replaced>' `
   --profile tace-aws-admin
 ```
 
@@ -39,7 +50,7 @@ Note the role ARN from the create-role output:
 
 ---
 
-## 2. Create Lambda Function
+### 2. Create Lambda Function
 
 Package and deploy the initial function code:
 
@@ -59,22 +70,24 @@ aws lambda create-function `
 
 ---
 
-## 3. Set Environment Variables
+### 3. Set Environment Variables
 
-Set the three required environment variables on the Lambda function.
-`TD_API_KEY` is sensitive — set it here, never in source code.
+All sensitive values set here — never in source code.
 
 ```powershell
 aws lambda update-function-configuration `
   --function-name <ECON_LAMBDA_FUNCTION_NAME> `
-  --environment "Variables={TD_API_KEY=<TWELVE_DATA_API_KEY>,S3_BUCKET=<S3_BUCKET_NAME>,S3_KEY=tacedata-site/data/indicators.json}" `
+  --environment "Variables={TD_API_KEY=<TWELVE_DATA_API_KEY>,FRED_API_KEY=<FRED_API_KEY>,S3_BUCKET=<S3_BUCKET_NAME>,S3_KEY=tacedata-site/data/indicators.json,DYNAMODB_TABLE=econ-indicators-history,SNS_TOPIC_ARN=<SNS_TOPIC_ARN>}" `
   --region ca-central-1 `
   --profile tace-aws-admin
 ```
 
+Note: `DYNAMODB_TABLE` and `SNS_TOPIC_ARN` are added in Stages 5 and 6. Include them from the
+start if setting up all stages at once.
+
 ---
 
-## 4. Create EventBridge Schedule
+### 4. Create EventBridge Schedule
 
 Using EventBridge Rules (not Scheduler — no separate execution role required).
 
@@ -104,7 +117,7 @@ aws events put-targets `
 
 ---
 
-## 5. Add CloudFront Cache Behavior for /data/*
+### 5. Add CloudFront Cache Behavior for /data/*
 
 In the AWS CloudFront console:
 - Distribution: `<CLOUDFRONT_DISTRIBUTION_ID>`
@@ -117,7 +130,7 @@ This ensures visitors always get data from the most recent Lambda run (max 30 mi
 
 ---
 
-## 6. Add GitHub Actions Variable
+### 6. Add GitHub Actions Variable
 
 In `scottyleblanc/TACE.Website` → Settings → Variables → Actions:
 
@@ -129,9 +142,9 @@ The GitHub Actions deploy workflow uses this variable when running `aws lambda u
 
 ---
 
-## 7. Update Deploy Role Permissions
+### 7. Update Deploy Role Permissions
 
-The GitHub Actions deploy role needs `lambda:UpdateFunctionCode` in addition to existing S3 and CloudFront permissions. Update the inline policy:
+The GitHub Actions deploy role needs `lambda:UpdateFunctionCode`. Update the inline policy:
 
 ```powershell
 aws iam put-role-policy `
@@ -143,38 +156,33 @@ aws iam put-role-policy `
 
 ---
 
-## 8. Test Lambda Manually
-
-Invoke the Lambda and check the result:
+### 8. Test Lambda Manually
 
 ```powershell
 aws lambda invoke `
   --function-name <ECON_LAMBDA_FUNCTION_NAME> `
   --region ca-central-1 `
   --profile tace-aws-admin `
-  --log-type Tail `
-  response.json
+  --payload '{}' `
+  --cli-binary-format raw-in-base64-out `
+  /tmp/response.json
 
-# Check response
-Get-Content response.json
+Get-Content /tmp/response.json
 
 # Verify S3 write
-aws s3 cp s3://<S3_BUCKET_NAME>/tacedata-site/data/indicators.json - `
+aws s3 ls s3://<S3_BUCKET_NAME>/tacedata-site/data/ `
   --region ca-central-1 `
   --profile tace-aws-admin
 ```
 
 ---
 
-## 9. Validate Dashboard
-
-After a successful Lambda invocation:
+### 9. Validate Dashboard
 
 1. Load `https://tacedata.ca/projects/econ/interest-rate/`
 2. Verify all eight cards render with live data
 3. Verify `Generated:` timestamp matches the Lambda run time
 4. Verify no error banner appears
-5. Simulate a failure: temporarily rename the S3 key and reload — error banner should appear with clear messaging
 
 ---
 
@@ -208,13 +216,14 @@ aws dynamodb update-time-to-live `
 
 ### 11. Update Lambda Execution Role Policy
 
-The updated policy is in `config/lambda-execution-policy.json`. Apply it:
+Apply the current policy from `config/lambda-execution-policy.json` as inline JSON (replace
+`<AWS_ACCOUNT_ID>` with the real value):
 
 ```powershell
 aws iam put-role-policy `
   --role-name <ECON_LAMBDA_EXECUTION_ROLE_NAME> `
   --policy-name econ-lambda-execution-policy `
-  --policy-document file://config/lambda-execution-policy.json `
+  --policy-document '<JSON from config/lambda-execution-policy.json with placeholders replaced>' `
   --profile tace-aws-admin
 ```
 
@@ -232,21 +241,59 @@ aws lambda update-function-configuration `
   --profile tace-aws-admin
 ```
 
-### 13. Validate Stage 5
+### 13. Backfill Historical Data (one-time)
 
-After deploying updated Lambda code and completing setup:
+Run the backfill script to populate 180 days of history from upstream APIs:
 
-1. Invoke Lambda manually and check response
-2. Verify DynamoDB item written: `aws dynamodb query --table-name econ-indicators-history --key-condition-expression "pk = :pk" --expression-attribute-values '{":pk":{"S":"SNAPSHOT"}}' --limit 1 --scan-index-forward false --region ca-central-1 --profile tace-aws-admin`
-3. Wait for midnight UTC run (or manually invoke at 00:00 UTC) to trigger history file generation
-4. Verify history files written to S3: `aws s3 ls s3://<S3_BUCKET_NAME>/tacedata-site/data/ --region ca-central-1 --profile tace-aws-admin`
-5. Load dashboard — verify 3M and 6M period buttons appear and render sparklines (3M/6M will be empty until sufficient history accumulates)
+```powershell
+$env:TD_API_KEY   = "<TWELVE_DATA_API_KEY>"
+$env:FRED_API_KEY = "<FRED_API_KEY>"
+python scripts/backfill_history.py
+```
+
+The script is non-destructive — skips any date already present in DynamoDB.
+
+### 14. Generate History Files
+
+History files are generated on the midnight UTC Lambda run. To trigger immediately:
+
+```powershell
+aws lambda invoke `
+  --function-name <ECON_LAMBDA_FUNCTION_NAME> `
+  --region ca-central-1 `
+  --profile tace-aws-admin `
+  --payload '{"force_history": true}' `
+  --cli-binary-format raw-in-base64-out `
+  /tmp/response.json
+
+# Verify both history files exist
+aws s3 ls s3://<S3_BUCKET_NAME>/tacedata-site/data/ `
+  --region ca-central-1 `
+  --profile tace-aws-admin
+```
+
+### 15. Validate Stage 5
+
+1. Invoke Lambda and confirm `{"statusCode": 200, "errors": {}}`
+2. Verify DynamoDB snapshot written:
+```powershell
+aws dynamodb query `
+  --table-name econ-indicators-history `
+  --key-condition-expression "pk = :pk" `
+  --expression-attribute-values '{":pk":{"S":"SNAPSHOT"}}' `
+  --limit 1 `
+  --no-scan-index-forward `
+  --region ca-central-1 `
+  --profile tace-aws-admin
+```
+3. Verify `history-90d.json` and `history-180d.json` exist in S3
+4. Load dashboard — verify 3M and 6M period buttons render sparklines
 
 ---
 
 ## Stage 6 Setup — Threshold Alerting
 
-### 14. Create SNS Topic
+### 16. Create SNS Topic
 
 ```powershell
 aws sns create-topic `
@@ -257,7 +304,7 @@ aws sns create-topic `
 
 Note the TopicArn from the output.
 
-### 15. Subscribe Email to Topic
+### 17. Subscribe Email to Topic
 
 ```powershell
 aws sns subscribe `
@@ -270,29 +317,25 @@ aws sns subscribe `
 
 Confirm the subscription via the email AWS sends before proceeding.
 
-### 16. Update Lambda Execution Role Policy
+### 18. Update Lambda Execution Role Policy
 
-```powershell
-aws iam put-role-policy `
-  --role-name econ-indicators-execution-role `
-  --policy-name econ-lambda-execution-policy `
-  --policy-document file://config/lambda-execution-policy.json `
-  --profile tace-aws-admin
-```
+Apply the current `config/lambda-execution-policy.json` as inline JSON with `<AWS_ACCOUNT_ID>`
+replaced. Changes from Stage 5 policy:
+- Added `sns:Publish` on `econ-indicators-alerts`
 
-Note: use inline JSON on Windows (file:// fails). Replace <AWS_ACCOUNT_ID> and <SNS_TOPIC_ARN> resource values.
-
-### 17. Add SNS_TOPIC_ARN Environment Variable
+### 19. Add SNS_TOPIC_ARN Environment Variable
 
 ```powershell
 aws lambda update-function-configuration `
   --function-name <ECON_LAMBDA_FUNCTION_NAME> `
-  --environment "Variables={TD_API_KEY=<TD_API_KEY>,FRED_API_KEY=<FRED_API_KEY>,S3_BUCKET=<S3_BUCKET_NAME>,S3_KEY=tacedata-site/data/indicators.json,DYNAMODB_TABLE=econ-indicators-history,SNS_TOPIC_ARN=<SNS_TOPIC_ARN>}" `
+  --environment "Variables={TD_API_KEY=<TWELVE_DATA_API_KEY>,FRED_API_KEY=<FRED_API_KEY>,S3_BUCKET=<S3_BUCKET_NAME>,S3_KEY=tacedata-site/data/indicators.json,DYNAMODB_TABLE=econ-indicators-history,SNS_TOPIC_ARN=<SNS_TOPIC_ARN>}" `
   --region ca-central-1 `
   --profile tace-aws-admin
 ```
 
-### 18. Validate Stage 6
+### 20. Validate Stage 6
 
-1. Invoke Lambda manually and confirm no errors in response
-2. To test alerting without waiting for a real crossing, temporarily lower a threshold value in the code, deploy, invoke, then revert
+1. Invoke Lambda and confirm `{"statusCode": 200, "errors": {}}`
+2. To test alerting without waiting for a real crossing: temporarily lower a threshold in the
+   code (e.g. change `0.30` to `0.001` for the 5yr yield trigger), deploy, invoke, verify email
+   arrives, then revert and redeploy
