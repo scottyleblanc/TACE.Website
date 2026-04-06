@@ -4,7 +4,7 @@ Phase definitions, current state, and decision criteria.
 
 ---
 
-## Current Stage: Stage 5 — Domain Cutover
+## Current Stage: All Track 1 stages complete. Track 2 (econ dashboard) through Stage 2.6 complete.
 
 ---
 
@@ -132,10 +132,23 @@ Exact variants to confirm in Websavers dashboard before renewal.
 
 ## Completed Stages
 
-- Stage 1 — Hugo Evaluation — complete 2026-03-29
-- Stage 2 — Email Migration — complete 2026-04-01
-- Stage 3 — AWS Pipeline — complete 2026-04-02
-- Stage 4 — Content — complete 2026-04-03
+**Track 1 — Website Build**
+- Stage 1.1 — Hugo Evaluation — complete 2026-03-29
+- Stage 1.2 — Email Migration — complete 2026-04-01
+- Stage 1.3 — AWS Pipeline — complete 2026-04-02
+- Stage 1.4 — Content — complete 2026-04-03
+- Stage 1.5 — Domain Cutover — complete 2026-04-03
+- Stage 1.6 — CloudWatch Monitoring — complete 2026-04-03
+- Stage 1.7 — Security Remediation — complete 2026-04-04
+- Stage 1.8 — Internet Cache / Wayback Machine — complete 2026-04-05
+
+**Track 2 — Economic Indicators Dashboard**
+- Stage 2.1 — Document Origin — complete 2026-04-04
+- Stage 2.2 — Hugo Integration — complete 2026-04-04
+- Stage 2.3 — Server-Side Data Fetching — complete 2026-04-05
+- Stage 2.4 — Data Source Upgrades — complete 2026-04-05
+- Stage 2.5 — Historical Storage (DynamoDB) — complete 2026-04-06
+- Stage 2.6 — Threshold Alerting (SNS) — complete 2026-04-06
 
 ---
 

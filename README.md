@@ -24,7 +24,7 @@ This is not a consulting brochure. It is a working journal with proof of work.
 | Source control  | Git / GitHub                  |                                               |
 | CI/CD           | GitHub Actions                | Push to main → build → deploy                 |
 | Hosting         | AWS S3 + CloudFront           | ca-central-1                                  |
-| Domain          | tacedata.ca                   | Registered via Websavers; cutover in Stage 5  |
+| Domain          | tacedata.ca                   | Route 53 + ACM; cutover complete 2026-04-03   |
 | Email           | Fastmail                      | scott.leblanc@tacedata.ca                     |
 
 ---
@@ -34,20 +34,23 @@ This is not a consulting brochure. It is a working journal with proof of work.
 ```
 tacedata-site/
 ├── README.md                       ← this file
-├── LICENSE                         ← MIT
+├── LICENSE                         ← All Rights Reserved
 ├── SECURITY.md                     ← vulnerability reporting
 ├── .github/
 │   └── workflows/
 │       ├── deploy.yml              ← GitHub Actions deploy pipeline (on push)
 │       └── scheduled-rebuild.yml  ← daily cron rebuild (08:00 UTC)
 ├── config/
-│   ├── runbook-stage3-aws.md       ← AWS infrastructure setup commands
-│   ├── runbook-stage5-dns-cutover.md ← DNS cutover runbook
+│   ├── runbook-stage3-aws.md           ← AWS infrastructure setup (S3, CloudFront, IAM)
+│   ├── runbook-stage5-dns-cutover.md   ← DNS cutover runbook
 │   ├── runbook-cloudwatch-monitoring.md ← CloudWatch monitoring setup
-│   ├── s3.bucket.policy.json       ← S3 bucket policy (CloudFront OAC)
-│   ├── iam-trust-policy.json       ← IAM role trust policy
-│   ├── iam-permissions-policy.json ← IAM role permissions policy
-│   └── rewrite-index-html.js       ← CloudFront Function source
+│   ├── runbook-econ-dashboard.md       ← Econ dashboard Lambda pipeline setup (Stages 3/5/6)
+│   ├── lambda-execution-policy.json    ← Lambda IAM execution policy
+│   ├── lambda-trust-policy.json        ← Lambda IAM trust policy
+│   ├── s3.bucket.policy.json           ← S3 bucket policy (CloudFront OAC)
+│   ├── iam-trust-policy.json           ← GitHub Actions deploy role trust policy
+│   ├── iam-permissions-policy.json     ← GitHub Actions deploy role permissions policy
+│   └── rewrite-index-html.js           ← CloudFront Function source
 ├── docs/
 │   ├── TODO.md                     ← active build checklist
 │   ├── STAGES.md                   ← phase definitions and current state
@@ -55,17 +58,25 @@ tacedata-site/
 │   ├── CHANGELOG.md                ← version history
 │   ├── VERSIONING.md               ← commit and release conventions
 │   ├── templates/                  ← content templates
+│   ├── projects/
+│   │   └── econ-scaffold.md        ← econ dashboard project scaffold (session context)
 │   └── websavers.md                ← Websavers account review findings
-└── hugo/                      ← Hugo site source
+├── lambda/
+│   └── indicators.py               ← Lambda handler — fetches 8 indicators, writes to S3 + DynamoDB
+├── scripts/
+│   └── backfill_history.py         ← one-time DynamoDB history backfill (180 days)
+└── hugo/                           ← Hugo site source
     ├── hugo.toml                   ← Hugo site config
     ├── config/_default/            ← PaperMod theme config
     ├── content/
     │   ├── _index.md               ← home page
+    │   ├── portfolio.md            ← portfolio hub (projects → stages → posts)
     │   ├── posts/                  ← blog post Markdown files
     │   ├── projects/               ← project write-up Markdown files
     │   └── about.md                ← about page
+    ├── static/
+    │   └── projects/econ/          ← econ dashboard static HTML
     ├── themes/PaperMod/            ← PaperMod theme (git submodule)
-    ├── static/                     ← static assets (logo, diagrams)
     ├── assets/css/extended/        ← custom CSS overrides
     └── layouts/                    ← custom layout overrides
 ```
@@ -132,8 +143,9 @@ are stored in GitHub Actions variables — not committed to this repository.
 | Variable | `SITE_URL` | Base URL for Hugo build |
 | Variable | `S3_BUCKET_NAME` | S3 bucket name for site content |
 | Variable | `CLOUDFRONT_DISTRIBUTION_ID` | CloudFront distribution ID for cache invalidation |
+| Variable | `ECON_LAMBDA_FUNCTION_NAME` | Lambda function name for econ dashboard deploy |
 
-See `config/runbook-stage3-aws.md` for full infrastructure setup commands.
+See `config/runbook-stage3-aws.md` for site infrastructure setup and `config/runbook-econ-dashboard.md` for the econ dashboard Lambda pipeline.
 
 ---
 

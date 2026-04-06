@@ -22,17 +22,18 @@ The project is documented publicly as a staged build: a blog series on tacedata.
 | Hosting | AWS S3 + CloudFront |
 | Publish trigger | Git push → GitHub Actions → S3 sync |
 | Current dashboard file | `hugo/static/projects/econ/interest-rate/index.html` |
-| Dashboard version | v0.4.0 |
+| Dashboard version | v0.5.0 (Stage 2.5 — period selector, DynamoDB history) |
 | Dashboard URL | `/projects/econ/interest-rate/` |
 | Data feed | `https://tacedata.ca/data/indicators.json` (Lambda → S3 → CloudFront) |
+| History feeds | `https://tacedata.ca/data/history-90d.json` · `history-180d.json` |
 
 The dashboard is integrated into the Hugo site and fetches data from a server-side Lambda pipeline.
 
 ---
 
-## What currently exists — v0.3.0
+## What currently exists — v0.5.0
 
-A single self-contained HTML file (~921 lines). No external dependencies beyond Google Fonts. All logic — data fetching, signal computation, sparkline rendering, verdict aggregation — is in one `<script>` block.
+A single self-contained HTML file. No external dependencies beyond Google Fonts. All logic — signal computation, sparkline rendering, verdict aggregation, period selection — is in one `<script>` block. Data fetching runs entirely in Lambda.
 
 ### Eight indicator cards, two rows
 
@@ -69,7 +70,7 @@ A **Diagnostics panel** exposes raw Twelve Data API responses for troubleshootin
 - Twelve Data (SPY, CAD/USD only): 2 symbols × 2 calls = 4 calls per run, well within 8 calls/minute free tier
 - No inter-symbol pause required at current Twelve Data volume
 - `indicators.json` is written to S3 on every Lambda run; CloudFront serves it with caching disabled on the `data/*` path
-- Lambda environment variables: `TD_API_KEY` (Twelve Data), `FRED_API_KEY` (FRED), `S3_BUCKET`, `S3_KEY`
+- Lambda environment variables: `TD_API_KEY` (Twelve Data), `FRED_API_KEY` (FRED), `S3_BUCKET`, `S3_KEY`, `DYNAMODB_TABLE`, `SNS_TOPIC_ARN`
 
 **Known data source constraints:**
 
@@ -262,13 +263,18 @@ Twelve Data API key: Lambda environment variable only — never in source. AWS c
 
 | File | Description |
 |---|---|
-| `hugo/static/projects/econ/interest-rate/index.html` | Dashboard — v0.4.0 |
-| `lambda/indicators.py` | Lambda handler — fetches all 8 indicators, writes indicators.json to S3 |
+| `hugo/static/projects/econ/interest-rate/index.html` | Dashboard — v0.5.0 |
+| `lambda/indicators.py` | Lambda handler — fetches all 8 indicators, writes to S3 + DynamoDB, checks thresholds |
+| `scripts/backfill_history.py` | One-time DynamoDB backfill script (180 days) |
 | `hugo/content/projects/econ-indicators-proj.md` | Project page at `/projects/econ-indicators/` |
 | `hugo/content/posts/econ-stage-1-post.md` | Blog post — Stage 1 origin story |
 | `hugo/content/posts/econ-stage-2-post.md` | Blog post — Stage 2 Hugo integration |
 | `hugo/content/posts/econ-stage-3-post.md` | Blog post — Stage 3 server-side data fetching |
-| `config/runbook-econ-dashboard.md` | AWS setup runbook (placeholders) |
+| `hugo/content/posts/econ-stage-4-post.md` | Blog post — Stage 4 data source upgrades |
+| `hugo/content/posts/econ-stage-5-post.md` | Blog post — Stage 5 historical storage |
+| `hugo/content/posts/econ-stage-6-post.md` | Blog post — Stage 6 threshold alerting |
+| `config/runbook-econ-dashboard.md` | AWS setup runbook — Stages 3, 5, 6 |
+| `config/lambda-execution-policy.json` | Lambda IAM execution policy (current — all stages) |
 | `docs/projects/econ-scaffold.md` | This file |
 
 ---
