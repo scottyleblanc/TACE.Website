@@ -183,10 +183,29 @@ Browser (CloudFront)
 
 **Why BoC Valet for bond yields:** No free source of real-time GoC bond yields exists. Bond markets are OTC; real-time data requires Bloomberg Terminal or Refinitiv (~$24K/year). BoC publishes end-of-day yields — authoritative, free, and adequate for mortgage rate decision-making.
 
-### Stage 2.5 — Historical storage
-**Goal:** Lambda writes a timestamped snapshot to DynamoDB each run. Dashboard gains 3-month and 6-month sparkline options.
+### Stage 2.5 — Historical storage ✅ COMPLETE
 
-**Scope:** DynamoDB table design, Lambda write logic, dashboard UI for period selection.
+**Changes made:**
+- DynamoDB table `econ-indicators-history` — PK `pk` (String), SK `ts` (ISO timestamp), TTL `ttl` (1 year, auto-expires)
+- Lambda: `write_snapshot_to_dynamo(payload, ts)` — PutItem on every run; values stored as strings
+- Lambda: `generate_history_files(ts_now)` — runs during midnight UTC hour only; queries 90d and 180d windows, aggregates to one entry per calendar day, writes `data/history-90d.json` and `data/history-180d.json` to S3
+- Lambda: `_dynamo_query_all()` — pagination helper for DynamoDB Query
+- Dashboard: period selector (`30D` / `3M` / `6M`) in the header. 30D reads from `indicators.json` (unchanged). 3M/6M fetch the pre-built history files and re-draw sparklines. Current values, signals, and verdict are always from `indicators.json`.
+- IAM policy updated: S3 resource widened to `data/*`; added `dynamodb:PutItem` and `dynamodb:Query`
+
+**History file schema:**
+```json
+{
+  "generated_at": "2026-04-06T00:00:00Z",
+  "days": 90,
+  "snapshots": [
+    { "date": "2026-01-06", "sp": 540.2, "tsx": 24800, "oil": 72.5,
+      "cad": 0.718, "b5": 2.85, "b10": 3.22, "boc": 4.25, "cpi_yoy": 2.1 }
+  ]
+}
+```
+
+**Cost addition:** ~$0.15/month (DynamoDB writes + storage + once-daily reads). Well within DynamoDB free tier for storage.
 
 ### Stage 2.6 — Threshold alerting (optional)
 **Goal:** Lambda detects threshold crossings and publishes to SNS → email.

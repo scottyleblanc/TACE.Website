@@ -101,12 +101,13 @@ This project is documented stage by stage as a blog series:
 - [Post 2 — Hugo Integration](/posts/econ-stage-2-post/) — moving the dashboard into the site and the iframe-vs-link decision
 - [Post 3 — Server-Side Data Fetching](/posts/econ-stage-3-post/) — Lambda architecture, what disappeared from the browser, and error handling philosophy
 - [Post 4 — Data Source Upgrades](/posts/econ-stage-4-post/) — replacing ETF proxies, investigating free data sources, and fixing a BoC query bug
+- [Post 5 — Historical Storage](/posts/econ-stage-5-post/) — DynamoDB snapshot store, daily history file generation, and the 3M/6M period selector
 
 ## Current Stage
 
-Stage 4 is live. ETF proxies for TSX and crude oil are replaced with direct sources. GoC bond yields use a corrected BoC Valet query. Twelve Data is now used only for S&P 500 and CAD/USD.
+Stage 5 is live. Lambda writes a timestamped snapshot to DynamoDB on every run. Once daily, it queries the last 90 and 180 days, aggregates to one entry per calendar day, and writes pre-built history files to S3. The dashboard period selector (30D / 3M / 6M) re-renders sparklines from those files.
 
-Stage 5 will add historical storage — Lambda writes timestamped snapshots to DynamoDB, and the dashboard gains 3-month and 6-month sparkline options.
+Stage 6 will add threshold alerting — Lambda detects when an indicator crosses a meaningful threshold and sends an email via SNS.
 
 ## Tech Used
 

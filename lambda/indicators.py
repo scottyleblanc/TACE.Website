@@ -43,6 +43,15 @@ YF_BASE   = "https://query1.finance.yahoo.com/v8/finance/chart"
 # No inter-symbol pause required at this volume.
 TD_PAUSE_S = 0
 
+DYNAMODB_TABLE = os.environ.get("DYNAMODB_TABLE", "econ-indicators-history")
+
+# History files written to S3 once daily (midnight UTC run).
+# Served via the existing CloudFront data/* behavior.
+S3_HISTORY_KEYS = {
+    90:  "data/history-90d.json",
+    180: "data/history-180d.json",
+}
+
 
 # ── HTTP helpers ──────────────────────────────────────────────────────────────
 
@@ -245,25 +254,113 @@ def _is_stale(date_str, days):
 
 # ── S3 write ──────────────────────────────────────────────────────────────────
 
-def write_to_s3(payload):
-    """Write indicators.json to S3 using boto3 (available in Lambda runtime)."""
+def write_to_s3(payload, key=None, cache_control=None):
+    """Write a JSON payload to S3. Defaults to indicators.json with 30-minute cache."""
     import boto3  # noqa: PLC0415 — available in Lambda, not needed locally
     s3 = boto3.client("s3")
     s3.put_object(
         Bucket=S3_BUCKET,
-        Key=S3_KEY,
+        Key=key or S3_KEY,
         Body=json.dumps(payload, separators=(",", ":")),
         ContentType="application/json",
-        CacheControl="max-age=1800",  # 30 minutes — matches run cadence
+        CacheControl=cache_control or "max-age=1800",
     )
+
+
+def write_snapshot_to_dynamo(payload, ts):
+    """Write a timestamped snapshot to DynamoDB for historical storage.
+    Values stored as strings to avoid boto3 Decimal requirement.
+    TTL set to 1 year — DynamoDB expires old items automatically."""
+    import boto3  # noqa: PLC0415
+    dynamodb = boto3.resource("dynamodb")
+    table    = dynamodb.Table(DYNAMODB_TABLE)
+    ttl      = int((datetime.now(timezone.utc) + timedelta(days=365)).timestamp())
+
+    item = {"pk": "SNAPSHOT", "ts": ts, "ttl": ttl}
+    if payload.get("boc"):
+        item["boc"] = str(round(payload["boc"]["cur"], 4))
+    if payload.get("bonds"):
+        item["b5"]  = str(round(payload["bonds"]["b5"]["cur"],  4))
+        item["b10"] = str(round(payload["bonds"]["b10"]["cur"], 4))
+    if payload.get("cpi"):
+        item["cpi_yoy"] = str(round(payload["cpi"]["yoy"], 4))
+    if payload.get("sp"):
+        item["sp"]  = str(round(payload["sp"]["cur"],  4))
+    if payload.get("tsx"):
+        item["tsx"] = str(round(payload["tsx"]["cur"], 2))
+    if payload.get("oil"):
+        item["oil"] = str(round(payload["oil"]["cur"], 4))
+    if payload.get("cad"):
+        item["cad"] = str(round(payload["cad"]["cur"], 6))
+
+    table.put_item(Item=item)
+
+
+def _dynamo_query_all(table, **kwargs):
+    """Query DynamoDB with automatic pagination. Returns all items across pages."""
+    items = []
+    while True:
+        resp     = table.query(**kwargs)
+        items.extend(resp.get("Items", []))
+        last_key = resp.get("LastEvaluatedKey")
+        if not last_key:
+            break
+        kwargs["ExclusiveStartKey"] = last_key
+    return items
+
+
+def generate_history_files(ts_now):
+    """Query DynamoDB for 90- and 180-day windows, aggregate to one entry per calendar
+    day (latest run wins), and write history-90d.json / history-180d.json to S3.
+    Called only on the midnight UTC run — daily granularity, negligible read cost."""
+    import boto3  # noqa: PLC0415
+    from boto3.dynamodb.conditions import Key  # noqa: PLC0415
+
+    dynamodb = boto3.resource("dynamodb")
+    table    = dynamodb.Table(DYNAMODB_TABLE)
+    today    = datetime.now(timezone.utc).date()
+
+    for days in [90, 180]:
+        start = (today - timedelta(days=days)).strftime("%Y-%m-%dT00:00:00Z")
+
+        items = _dynamo_query_all(
+            table,
+            KeyConditionExpression=Key("pk").eq("SNAPSHOT") & Key("ts").gte(start),
+            ProjectionExpression="ts, boc, b5, b10, cpi_yoy, sp, tsx, oil, cad",
+        )
+
+        # One entry per calendar day — take the latest timestamp for that day
+        by_day = {}
+        for item in items:
+            date = item["ts"][:10]
+            if date not in by_day or item["ts"] > by_day[date]["ts"]:
+                by_day[date] = item
+
+        snapshots = []
+        for date in sorted(by_day.keys()):
+            item = by_day[date]
+            snap = {"date": date}
+            for k in ["boc", "b5", "b10", "cpi_yoy", "sp", "tsx", "oil", "cad"]:
+                if k in item:
+                    snap[k] = float(item[k])
+            snapshots.append(snap)
+
+        write_to_s3(
+            {"generated_at": ts_now, "days": days, "snapshots": snapshots},
+            key=S3_HISTORY_KEYS[days],
+            cache_control="max-age=86400",  # 24 hours — regenerated once daily
+        )
+        print(f"[indicators] history-{days}d: {len(snapshots)} daily snapshots written")
 
 
 # ── Handler ───────────────────────────────────────────────────────────────────
 
 def handler(event, context):
-    """Lambda entry point. Fetches all indicators and writes indicators.json to S3."""
+    """Lambda entry point. Fetches all indicators, writes indicators.json to S3,
+    writes a timestamped snapshot to DynamoDB, and regenerates history files once daily."""
     errors  = {}
-    payload = {"generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
+    ts_now  = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    payload = {"generated_at": ts_now}
 
     # No-quota / free sources — fetch first, no rate concerns
     for key, fn in [
@@ -293,6 +390,20 @@ def handler(event, context):
         payload["errors"] = errors
 
     write_to_s3(payload)
+
+    # Write snapshot to DynamoDB — non-fatal if it fails
+    try:
+        write_snapshot_to_dynamo(payload, ts_now)
+    except Exception as e:
+        print(f"[indicators] DynamoDB write failed: {e}")
+
+    # Regenerate history files once daily — midnight UTC hour only (00:00 and 00:30 runs)
+    now_utc = datetime.now(timezone.utc)
+    if now_utc.hour == 0:
+        try:
+            generate_history_files(ts_now)
+        except Exception as e:
+            print(f"[indicators] history generation failed: {e}")
 
     print(f"[indicators] written to s3://{S3_BUCKET}/{S3_KEY} — errors: {errors or 'none'}")
     return {"statusCode": 200, "errors": errors}

@@ -2,10 +2,22 @@
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "S3WriteIndicators",
+      "Sid": "S3WriteData",
       "Effect": "Allow",
       "Action": "s3:PutObject",
-      "Resource": "arn:aws:s3:::<S3_BUCKET_NAME>/tacedata-site/data/indicators.json"
+      "Resource": "arn:aws:s3:::<S3_BUCKET_NAME>/tacedata-site/data/*"
+    },
+    {
+      "Sid": "DynamoDBSnapshotWrite",
+      "Effect": "Allow",
+      "Action": "dynamodb:PutItem",
+      "Resource": "arn:aws:dynamodb:ca-central-1:<AWS_ACCOUNT_ID>:table/econ-indicators-history"
+    },
+    {
+      "Sid": "DynamoDBSnapshotQuery",
+      "Effect": "Allow",
+      "Action": "dynamodb:Query",
+      "Resource": "arn:aws:dynamodb:ca-central-1:<AWS_ACCOUNT_ID>:table/econ-indicators-history"
     },
     {
       "Sid": "CloudWatchLogs",

@@ -6,6 +6,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-04-06
+
+### Added
+- `lambda/indicators.py` — DynamoDB snapshot write (`write_snapshot_to_dynamo`) on every run; once-daily history file generation (`generate_history_files`) querying 90 and 180 day windows; `_dynamo_query_all` pagination helper
+- `data/history-90d.json`, `data/history-180d.json` — pre-aggregated daily history files written to S3 by Lambda; one entry per calendar day, oldest→newest
+- Dashboard period selector (30D / 3M / 6M) — re-renders sparklines from history files; current values, signals, and verdict always from `indicators.json`
+- Runbook steps 10–13 in `config/runbook-econ-dashboard.md` — DynamoDB table creation, TTL setup, IAM policy update, DYNAMODB_TABLE env var
+
+### Changed
+- `config/lambda-execution-policy.json` — S3 resource widened from `data/indicators.json` to `data/*`; added `dynamodb:PutItem` and `dynamodb:Query` on `econ-indicators-history`
+
+---
+
 ## [0.18.0] - 2026-04-05
 
 ### Added

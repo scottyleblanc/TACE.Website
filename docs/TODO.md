@@ -160,15 +160,19 @@ Two tracks:
 
 ---
 
-## Stage 2.5 — Econ Dashboard: Historical Storage (Planned)
+## Stage 2.5 — Econ Dashboard: Historical Storage (Complete — 2026-04-06)
 
 Goal: Lambda writes a timestamped snapshot to DynamoDB each run. Dashboard gains 3-month and 6-month sparkline options.
 
-- [ ] DynamoDB table design
-- [ ] Lambda write logic (append snapshot each run)
-- [ ] Dashboard UI — period selector (30-day / 3-month / 6-month)
-- [ ] Blog post: `econ-stage-5-post.md`
-- [ ] Tag: econ-v0.6.0
+- [x] DynamoDB table design — `econ-indicators-history` PK/SK/TTL
+- [x] Lambda write logic — `write_snapshot_to_dynamo()` on every run
+- [x] Lambda history generation — `generate_history_files()` once daily at midnight UTC
+- [x] IAM policy updated — S3 `data/*`, DynamoDB PutItem + Query
+- [x] Dashboard UI — period selector (30D / 3M / 6M) in header
+- [x] Runbook updated — Steps 10–13 for Stage 5 AWS setup
+- [x] Blog post: `econ-stage-5-post.md`
+- [ ] AWS setup: create DynamoDB table, update Lambda execution role, add DYNAMODB_TABLE env var
+- [ ] Tag: v2.6.0
 
 ---
 
@@ -180,7 +184,7 @@ Goal: Lambda detects threshold crossings and publishes to SNS → email.
 - [ ] Lambda threshold detection logic
 - [ ] SNS topic and email subscription
 - [ ] Blog post: `econ-stage-6-post.md`
-- [ ] Tag: econ-v0.7.0
+- [ ] Tag: v2.7.0
 
 ---
 

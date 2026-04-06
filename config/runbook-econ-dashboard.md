@@ -1,4 +1,4 @@
-# Runbook — Economic Indicators Lambda (Stage 3)
+# Runbook — Economic Indicators Lambda (Stage 3 / Stage 5)
 
 One-time setup for the econ dashboard server-side data pipeline.
 Run from the repo root unless otherwise noted.
@@ -175,3 +175,69 @@ After a successful Lambda invocation:
 3. Verify `Generated:` timestamp matches the Lambda run time
 4. Verify no error banner appears
 5. Simulate a failure: temporarily rename the S3 key and reload — error banner should appear with clear messaging
+
+---
+
+## Stage 5 Setup — DynamoDB Historical Storage
+
+### 10. Create DynamoDB Table
+
+```powershell
+aws dynamodb create-table `
+  --table-name econ-indicators-history `
+  --attribute-definitions `
+    AttributeName=pk,AttributeType=S `
+    AttributeName=ts,AttributeType=S `
+  --key-schema `
+    AttributeName=pk,KeyType=HASH `
+    AttributeName=ts,KeyType=RANGE `
+  --billing-mode PAY_PER_REQUEST `
+  --region ca-central-1 `
+  --profile tace-aws-admin
+```
+
+Enable TTL (auto-expires items older than 1 year):
+
+```powershell
+aws dynamodb update-time-to-live `
+  --table-name econ-indicators-history `
+  --time-to-live-specification Enabled=true,AttributeName=ttl `
+  --region ca-central-1 `
+  --profile tace-aws-admin
+```
+
+### 11. Update Lambda Execution Role Policy
+
+The updated policy is in `config/lambda-execution-policy.json`. Apply it:
+
+```powershell
+aws iam put-role-policy `
+  --role-name <ECON_LAMBDA_EXECUTION_ROLE_NAME> `
+  --policy-name econ-lambda-execution-policy `
+  --policy-document file://config/lambda-execution-policy.json `
+  --profile tace-aws-admin
+```
+
+Changes from Stage 3 policy:
+- S3 resource widened from `data/indicators.json` to `data/*` (covers history files)
+- Added `dynamodb:PutItem` and `dynamodb:Query` on `econ-indicators-history`
+
+### 12. Add DYNAMODB_TABLE Environment Variable
+
+```powershell
+aws lambda update-function-configuration `
+  --function-name <ECON_LAMBDA_FUNCTION_NAME> `
+  --environment "Variables={TD_API_KEY=<TWELVE_DATA_API_KEY>,FRED_API_KEY=<FRED_API_KEY>,S3_BUCKET=<S3_BUCKET_NAME>,S3_KEY=tacedata-site/data/indicators.json,DYNAMODB_TABLE=econ-indicators-history}" `
+  --region ca-central-1 `
+  --profile tace-aws-admin
+```
+
+### 13. Validate Stage 5
+
+After deploying updated Lambda code and completing setup:
+
+1. Invoke Lambda manually and check response
+2. Verify DynamoDB item written: `aws dynamodb query --table-name econ-indicators-history --key-condition-expression "pk = :pk" --expression-attribute-values '{":pk":{"S":"SNAPSHOT"}}' --limit 1 --scan-index-forward false --region ca-central-1 --profile tace-aws-admin`
+3. Wait for midnight UTC run (or manually invoke at 00:00 UTC) to trigger history file generation
+4. Verify history files written to S3: `aws s3 ls s3://<S3_BUCKET_NAME>/tacedata-site/data/ --region ca-central-1 --profile tace-aws-admin`
+5. Load dashboard — verify 3M and 6M period buttons appear and render sparklines (3M/6M will be empty until sufficient history accumulates)
