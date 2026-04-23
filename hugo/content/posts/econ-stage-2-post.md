@@ -60,4 +60,8 @@ That is the [next post](/posts/econ-stage-3-post/).
 
 ---
 
+*Next in the series: [Stage 3 — server-side data fetching](/posts/econ-stage-3-post/) — moving all data fetching out of the browser and into AWS Lambda, eliminating the API key requirement, CORS constraints, and 90-second cooldown.*
+
+---
+
 *This dashboard is an informational tool for personal use. It is not financial advice. Mortgage decisions depend on personal circumstances that no dashboard can capture. Consult a mortgage broker or financial advisor before making rate decisions.*

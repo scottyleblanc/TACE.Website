@@ -120,4 +120,8 @@ Stage 5 adds historical storage. Right now the Lambda writes a single current sn
 
 ---
 
+*Next in the series: [Stage 5 — historical storage](/posts/econ-stage-5-post/) — adding a DynamoDB snapshot store so the dashboard can display 3-month and 6-month sparklines alongside the existing 30-day view.*
+
+---
+
 *This dashboard is an informational tool for personal use. It is not financial advice. Mortgage decisions depend on personal circumstances that no dashboard can capture. Consult a mortgage broker or financial advisor before making rate decisions.*

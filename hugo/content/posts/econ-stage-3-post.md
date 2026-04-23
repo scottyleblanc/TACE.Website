@@ -139,4 +139,8 @@ With CORS no longer a constraint, Stage 4 evaluates replacing the ETF proxies wi
 
 ---
 
+*Next in the series: [Stage 4 — data source upgrades](/posts/econ-stage-4-post/) — replacing ETF proxies with direct data sources, investigating free alternatives, and fixing a BoC date-range bug that was hiding three months of bond yield data.*
+
+---
+
 *This dashboard is an informational tool for personal use. It is not financial advice. Mortgage decisions depend on personal circumstances that no dashboard can capture. Consult a mortgage broker or financial advisor before making rate decisions.*

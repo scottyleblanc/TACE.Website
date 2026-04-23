@@ -1,6 +1,6 @@
 ---
 title: "economic dashboard series: stage 5 — historical storage"
-date: 2026-04-05T14:00:00
+date: 2026-04-06T14:00:00
 draft: false
 tags: ["aws", "lambda", "dynamodb", "s3", "python", "portfolio", "economics", "canada"]
 summary: "fifth post in the series: adding a DynamoDB snapshot store so the dashboard can display 3-month and 6-month sparklines alongside the existing 30-day view."
@@ -134,6 +134,10 @@ One issue surfaced during setup: the history file generation uses a `force_histo
 ### What Comes Next
 
 Stage 6 adds threshold alerting — Lambda detects when an indicator crosses a meaningful threshold (5yr yield up >0.3% in a week, CPI above 3%, yield curve inversion) and publishes to SNS for email notification.
+
+---
+
+*Next in the series: [Stage 6 — threshold alerting](/posts/econ-stage-6-post/) — adding SNS email alerts on indicator crossings, with a 24-hour deduplication window to prevent repeated alerts when a value sits above a threshold for an extended period.*
 
 ---
 
