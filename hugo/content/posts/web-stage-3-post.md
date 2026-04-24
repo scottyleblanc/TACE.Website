@@ -1,5 +1,5 @@
 ---
-title: "stage 3: deploying a static site on aws"
+title: "site: stage 3: deploying a static site on aws"
 date: 2026-04-02
 draft: false
 tags: ["aws", "s3", "cloudfront", "github-actions", "oidc"]

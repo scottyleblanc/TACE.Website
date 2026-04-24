@@ -1,5 +1,5 @@
 ---
-title: "stage 6:  site monitoring with aws cloudwatch"
+title: "site: stage 6:  site monitoring with aws cloudwatch"
 date: 2026-04-03T23:00:00
 draft: false
 tags: ["aws", "cloudwatch", "monitoring", "synthetics"]

@@ -1,5 +1,5 @@
 ---
-title: "scheduled rebuild — publishing future-dated posts automatically"
+title: "site: scheduled rebuild — publishing future-dated posts automatically"
 date: 2026-04-06T07:30:00
 draft: false
 tags: ["aws", "github-actions", "hugo", "ci-cd"]

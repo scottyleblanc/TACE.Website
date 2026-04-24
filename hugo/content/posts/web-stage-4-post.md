@@ -1,5 +1,5 @@
 ---
-title: "stage 4: building the site itself"
+title: "site: stage 4: building the site itself"
 date: 2026-04-03T06:00:00
 draft: false
 tags: ["hugo", "papermod", "aws", "cloudfront"]

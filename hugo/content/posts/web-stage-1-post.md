@@ -1,5 +1,5 @@
 ---
-title: "stage 1: choosing a static site generator"
+title: "site: stage 1: choosing a static site generator"
 date: 2026-03-29
 draft: false
 tags: ["hugo", "meta"]

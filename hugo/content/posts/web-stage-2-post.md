@@ -1,5 +1,5 @@
 ---
-title: "stage 2: migrating email before touching dns"
+title: "site: stage 2: migrating email before touching dns"
 date: 2026-04-01
 draft: false
 tags: ["email", "fastmail", "dns", "aws"]
