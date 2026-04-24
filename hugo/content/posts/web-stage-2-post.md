@@ -4,6 +4,7 @@ date: 2026-04-01
 draft: false
 tags: ["email", "fastmail", "dns", "aws"]
 summary: "Why email migration had to happen before any DNS work — moving tacedata.ca email to Fastmail without losing anything."
+aliases: ["/posts/email-migration-post/"]
 ---
 
 *This is the second post in a series documenting the build of tacedata.ca — moving from WordPress to a Hugo static site on AWS. [Stage 1](/posts/web-stage-1-post/) chose Hugo and PaperMod.*

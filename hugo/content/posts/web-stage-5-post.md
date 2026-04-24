@@ -4,6 +4,7 @@ date: 2026-04-03T12:00:00
 draft: false
 tags: ["aws", "dns", "route53", "cloudfront", "acm", "powershell"]
 summary: "Moving tacedata.ca from Websavers DNS to AWS Route 53 — what the cutover actually involves, and how to do it without taking the site down."
+aliases: ["/posts/dns-cutover-post/"]
 ---
 
 *This is the fifth post in a series documenting the build of tacedata.ca — moving from WordPress to a Hugo static site on AWS. [Stage 1](/posts/web-stage-1-post/) chose Hugo and PaperMod. [Stage 2](/posts/web-stage-2-post/) migrated email. [Stage 3](/posts/web-stage-3-post/) built the deploy pipeline. [Stage 4](/posts/web-stage-4-post/) built out the site content and structure.*

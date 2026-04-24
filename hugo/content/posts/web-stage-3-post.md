@@ -4,6 +4,7 @@ date: 2026-04-02
 draft: false
 tags: ["aws", "s3", "cloudfront", "github-actions", "oidc"]
 summary: "How we set up S3, CloudFront, and a GitHub Actions deploy pipeline for tacedata.ca — no long-lived credentials, no manual deploys."
+aliases: ["/posts/aws-pipeline-post/"]
 ---
 
 *This is the third post in a series documenting the build of tacedata.ca — moving from WordPress to a Hugo static site on AWS. [Stage 1](/posts/web-stage-1-post/) chose Hugo and PaperMod. [Stage 2](/posts/web-stage-2-post/) migrated email before touching DNS.*

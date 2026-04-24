@@ -4,6 +4,7 @@ date: 2026-04-06T07:30:00
 draft: false
 tags: ["aws", "github-actions", "hugo", "ci-cd"]
 summary: "Adding a daily GitHub Actions cron workflow so future-dated Hugo posts go live on their scheduled date without a manual push."
+aliases: ["/posts/scheduled-rebuild-post/"]
 ---
 
 Hugo respects the `date:` field in a post's frontmatter. If you set a date in the future, Hugo will not include that post in the build output until that date has passed. This is useful — write a post today, schedule it for next week.

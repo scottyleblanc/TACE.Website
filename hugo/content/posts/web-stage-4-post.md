@@ -4,6 +4,7 @@ date: 2026-04-03T06:00:00
 draft: false
 tags: ["hugo", "papermod", "aws", "cloudfront"]
 summary: "Getting the site into a state worth sharing — PaperMod setup, profile home page, content structure, and a few problems solved along the way."
+aliases: ["/posts/site-content-post/"]
 ---
 
 *This is the fourth post in a series documenting the build of tacedata.ca — moving from WordPress to a Hugo static site on AWS. [Stage 1](/posts/web-stage-1-post/) chose Hugo and PaperMod. [Stage 2](/posts/web-stage-2-post/) migrated email. [Stage 3](/posts/web-stage-3-post/) built the AWS deploy pipeline.*

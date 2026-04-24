@@ -4,6 +4,7 @@ date: 2026-03-29
 draft: false
 tags: ["hugo", "meta"]
 summary: "Evaluated Hugo and three themes before committing to a stack — and what we were actually looking for."
+aliases: ["/posts/hugo-evaluation-post/"]
 ---
 
 *This is the first post in a series documenting the build of tacedata.ca — moving from WordPress to a Hugo static site on AWS.*
