@@ -1,9 +1,13 @@
 ---
-title: "cleaning sensitive data out of git history"
+title: "security - stage 1 - cleaning sensitive data out of git history"
 date: 2026-04-04T01:00:00
 draft: false
 tags: ["git", "security", "aws", "git-filter-repo"]
 summary: "After a security review flagged AWS identifiers committed to a public repo, we used git-filter-repo to scrub them from all 46 commits — including file content and commit messages."
+---
+
+*This is the first post in a series documenting the security remediation of tacedata.ca — after a post-launch review found sensitive AWS identifiers committed to a public repository.*
+
 ---
 
 Building in public has a cost if you are not careful about what you commit.
@@ -75,3 +79,7 @@ I was already hesitant about a public repo. That instinct was right. The lesson 
 [security remediation — what we got wrong](/projects/security-remediation-proj/)
 
 Scott
+
+---
+
+*Next in the series: [Stage 2 — internet cache and the Wayback Machine](/posts/sec-stage-2-post/) — cleaning the repo is step one; checking what already left the building is step two.*

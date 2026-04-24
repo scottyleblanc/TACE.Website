@@ -1,10 +1,14 @@
 
 ---
-title: "internet cache and the wayback machine"
+title: "security - stage 2 - internet cache and the wayback machine"
 date: 2026-04-04T06:00:00
 draft: false
 tags: ["git", "security", "aws", "git-filter-repo", "wayback machine", "internet cache"]
 summary: "Cleaning git history removes data from your repo — but not from search engines, the Wayback Machine, or GitHub's cache. Here is what to check."
+---
+
+*This is the second post in a series documenting the security remediation of tacedata.ca. [Stage 1](/posts/sec-stage-1-post/) covered cleaning sensitive AWS identifiers from the git history.*
+
 ---
 
 Cleaning the git history is step one. Step two is checking what already left the building.
@@ -64,3 +68,7 @@ The lesson is not that this will always be the case. On a repository with traffi
 [security remediation — what we got wrong](/projects/security-remediation-proj/)
 
 Scott
+
+---
+
+*The security remediation series ends here. The full account: [security remediation — what we got wrong](/projects/security-remediation-proj/).*

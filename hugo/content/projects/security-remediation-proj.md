@@ -86,6 +86,6 @@ AI makes mistakes.  Despite my hesitation, and initial pushback, I eventually ac
 
 ## References
 
-- [cleaning sensitive data out of git history](/posts/git-history-rewrite-post/) *(draft — pending GitHub support resolution)*
-- [internet cache and wayback machine](/posts/cache-and-a-wayback-machine/) *(draft — pending GitHub support resolution)*
+- [cleaning sensitive data out of git history](/posts/sec-stage-1-post/)
+- [internet cache and wayback machine](/posts/sec-stage-2-post/)
 - [tacedata.ca site build](/projects/tacedata-site-proj/)

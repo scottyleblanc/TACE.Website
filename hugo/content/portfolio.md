@@ -33,8 +33,8 @@ A map of the work: what was built, how it was documented, and where to find it.
 
 | Stage | What | Post |
 |---|---|---|
-| 1.8 | Internet cache and the Wayback Machine | [Internet cache and the wayback machine](/posts/cache-and-a-wayback-machine/) |
-| 1.7 | Cleaning sensitive data out of git history | [Cleaning sensitive data out of git history](/posts/git-history-rewrite-post/) |
+| 1.8 | Internet cache and the Wayback Machine | [Internet cache and the wayback machine](/posts/sec-stage-2-post/) |
+| 1.7 | Cleaning sensitive data out of git history | [Cleaning sensitive data out of git history](/posts/sec-stage-1-post/) |
 | 1.6 | Site monitoring with AWS CloudWatch | [Site monitoring with aws cloudwatch](/posts/web-stage-6-post/) |
 | 1.5 | Cutting over a website | [Stage 5: cutting over a website](/posts/web-stage-5-post/) |
 | 1.4 | Building the site itself | [Stage 4: building the site itself](/posts/web-stage-4-post/) |
