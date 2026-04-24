@@ -6,6 +6,10 @@ tags: ["email", "fastmail", "dns", "aws"]
 summary: "Why email migration had to happen before any DNS work — moving tacedata.ca email to Fastmail without losing anything."
 ---
 
+*This is the second post in a series documenting the build of tacedata.ca — moving from WordPress to a Hugo static site on AWS. [Stage 1](/posts/web-stage-1-post/) chose Hugo and PaperMod.*
+
+---
+
 DNS changes are irreversible in the sense that once nameservers propagate, the old configuration is gone. Before we touched a single DNS record, we needed to know that email was sorted. Not planned — sorted. Working, tested, confirmed.
 
 The concern was straightforward: if email broke mid-cutover, we could be locked out of the domain at the worst possible moment — unable to receive AWS account notifications, ACM alerts, or anything else tied to the tacedata.ca inbox. As it turned out, the cutover required no email interaction at all. But that is only knowable in hindsight — sorting email first was the right call.
@@ -44,3 +48,7 @@ Email is working on Fastmail. All three addresses receive mail. Aliases are conf
 The site and DNS work that follows can proceed without email being a risk factor.
 
 Scott
+
+---
+
+*Next in the series: [Stage 3 — deploying a static site on AWS](/posts/web-stage-3-post/) — S3, CloudFront, and a GitHub Actions deploy pipeline with no long-lived credentials.*

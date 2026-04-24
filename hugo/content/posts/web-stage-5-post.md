@@ -6,6 +6,10 @@ tags: ["aws", "dns", "route53", "cloudfront", "acm", "powershell"]
 summary: "Moving tacedata.ca from Websavers DNS to AWS Route 53 — what the cutover actually involves, and how to do it without taking the site down."
 ---
 
+*This is the fifth post in a series documenting the build of tacedata.ca — moving from WordPress to a Hugo static site on AWS. [Stage 1](/posts/web-stage-1-post/) chose Hugo and PaperMod. [Stage 2](/posts/web-stage-2-post/) migrated email. [Stage 3](/posts/web-stage-3-post/) built the deploy pipeline. [Stage 4](/posts/web-stage-4-post/) built out the site content and structure.*
+
+---
+
 The new site has been running at a CloudFront URL since Stage 3. Functional, deployed, but not yet at tacedata.ca. The last piece was DNS — moving the domain off Websavers DNS and onto AWS Route 53, and attaching a proper SSL certificate.
 
 It sounds like a small thing. It is not a small thing.  However, with a well defined plan and a bunch of help from Claude, we managed to get it done in an evening.   
@@ -103,3 +107,7 @@ Scott
 ---
 
 **PS** — The us-east-1 requirement is not just an arbitrary AWS quirk. Readers who follow AWS news may recall recent outages where a significant portion of the internet went down because so many services rely on us-east-1 for their control plane — even when their actual workloads run elsewhere. For this site, the exposure is low: once the certificate is issued and attached, day-to-day serving does not touch us-east-1. But it is a real dependency worth understanding.
+
+---
+
+*Next in the series: [Stage 6 — site monitoring with AWS CloudWatch](/posts/web-stage-6-post/) — adding availability monitoring so we know within 10 minutes if the site goes down.*

@@ -6,6 +6,10 @@ tags: ["hugo", "meta"]
 summary: "Evaluated Hugo and three themes before committing to a stack — and what we were actually looking for."
 ---
 
+*This is the first post in a series documenting the build of tacedata.ca — moving from WordPress to a Hugo static site on AWS.*
+
+---
+
 Before writing a line of content or touching a DNS record, we needed to decide whether Hugo was actually the right tool. The old site was WordPress. Moving to a static site generator is a meaningful change in workflow — no admin panel, no plugins, no database. Everything lives in Markdown files and a git repository. That is either liberating or inconvenient depending on how you work.
 
 I prefer to work from the command line whenever possible, and notepad++ is a good friend.  Still learning the workings of Git, but comfortable with the basics.
@@ -37,4 +41,8 @@ The git workflow is a natural fit. Every content change is a commit. The history
 
 The evaluation took a couple of evenings. It was worth doing before committing to a full migration.  It was not until I had confirmed the workflow that I made a final call.
 
-Scott 
+Scott
+
+---
+
+*Next in the series: [Stage 2 — migrating email before touching DNS](/posts/web-stage-2-post/) — why email had to be sorted before any DNS work could begin.*

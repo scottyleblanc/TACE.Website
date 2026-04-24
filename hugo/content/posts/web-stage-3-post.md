@@ -6,6 +6,10 @@ tags: ["aws", "s3", "cloudfront", "github-actions", "oidc"]
 summary: "How we set up S3, CloudFront, and a GitHub Actions deploy pipeline for tacedata.ca — no long-lived credentials, no manual deploys."
 ---
 
+*This is the third post in a series documenting the build of tacedata.ca — moving from WordPress to a Hugo static site on AWS. [Stage 1](/posts/web-stage-1-post/) chose Hugo and PaperMod. [Stage 2](/posts/web-stage-2-post/) migrated email before touching DNS.*
+
+---
+
 The site is built with Hugo. Hugo produces a folder of static files — HTML, CSS, JavaScript, images. The question is where those files live and how they get there. We chose AWS, and the setup turned out to be more interesting than expected.
 
 ## the stack
@@ -59,3 +63,7 @@ The full command sequence — S3 bucket policy, OIDC provider setup, IAM role cr
 [tacedata.ca project write-up](/projects/tacedata-site-proj/)
 
 Scott
+
+---
+
+*Next in the series: [Stage 4 — building the site itself](/posts/web-stage-4-post/) — PaperMod setup, profile home page, content structure, and a few problems solved along the way.*

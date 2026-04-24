@@ -1,9 +1,13 @@
 ---
-title: "site monitoring with aws cloudwatch"
+title: "stage 6:  site monitoring with aws cloudwatch"
 date: 2026-04-03T23:00:00
 draft: false
 tags: ["aws", "cloudwatch", "monitoring", "synthetics"]
 summary: "Setting up availability monitoring for tacedata.ca using CloudWatch Synthetics — what it is, what it costs, and how we set it up."
+---
+
+*This is the sixth post in a series documenting the build of tacedata.ca — moving from WordPress to a Hugo static site on AWS. [Stage 1](/posts/web-stage-1-post/) chose Hugo and PaperMod. [Stage 2](/posts/web-stage-2-post/) migrated email. [Stage 3](/posts/web-stage-3-post/) built the deploy pipeline. [Stage 4](/posts/web-stage-4-post/) built out the site. [Stage 5](/posts/web-stage-5-post/) cut over DNS.*
+
 ---
 
 The site is live. The next question is: how do we know if it goes down?
@@ -45,3 +49,7 @@ The full setup — IAM policy, canary script, alarm configuration — is in the 
 [tacedata.ca project write-up](/projects/tacedata-site-proj/)
 
 Scott
+
+---
+
+*The build series ends here. What happened next: [security remediation — what we got wrong](/projects/security-remediation-proj/) — a post-launch security review found sensitive AWS identifiers committed to the public repo.*

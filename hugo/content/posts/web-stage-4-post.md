@@ -6,6 +6,10 @@ tags: ["hugo", "papermod", "aws", "cloudfront"]
 summary: "Getting the site into a state worth sharing — PaperMod setup, profile home page, content structure, and a few problems solved along the way."
 ---
 
+*This is the fourth post in a series documenting the build of tacedata.ca — moving from WordPress to a Hugo static site on AWS. [Stage 1](/posts/web-stage-1-post/) chose Hugo and PaperMod. [Stage 2](/posts/web-stage-2-post/) migrated email. [Stage 3](/posts/web-stage-3-post/) built the AWS deploy pipeline.*
+
+---
+
 Stage 3 left us with a working pipeline — push to main, site deploys to CloudFront. What it did not leave us with was a site worth visiting. The content was placeholder, the layout was default, and the URL was a CloudFront test domain. Stage 4 was about fixing all of that.
 
 ## switching to PaperMod
@@ -44,3 +48,7 @@ One issue surfaced when the pipeline ran against the live CloudFront URL: PaperM
 The fix was to move `baseURL` out of the config file entirely and into a GitHub Actions variable (`vars.SITE_URL`), passed to Hugo at build time with `--baseURL "${{ vars.SITE_URL }}"`. The config file has no domain baked into it. When the domain cutover came, one variable update was all that was required.
 
 Scott
+
+---
+
+*Next in the series: [Stage 5 — cutting over a website](/posts/web-stage-5-post/) — moving tacedata.ca from Websavers DNS to Route 53 and attaching a proper SSL certificate.*

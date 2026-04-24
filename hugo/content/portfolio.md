@@ -35,9 +35,9 @@ A map of the work: what was built, how it was documented, and where to find it.
 |---|---|---|
 | 1.8 | Internet cache and the Wayback Machine | [Internet cache and the wayback machine](/posts/cache-and-a-wayback-machine/) |
 | 1.7 | Cleaning sensitive data out of git history | [Cleaning sensitive data out of git history](/posts/git-history-rewrite-post/) |
-| 1.6 | Site monitoring with AWS CloudWatch | [Site monitoring with aws cloudwatch](/posts/cloudwatch-monitoring-post/) |
-| 1.5 | Cutting over a website | [Stage 5: cutting over a website](/posts/dns-cutover-post/) |
-| 1.4 | Building the site itself | [Stage 4: building the site itself](/posts/site-content-post/) |
-| 1.3 | Deploying a static site on AWS | [Stage 3: deploying a static site on aws](/posts/aws-pipeline-post/) |
-| 1.2 | Migrating email before touching DNS | [Stage 2: migrating email before touching dns](/posts/email-migration-post/) |
-| 1.1 | Choosing a static site generator | [Stage 1: choosing a static site generator](/posts/hugo-evaluation-post/) |
+| 1.6 | Site monitoring with AWS CloudWatch | [Site monitoring with aws cloudwatch](/posts/web-stage-6-post/) |
+| 1.5 | Cutting over a website | [Stage 5: cutting over a website](/posts/web-stage-5-post/) |
+| 1.4 | Building the site itself | [Stage 4: building the site itself](/posts/web-stage-4-post/) |
+| 1.3 | Deploying a static site on AWS | [Stage 3: deploying a static site on aws](/posts/web-stage-3-post/) |
+| 1.2 | Migrating email before touching DNS | [Stage 2: migrating email before touching dns](/posts/web-stage-2-post/) |
+| 1.1 | Choosing a static site generator | [Stage 1: choosing a static site generator](/posts/web-stage-1-post/) |
