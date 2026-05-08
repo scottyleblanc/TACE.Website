@@ -1,12 +1,24 @@
 ---
 title: "portfolio"
-date: 2026-04-05
+date: 2026-05-07
 draft: false
 url: /portfolio/
 summary: "Projects, stages, posts, and live work — all in one place."
 ---
 
 A map of the work: what was built, how it was documented, and where to find it.
+
+---
+
+## Traffic Analytics — CloudFront logs and Athena
+
+*Server-side traffic analytics for tacedata.ca using AWS-native tooling — no JavaScript, no cookies, no third parties. Design proved sound; closed when the CloudFront Free pricing plan blocked all logging features.*
+
+**[Project write-up →](/projects/analytics/)**
+
+| Stage | What | Post | Status |
+|---|---|---|---|
+| 4.1 | Free plan logging wall — CloudFront and WAF logging both gated behind the Pro tier | [Post 1 — what the Free plan doesn't tell you](/posts/analytics-stage-1-post/) | Closed |
 
 ---
 
@@ -27,14 +39,28 @@ A map of the work: what was built, how it was documented, and where to find it.
 
 ---
 
+## Security Remediation — public repo cleanup
+
+*A post-launch security review uncovered AWS resource identifiers committed to a public repository. Full account of what was exposed, how it was found, and what it took to fix it — including a `git-filter-repo` history rewrite across 46 commits.*
+
+**[Project write-up →](/projects/security-remediation-proj/)**
+
+| Stage | What | Post | Status |
+|---|---|---|---|
+| 3.2 | Internet cache and the Wayback Machine | [Post 2 — internet cache and the wayback machine](/posts/sec-stage-2-post/) | Complete |
+| 3.1 | Cleaning sensitive data out of git history | [Post 1 — cleaning sensitive data out of git history](/posts/sec-stage-1-post/) | Complete |
+
+---
+
 ## tacedata.ca — this site
 
 *Personal portfolio and professional development site. Hugo static site hosted on AWS S3 + CloudFront, deployed via GitHub Actions. Documented as a staged build from scratch.*
 
+**[Project write-up →](/projects/tacedata-site-proj/)**
+
 | Stage | What | Post |
 |---|---|---|
-| 1.8 | Internet cache and the Wayback Machine | [Internet cache and the wayback machine](/posts/sec-stage-2-post/) |
-| 1.7 | Cleaning sensitive data out of git history | [Cleaning sensitive data out of git history](/posts/sec-stage-1-post/) |
+| 1.7 | Scheduled rebuild — publishing future-dated posts automatically | [Scheduled publishing](/posts/web-feat-1-post/) |
 | 1.6 | Site monitoring with AWS CloudWatch | [Site monitoring with aws cloudwatch](/posts/web-stage-6-post/) |
 | 1.5 | Cutting over a website | [Stage 5: cutting over a website](/posts/web-stage-5-post/) |
 | 1.4 | Building the site itself | [Stage 4: building the site itself](/posts/web-stage-4-post/) |
