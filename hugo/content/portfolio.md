@@ -1,12 +1,24 @@
 ---
 title: "portfolio"
-date: 2026-05-07
+date: 2026-05-08
 draft: false
 url: /portfolio/
 summary: "Projects, stages, posts, and live work — all in one place."
 ---
 
 A map of the work: what was built, how it was documented, and where to find it.
+
+---
+
+## AWS Cost Management — right-sizing a personal estate
+
+*A billing audit that found $59/month accumulating in a personal AWS account that was supposed to cost nearly nothing — idle EIPs, orphaned snapshots, and test secrets nobody cleaned up. Reduced to $3.63/month.*
+
+**[Project write-up →](/projects/aws-cost/)**
+
+| Stage | What | Post | Status |
+|---|---|---|---|
+| 5.1 | What $59/month looks like on a personal site — idle EIPs, orphaned snapshots, secret accumulation | [Post 1 — what $59/month looks like](/posts/aws-cost-stage-1-post/) | Complete |
 
 ---
 
