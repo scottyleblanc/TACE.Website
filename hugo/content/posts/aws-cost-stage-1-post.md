@@ -1,5 +1,5 @@
 ---
-title: "aws cost management: stage 1: what $59/month looks like on a personal site"
+title: "aws cost management: stage 1: time to cancel that gym membership you don't use"
 date: 2026-05-08T00:00:00
 draft: false
 tags: ["aws", "cost", "ec2", "ebs", "secrets-manager", "elastic-ip"]
@@ -9,6 +9,10 @@ summary: "A billing audit of the tacedata.ca AWS account — what was accumulati
 *This is the first post in a series on AWS cost management for tacedata.ca. Related: [analytics project write-up](/projects/analytics/) — the project that prompted the audit.*
 
 ---
+
+Most gym memberships are not cancelled the day you stop going. You stop going in February. The charge keeps appearing in March, April, May. It is small enough not to be alarming. The intention to cancel exists, quietly, alongside the charge. Eventually someone looks at the bank statement.
+
+AWS accounts work the same way.
 
 The analytics project ended when the CloudFront Free plan blocked all logging features. The work was not wasted — I learned something about the pricing model, documented it, and moved on. But the project had a side effect: while digging through the AWS console, I looked at the billing dashboard for the first time in a while.
 
@@ -68,7 +72,7 @@ The $3.63 that remains is the actual site: snapshot storage for the AMI archive 
 
 A 94% reduction from a couple of hours of work. The infrastructure that was supposed to cost nothing does, in fact, cost nothing. The charges that existed were real — accumulated from months of building, testing, and not cleaning up — and were invisible until someone looked.
 
-The lesson is less about the specific services and more about the habit: AWS accounts accumulate charges the way drawers accumulate things. It takes an active decision to open the drawer.
+The lesson is less about the specific services and more about the habit. AWS accounts bill on autopay. Charges accumulate the way gym memberships do — quietly, monthly, each one below the threshold of alarm. They stop when you cancel them. It takes an active decision to cancel.
 
 Scott
 

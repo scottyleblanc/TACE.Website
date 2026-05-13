@@ -11,7 +11,7 @@ summary: "A billing audit of the tacedata.ca AWS account that found $59/month in
 
 The analytics project surfaced a question that should have been asked earlier: what is this AWS account actually costing?
 
-The site itself — S3, CloudFront, Route 53 — was known to be near-zero. The concern was everything else that accumulated over months of POC work, infrastructure experiments, and development activity. No one had looked at the bill as a whole.
+The site itself — S3, CloudFront, Route 53 — was known to be near-zero. The concern was everything else that accumulated over months of POC work, infrastructure experiments, and development activity. I had not looked at the bill as a whole.
 
 ## What Was Found
 
