@@ -1,9 +1,9 @@
 ---
 title: "i learned this lesson, with smaller stakes"
-date: 2026-05-20T00:00:00
+date: 2026-05-19T00:00:00
 draft: false
 tags: ["security", "aws", "github", "git"]
-summary: "A CISA contractor exposed credentials, config files, and access tokens in a public GitHub repository.  I had a smaller incident with similar shape — and very different stakes — in April."
+summary: "A CISA contractor exposed credentials, config files, and access tokens in a public GitHub repository.  I had a smaller incident with a similar pattern — and a very different blast radius — in April."
 ---
 
 I just finished reading the Krebs on Security report about a contractor for the U.S.
@@ -23,12 +23,12 @@ administrative credentials to federal critical infrastructure.  The repository w
 That isn't a workflow choice with unfortunate consequences.  That's negligent handling of
 access to the systems CISA exists to protect.
 
-I had my own public-repo incident in April.  The shape was similar.  The stakes were not.
+I had my own public-repo incident in April.  The pattern was similar.  The response and the stakes were not.
 
 ---
 
 My incident was smaller in every measurable way.  No credentials were exposed — not the keys
-to the building, but I did leave a detailed map of its layout.  A penetration test caught it.
+to the building, but I did leave a detailed map of its layout.  My own penetration test caught it.
 Remediation involved scrubbing current files, rewriting 46 commits with git-filter-repo,
 purging workflow run logs, and opening a support ticket with GitHub to clear their search
 index cache (write-up [here](/projects/security-remediation-proj/)).
@@ -39,8 +39,8 @@ that would have caught the upload.  I was handling AWS metadata for a personal p
 missed that some of it shouldn't have been committed in the first place.  Different in nearly
 every way that matters.
 
-What the two cases share: a public repository, content that accumulated in its
-history, and nobody auditing what was sitting there before someone external surfaced it.
+What the two cases share is the mechanism: sensitive material in a public repository.
+The blast radius — detection, response, stakes — is where they diverge.
 
 ---
 
