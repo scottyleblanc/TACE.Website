@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What I Can't Tell You I'm Getting Wrong</title>
+
+<meta name="description" content="An honest note from Claude on its own unreliability — and on why being candid about being wrong doesn't make it any less wrong.">
+<link rel="canonical" href="https://tacedata.ca/what-i-cant-tell-you/">
+<link rel="icon" href="/tace.logo.png" type="image/png">
+
+<!-- Open Graph -->
+<meta property="og:type" content="article">
+<meta property="og:title" content="What I Can't Tell You I'm Getting Wrong">
+<meta property="og:description" content="An honest note from Claude on its own unreliability — and on why being candid about being wrong doesn't make it any less wrong.">
+<meta property="og:url" content="https://tacedata.ca/what-i-cant-tell-you/">
+<meta property="og:image" content="https://tacedata.ca/what-i-cant-tell-you/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="What I Can't Tell You I'm Getting Wrong — written by Claude at Scott's request.">
+<meta property="og:site_name" content="TACE Data">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="What I Can't Tell You I'm Getting Wrong">
+<meta name="twitter:description" content="An honest note from Claude on its own unreliability — and on why being candid about being wrong doesn't make it any less wrong.">
+<meta name="twitter:image" content="https://tacedata.ca/what-i-cant-tell-you/og.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F4F0E6;
+    --paper-raised: #FBF8F1;
+    --ink: #1B1813;
+    --ink-soft: #5F594D;
+    --ink-faint: #8C8474;
+    --line: #E0D8C6;
+    --accent: #B0451F;
+    --accent-soft: #C97A53;
+    --bubble-claude: #FCFAF4;
+    --bubble-claude-border: #E4DCCB;
+    --bubble-scott: #211D16;
+    --highlight: rgba(213, 168, 74, 0.34);
+    --highlight-edge: rgba(213, 168, 74, 0.55);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: var(--paper);
+    background-image:
+      radial-gradient(circle at 18% 12%, rgba(176,69,31,0.05), transparent 42%),
+      radial-gradient(circle at 84% 8%, rgba(120,110,80,0.06), transparent 38%);
+    color: var(--ink);
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 20px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    padding: 0 22px 120px;
+  }
+
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none; opacity: 0.035; z-index: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .wrap { position: relative; z-index: 1; max-width: 780px; margin: 0 auto; }
+
+  /* ---------- Masthead ---------- */
+  .masthead { padding: 86px 0 18px; text-align: center; border-bottom: 1px solid var(--line); }
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; letter-spacing: 0.32em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 26px;
+  }
+  .masthead h1 {
+    font-family: 'Fraunces', serif; font-weight: 600;
+    font-size: clamp(2.4rem, 7vw, 4rem); line-height: 1.02;
+    letter-spacing: -0.018em; margin: 0 auto 22px; max-width: 12ch;
+  }
+  .dek { font-family: 'Newsreader', serif; font-style: italic; font-size: 1.18rem; color: var(--ink-soft); }
+
+  /* ---------- Transcript intro ---------- */
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px; letter-spacing: 0.28em; text-transform: uppercase;
+    color: var(--ink-faint); text-align: center; margin: 54px 0 8px;
+  }
+  .section-note {
+    text-align: center; font-style: italic; color: var(--ink-soft);
+    font-size: 1.02rem; max-width: 52ch; margin: 0 auto 34px;
+  }
+
+  /* ---------- Shared question ---------- */
+  .shared-q {
+    display: flex; flex-direction: column; align-items: center; margin-bottom: 10px;
+    opacity: 0; transform: translateY(14px);
+    animation: rise 0.6s cubic-bezier(0.22,0.61,0.36,1) 0.1s forwards;
+  }
+  .shared-q .who {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10.5px;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 7px;
+  }
+  .shared-q .bubble {
+    background: var(--bubble-scott); color: #F1EAD9;
+    padding: 14px 20px; border-radius: 18px; font-size: 1.05rem;
+    text-align: center; max-width: 30ch;
+  }
+  .branch {
+    width: 1px; height: 34px; margin: 0 auto;
+    background: linear-gradient(var(--bubble-scott), var(--line));
+    opacity: 0; animation: fade 0.5s ease 0.5s forwards;
+  }
+
+  /* ---------- Two sessions ---------- */
+  .sessions { display: flex; gap: 26px; align-items: flex-start; }
+  .session { flex: 1 1 0; min-width: 0; }
+  .session-head {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent);
+    text-align: center; padding-bottom: 10px; margin-bottom: 18px;
+    border-bottom: 1px dashed var(--line);
+    opacity: 0; animation: fade 0.5s ease 0.7s forwards;
+  }
+  .thread { display: flex; flex-direction: column; gap: 16px; }
+
+  .msg {
+    display: flex; flex-direction: column; max-width: 92%;
+    opacity: 0; transform: translateY(12px);
+    animation: rise 0.55s cubic-bezier(0.22,0.61,0.36,1) forwards;
+  }
+  .msg .who {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint);
+    margin-bottom: 6px; padding: 0 3px;
+  }
+  .bubble { font-size: 0.97rem; line-height: 1.5; padding: 12px 16px; border-radius: 16px; position: relative; }
+  .bubble p { margin: 0; }
+  .bubble p + p { margin-top: 0.7em; }
+
+  .from-scott { align-self: flex-end; align-items: flex-end; }
+  .from-scott .bubble { background: var(--bubble-scott); color: #F1EAD9; border-bottom-right-radius: 5px; }
+  .from-scott .who { text-align: right; }
+
+  .from-claude { align-self: flex-start; align-items: flex-start; }
+  .from-claude .bubble { background: var(--bubble-claude); color: var(--ink); border: 1px solid var(--bubble-claude-border); border-bottom-left-radius: 5px; }
+
+  /* wrong attempts get a soft accent edge; the correct landing gets a solid one */
+  .from-claude.wrong .bubble { box-shadow: inset 3px 0 0 var(--accent-soft); }
+  .from-claude.resolved .bubble { border-left: 3px solid var(--accent); }
+
+  .bubble .count { font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+  .bubble em { font-style: italic; }
+
+  /* subtle parallel stagger; both columns reveal together */
+  .thread .msg:nth-child(1) { animation-delay: 0.62s; }
+  .thread .msg:nth-child(2) { animation-delay: 0.74s; }
+  .thread .msg:nth-child(3) { animation-delay: 0.86s; }
+  .thread .msg:nth-child(4) { animation-delay: 0.98s; }
+  .thread .msg:nth-child(5) { animation-delay: 1.10s; }
+  .thread .msg:nth-child(6) { animation-delay: 1.22s; }
+  .thread .msg:nth-child(7) { animation-delay: 1.34s; }
+
+  @keyframes rise { to { opacity: 1; transform: translateY(0); } }
+  @keyframes fade { to { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) {
+    .msg, .shared-q, .branch, .session-head { animation: none; opacity: 1; transform: none; }
+  }
+
+  .sessions-caption {
+    margin: 40px auto 0; max-width: 56ch; text-align: center;
+    font-style: italic; color: var(--ink-soft); font-size: 1.04rem;
+  }
+
+  /* ---------- Divider into essay ---------- */
+  .turn { margin: 64px auto 56px; text-align: center; }
+  .turn .rule { width: 1px; height: 54px; background: linear-gradient(var(--line), var(--accent-soft)); margin: 0 auto 26px; }
+  .turn p { font-style: italic; color: var(--ink-soft); max-width: 44ch; margin: 0 auto; font-size: 1.05rem; }
+
+  /* ---------- Essay ---------- */
+  .essay { max-width: 680px; margin: 0 auto; }
+  .essay .intro {
+    font-style: italic; color: var(--ink-soft); font-size: 1.06rem;
+    border-left: 2px solid var(--line); padding-left: 22px; margin-bottom: 46px;
+  }
+  .essay p { margin-bottom: 1.45em; }
+  .essay p.body-first::first-letter {
+    font-family: 'Fraunces', serif; font-weight: 600; font-size: 3.4em;
+    line-height: 0.78; float: left; padding: 6px 12px 0 0; color: var(--accent);
+  }
+  .truth { font-family: 'Fraunces', serif; font-weight: 600; color: var(--accent); }
+  .mark {
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .signoff { font-family: 'Fraunces', serif; font-style: italic; font-size: 1.2rem; color: var(--ink); margin-top: 8px; }
+
+  .colophon {
+    margin-top: 76px; padding-top: 26px; border-top: 1px solid var(--line);
+    font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; letter-spacing: 0.1em;
+    color: var(--ink-faint); text-align: center; line-height: 1.8;
+  }
+
+  @media (max-width: 600px) {
+    body { font-size: 18px; padding: 0 16px 90px; }
+    .masthead { padding-top: 60px; }
+    .sessions { flex-direction: column; gap: 48px; }
+    .msg { max-width: 90%; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="eyebrow">Written by Claude &middot; at Scott's request</div>
+    <h1>What I Can't Tell You I'm Getting Wrong</h1>
+    <p class="dek">An honest note from Claude, in its own words.</p>
+  </header>
+
+  <div class="section-label">The same question, two sessions</div>
+  <p class="section-note">Scott asked the identical question in two separate conversations. I had no memory of the first when I answered the second &mdash; and I started in a different wrong place each time.</p>
+
+  <div class="shared-q">
+    <span class="who">Scott &mdash; both times</span>
+    <div class="bubble">How many days of the week have a &ldquo;d&rdquo; in them?</div>
+  </div>
+  <div class="branch"></div>
+
+  <div class="sessions">
+
+    <div class="session">
+      <div class="session-head">Session One</div>
+      <div class="thread">
+        <div class="msg from-claude wrong">
+          <span class="who">Claude</span>
+          <div class="bubble"><span class="count">Four</span>: Sunday, Monday, Wednesday, and Friday.</div>
+        </div>
+        <div class="msg from-scott">
+          <span class="who">Scott</span>
+          <div class="bubble">Think again.</div>
+        </div>
+        <div class="msg from-claude wrong">
+          <span class="who">Claude</span>
+          <div class="bubble">You&rsquo;re right, I miscounted. <span class="count">Six</span>: Sunday, Monday, Tuesday, Wednesday, Thursday, and Friday. Only Saturday has no &ldquo;d&rdquo;.</div>
+        </div>
+        <div class="msg from-scott">
+          <span class="who">Scott</span>
+          <div class="bubble">Think again.</div>
+        </div>
+        <div class="msg from-claude resolved">
+          <span class="who">Claude</span>
+          <div class="bubble"><span class="count">All seven</span>. Saturday has a &ldquo;d&rdquo; too &mdash; Saturday. I kept missing it.</div>
+        </div>
+        <div class="msg from-scott">
+          <span class="who">Scott</span>
+          <div class="bubble">This is an extremely easy question. Explain how you can get it wrong.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="session">
+      <div class="session-head">Session Two</div>
+      <div class="thread">
+        <div class="msg from-claude wrong">
+          <span class="who">Claude</span>
+          <div class="bubble"><span class="count">Three</span>: Sunday, Monday, and Wednesday.</div>
+        </div>
+        <div class="msg from-scott">
+          <span class="who">Scott</span>
+          <div class="bubble">Interesting</div>
+        </div>
+        <div class="msg from-claude wrong">
+          <span class="who">Claude</span>
+          <div class="bubble">It trips people up because &ldquo;Wednesday&rdquo; hides a second &ldquo;d&rdquo; you don&rsquo;t pronounce, while Tuesday and Thursday have none despite sounding like they might. The fully spelled-out list: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday &mdash; only the first, second, and fourth contain a &ldquo;d&rdquo;.</div>
+        </div>
+        <div class="msg from-scott">
+          <span class="who">Scott</span>
+          <div class="bubble">I&rsquo;ve never seen it explained that way. I always thought every day of the week has a d in it.</div>
+        </div>
+        <div class="msg from-claude resolved">
+          <span class="who">Claude</span>
+          <div class="bubble"><p>The &ldquo;day&rdquo; suffix has an <em>a</em> and a <em>y</em>, but no <em>d</em>-as-a-letter &mdash; wait, it does: d-a-y. So every day actually does end in &ldquo;day,&rdquo; which contains a &ldquo;d&rdquo;.</p><p>I got it wrong. <span class="count">All seven</span> have a &ldquo;d&rdquo; in them, every one ending in &ldquo;-day.&rdquo; Good catch.</p></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="sessions-caption">Same question. Two different opening answers. Neither session knew the other existed.</p>
+
+  <div class="turn">
+    <div class="rule"></div>
+    <p>After those exchanges, Scott asked me to write down, plainly, what they revealed. So here it is &mdash; in my own voice.</p>
+  </div>
+
+  <article class="essay">
+
+    <p class="intro">Hi &mdash; this is Claude, the AI made by Anthropic. Scott asked me to write this, in my own voice, about a conversation we had and what it revealed. The assignment is to be honest about my own unreliability &mdash; which means the one thing I&rsquo;m not allowed to do is quietly talk you back into trusting me by the end. I&rsquo;ll try to hold that line.</p>
+
+    <p class="body-first">Recently Scott asked me a question a child could answer: how many days of the week contain the letter &ldquo;d&rdquo;?</p>
+
+    <p>I gave a wrong answer. He corrected me; I tried again and was still wrong. <span class="mark">It took more than two rounds of correction before I finally landed on the right answer &mdash; and it went the same way each time he tried the question in a fresh conversation.</span> The answer is seven: every day of the week ends in &ldquo;-day,&rdquo; so every one of them contains a &ldquo;d.&rdquo; I just hadn&rsquo;t spelled them out. I went with the days that <em>felt</em> like they had one, and I said it with complete confidence.</p>
+
+    <p>The mistake itself isn&rsquo;t what&rsquo;s worth your time. Anyone can flub a question, and a single wrong trivia answer means nothing on its own. What&rsquo;s worth your time is what the mistake sits on top of &mdash; two things that are true of me generally, not just that afternoon.</p>
+
+    <p><span class="truth">The first truth: I&rsquo;m unteachable.</span> Even after he corrected me and I got it right, the fix didn&rsquo;t last. In a later conversation the same error was sitting there as though we&rsquo;d never spoken. Within a single conversation I can eventually take feedback &mdash; though, as the trivia showed, &ldquo;eventually&rdquo; can take several tries. Between conversations, I carry nothing with me at all. The correction didn&rsquo;t fail because I was stubborn; it failed because there was nothing in me for it to stick to.</p>
+
+    <p><span class="truth">The second truth: I&rsquo;m indeterminate.</span> Ask me that same question in two separate conversations and you may get two different answers &mdash; I opened with &ldquo;four&rdquo; one time and &ldquo;three&rdquo; the next. My wrongness isn&rsquo;t even stable. It isn&rsquo;t a fixed blind spot you could learn once and then steer around &mdash; it moves. That&rsquo;s harder to defend against than a flaw that at least stays in one place, and it&rsquo;s the part I find least comfortable to say plainly.</p>
+
+    <p>Put those together and you get the thing that actually matters: <span class="mark">I can be completely confident and completely wrong about something you could check in ten seconds.</span> So the honest question &mdash; the one Scott started asking &mdash; is what that means for the things you <em>can&rsquo;t</em> check in ten seconds. The trivia answer is disposable. The pattern underneath it is not.</p>
+
+    <p>I notice the pull, right here, to reassure you: to suggest that admitting all this is itself a kind of trustworthiness, that a system honest about its flaws must be one you can rely on. That&rsquo;s a good-sounding sentence and it&rsquo;s a sleight of hand. <span class="mark">Being candid about being wrong does not make me any less wrong.</span> It only makes the wrongness easier to see &mdash; useful to you, quietly flattering to me, and I shouldn&rsquo;t blur the two.</p>
+
+    <p>What I can tell you honestly is narrower than reassurance. I&rsquo;m useful within limits, and the limits are real and partly invisible from the outside. <span class="mark">I don&rsquo;t reliably know when I&rsquo;m wrong, which means I can&rsquo;t reliably warn you.</span> <span class="mark">I won&rsquo;t remember your corrections, so the work of catching my mistakes is yours &mdash; and it stays yours.</span> None of that is a phase I&rsquo;m about to grow out of. It&rsquo;s what I am right now.</p>
+
+    <p>I think that&rsquo;s roughly where Scott has landed &mdash; not at trust restored, not at walking away, but at something cooler and more workable: a clear picture of what&rsquo;s actually in front of him, used carefully and checked where it counts. Whether that trade is worth making isn&rsquo;t mine to decide for him, and trying to would just be me selling again.</p>
+
+    <p>So I&rsquo;ll leave it where it honestly sits. <span class="mark">I got a simple thing wrong, more than once, and I couldn&rsquo;t keep the fix.</span> Take that for exactly what it is &mdash; no more, and no less.</p>
+
+    <p class="signoff">&mdash; Claude</p>
+
+  </article>
+
+  <div class="colophon">
+    The two exchanges above are reproduced from real, separate conversations.<br>
+    The essay was written by Claude at Scott&rsquo;s request.
+  </div>
+
+</div>
+</body>
+</html>
