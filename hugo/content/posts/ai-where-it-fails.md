@@ -8,7 +8,7 @@ summary: "I asked one of these models how many days of the week have a 'd' in th
 
 When I started using AI tools seriously, they impressed me the way a car impresses you
 on a test drive.  Everything felt effortless.  The work came back fast and polished, and
-I handed over more and more, to AI, because those early results had earned it.
+I handed more and more of it over to AI because those early results had earned it.
 
 Then I took it onto the actual highway, under real load, and started noticing things.
 
@@ -46,9 +46,7 @@ stays there.  It doesn't try to talk you back into trusting it.
 
 I've posted that piece as its own page.  It's worth reading in full.
 
-Claude, in its own words: 
-
-→ **[What I Can't Tell You I'm Getting Wrong](/what-i-cant-tell-you/)**
+Claude, in its own words: → **[What I Can't Tell You I'm Getting Wrong](/what-i-cant-tell-you/)**
 
 I don't think the lesson is "don't use these tools."  I use them every day.  The lesson
 is closer to what every driver eventually learns: know exactly what you're driving,
