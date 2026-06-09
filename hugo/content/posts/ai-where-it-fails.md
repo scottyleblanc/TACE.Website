@@ -18,11 +18,11 @@ down and the more it felt like my expectations had been set in a showroom.  The 
 that impressed me early and the version I work with every day are the same thing.  What
 changed was me.
 
-The moment that crystallized it was almost embarrassingly small.  I asked one of these
-models how many days of the week have a "d" in them.  It got it wrong.  I asked again in
-a separate conversation, and it got it wrong in a different way.  The answer is seven —
-every day ends in "-day."  A child can check it in ten seconds.  The model couldn't
-reliably do it at all, and it delivered each wrong answer with complete confidence.
+The moment that crystallized it was almost embarrassingly small.  In late May, I asked
+ChatGPT, Gemini, and Claude how many days of the week have a "d" in them.  All three got
+it wrong.  When I asked Claude again in a fresh conversation, it got it wrong in a
+different way.  The answer is seven — every day ends in "-day."  None of them got it
+right, and each delivered its wrong answer with complete confidence.
 
 That's the part that stays with me.  Not that it missed something trivial, but that it
 sounded exactly as sure when it was wrong as when it was right — and that I'd been
