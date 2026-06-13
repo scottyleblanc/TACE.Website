@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Training Tracker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+
+    <p id="app-error" class="app-error" style="display:none"></p>
+
+    <div id="login-screen">
+      <div class="login-card">
+        <h1>Training Tracker</h1>
+        <p class="login-sub">5K to 10K &mdash; June 15 to September 27, 2026</p>
+        <button id="login-btn">Login with Google</button>
+      </div>
+    </div>
+
+    <div id="dashboard" style="display:none">
+      <header class="site-header">
+        <span class="site-title">Training Tracker</span>
+        <button id="logout-btn" class="logout-btn">Logout</button>
+      </header>
+
+      <main>
+        <section id="today-card"></section>
+
+        <section class="stats-row">
+          <div class="stat-box">
+            <span class="stat-label">Current streak</span>
+            <span id="streak-count" class="stat-value">0</span>
+            <span class="stat-unit">active days</span>
+          </div>
+          <div class="stat-box progress-box">
+            <div class="progress-header">
+              <span class="stat-label">Overall progress</span>
+              <span id="progress-fraction" class="stat-value">0 / 75</span>
+              <span id="progress-pct" class="stat-pct">0%</span>
+            </div>
+            <div class="progress-track">
+              <div id="progress-bar-fill"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="weekly-section">
+          <h2 class="section-title">This week</h2>
+          <div id="weekly-row"></div>
+        </section>
+      </main>
+    </div>
+
+  </div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

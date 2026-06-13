@@ -27,45 +27,51 @@ Data dictionary and build brief: `dev/README.md`
 
 ## Stage 3.2 — Auth
 
-- [ ] Set up Google OAuth2 app in Google Cloud Console (runbook Prerequisites)
-- [ ] Store Google Client ID + Secret in 1Password as "Google OAuth — train.tacedata.ca"
-- [ ] Create Cognito User Pool `tacedata-train-pool` (runbook Step 14)
-- [ ] Create Google IdP in Cognito (runbook Step 15)
-- [ ] Create Cognito App Client `tacedata-train-client` (runbook Step 16)
-- [ ] Create Cognito Hosted UI domain `tacedata-train` (runbook Step 17)
-- [ ] Validate end-to-end login: browser → Cognito Hosted UI → Google → redirect back to train.tacedata.ca
+- [x] Set up Google OAuth2 app in Google Cloud Console (runbook Prerequisites)
+- [x] Store Google Client ID + Secret in 1Password as "Google OAuth — train.tacedata.ca"
+- [x] Create Cognito User Pool `tacedata-train-pool` (runbook Step 14)
+- [x] Create Google IdP in Cognito (runbook Step 15)
+- [x] Create Cognito App Client `tacedata-train-client` (runbook Step 16)
+- [x] Create Cognito Hosted UI domain `tacedata-train` (runbook Step 17)
+- [x] Validate end-to-end login: browser → Cognito Hosted UI → Google → redirect back to train.tacedata.ca
+- [x] Write `tracker/lambda/auth_guard.py` — PreSignUp + PreTokenGeneration trigger, rejects non-allowed Google accounts
+- [x] Create IAM role `tracker-auth-guard-role` (AWSLambdaBasicExecutionRole only) (runbook Step 18)
+- [x] Deploy `tracker-auth-guard` Lambda (runbook Step 18)
+- [x] Grant Cognito permission to invoke auth guard (runbook Step 19)
+- [x] Wire auth guard as PreSignUp + PreTokenGeneration trigger on `<COGNITO_USER_POOL_ID>` (runbook Step 20)
+- [x] Validate: non-owner Google account is rejected at login (runbook Step 21)
 
 ---
 
 ## Stage 3.3 — Backend API
 
-- [ ] Write `tracker/lambda/days_api.py` — GET /days, GET /days/{date}, PATCH /days/{date}
-- [ ] Create IAM execution role `tracker-api-execution-role` (runbook Step 18)
-- [ ] Deploy `tracker-api` Lambda (runbook Step 20)
-- [ ] Set Lambda environment variables (runbook Step 21)
-- [ ] Create API Gateway HTTP API `tracker-api` (runbook Step 24)
-- [ ] Create Cognito JWT authorizer (runbook Step 25)
-- [ ] Create Lambda integration (runbook Step 26)
-- [ ] Create routes GET /days, GET /days/{date}, PATCH /days/{date} (runbook Step 27)
-- [ ] Create auto-deploy stage (runbook Step 28)
-- [ ] Grant API Gateway permission to invoke Lambda (runbook Step 29)
-- [ ] Validate: GET /days with valid Cognito token returns 105 items
-- [ ] Validate: PATCH /days/2026-06-15 sets completed=true in DynamoDB
+- [x] Write `tracker/lambda/days_api.py` — GET /days, GET /days/{date}, PATCH /days/{date}
+- [x] Create IAM execution role `tracker-api-execution-role` (runbook Step 18)
+- [x] Deploy `tracker-api` Lambda (runbook Step 20)
+- [x] Set Lambda environment variables (runbook Step 21)
+- [x] Create API Gateway HTTP API `tracker-api` (runbook Step 24)
+- [x] Create Cognito JWT authorizer (runbook Step 25)
+- [x] Create Lambda integration (runbook Step 26)
+- [x] Create routes GET /days, GET /days/{date}, PATCH /days/{date} (runbook Step 27)
+- [x] Create auto-deploy stage (runbook Step 28)
+- [x] Grant API Gateway permission to invoke Lambda (runbook Step 29)
+- [x] Validate: GET /days returns 105 items (2026-06-15 → 2026-09-27)
+- [x] Validate: PATCH /days/2026-06-15 sets completed=true in DynamoDB
 
 ---
 
 ## Stage 3.4 — Frontend SPA
 
-- [ ] Write `tracker/src/auth.js` — Cognito PKCE login flow, token storage, refresh
-- [ ] Write `tracker/src/app.js` — load days, render today card, streak, weekly row
-- [ ] Write `tracker/src/index.html` — layout, login redirect, dashboard container
-- [ ] Write `tracker/src/style.css` — clean, readable, no emojis
-- [ ] Implement checkbox check-off (PATCH /days/{date} completed=true)
-- [ ] Implement notes field (PATCH /days/{date} notes=text)
-- [ ] Streak logic: consecutive active days completed, rest days skipped
-- [ ] Weekly adherence display: completed/5 for current week
-- [ ] Overall progress: completed/75 active days
-- [ ] Deploy SPA to S3 and validate end-to-end in browser
+- [x] Write `tracker/src/auth.js` — Cognito PKCE login flow, token storage, refresh
+- [x] Write `tracker/src/app.js` — load days, render today card, streak, weekly row
+- [x] Write `tracker/src/index.html` — layout, login redirect, dashboard container
+- [x] Write `tracker/src/style.css` — clean, readable, no emojis
+- [x] Implement checkbox check-off (PATCH /days/{date} completed=true)
+- [x] Implement notes field (PATCH /days/{date} notes=text)
+- [x] Streak logic: consecutive active days completed, rest days skipped
+- [x] Weekly adherence display: completed/5 for current week
+- [x] Overall progress: completed/75 active days
+- [x] Deploy SPA to S3 and validate end-to-end in browser
 
 ---
 

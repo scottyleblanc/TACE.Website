@@ -7,7 +7,7 @@ Full build brief: `dev/README.md`
 
 ---
 
-## Current Stage: Stage 3.2 — Auth (Not Started)
+## Current Stage: Stage 3.5 — Email Notifications (Not Started)
 
 ---
 
@@ -110,6 +110,40 @@ wildcard ACM cert, and Route 53 record in place. DynamoDB table seeded with all 
 ---
 
 ## Completed Stages
+
+### Stage 3.4 — Frontend SPA (2026-06-13)
+
+- `tracker/src/auth.js` — PKCE flow, token storage, refresh, logout
+- `tracker/src/app.js` — today card, streak, progress bar, weekly row, checkbox, notes
+- `tracker/src/index.html` — login screen + dashboard structure
+- `tracker/src/style.css` — clean, no emojis
+- Deployed to S3, CloudFront invalidated, validated end-to-end in browser
+
+---
+
+### Stage 3.3 — Backend API (2026-06-13)
+
+- IAM role `tracker-api-execution-role` — DynamoDB (GetItem, UpdateItem, Scan) + CloudWatch Logs
+- Lambda `tracker-api` — Python 3.12, `days_api.handler`, env `DYNAMODB_TABLE=training-plan`
+- API Gateway HTTP API `tracker-api` — ID `<TRACKER_API_ID>`, endpoint `https://<TRACKER_API_ID>.execute-api.ca-central-1.amazonaws.com`
+- Cognito JWT authorizer `<COGNITO_AUTHORIZER_ID>`, Lambda integration `<LAMBDA_INTEGRATION_ID>`
+- Routes: GET /days, GET /days/{date}, PATCH /days/{date} — all JWT-protected
+- Validated: GET /days returns 105 items; PATCH sets completed=true + completed_date
+
+---
+
+### Stage 3.2 — Auth (2026-06-13)
+
+- Cognito User Pool `tacedata-train-pool` — `<COGNITO_USER_POOL_ID>`
+- Google IdP configured — Client ID `<GOOGLE_OAUTH_CLIENT_ID>`
+- App Client `tacedata-train-client` — `<COGNITO_CLIENT_ID>` (code flow, no secret, PKCE)
+- Hosted UI domain — `<COGNITO_HOSTED_UI_DOMAIN>`
+- Auth guard Lambda `tracker-auth-guard` — PreSignUp + PreTokenGeneration triggers
+- Allowed emails: `<ALLOWED_EMAIL_1>`, `<ALLOWED_EMAIL_2>`
+- Note: PreAuthentication does NOT fire for Google federated logins; PreSignUp blocks profile creation, PreTokenGeneration blocks token exchange
+- Validated: non-allowed account rejected at PreSignUp; allowed account gets `?code=` redirect
+
+---
 
 ### Stage 3.1 — Infrastructure (2026-06-13)
 
