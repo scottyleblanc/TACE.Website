@@ -51,3 +51,29 @@ jobs:
             --function-name ${{ vars.ECON_LAMBDA_FUNCTION_NAME }} \
             --zip-file fileb://function.zip \
             --region ca-central-1
+
+      - name: Deploy Tracker SPA to S3
+        run: |
+          aws s3 sync tracker/src/ s3://${{ vars.TRACKER_S3_BUCKET }}/ --delete
+
+      - name: Invalidate Tracker CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ vars.TRACKER_DISTRIBUTION_ID }} \
+            --paths "/*"
+
+      - name: Update tracker-api Lambda
+        run: |
+          zip -j tracker-api.zip tracker/lambda/days_api.py
+          aws lambda update-function-code \
+            --function-name ${{ vars.TRACKER_LAMBDA_API }} \
+            --zip-file fileb://tracker-api.zip \
+            --region ca-central-1
+
+      - name: Update tracker-email Lambda
+        run: |
+          zip -j tracker-email.zip tracker/lambda/daily_email.py
+          aws lambda update-function-code \
+            --function-name ${{ vars.TRACKER_LAMBDA_EMAIL }} \
+            --zip-file fileb://tracker-email.zip \
+            --region ca-central-1
