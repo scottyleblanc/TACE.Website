@@ -6,10 +6,10 @@ loads all 105 days into DynamoDB. Safe to re-run -- re-seeds unchanged
 items unless --preserve-state is passed (which skips completed days).
 
 Usage:
-    python tracker/scripts/seed_dynamo.py
-    python tracker/scripts/seed_dynamo.py --dry-run
-    python tracker/scripts/seed_dynamo.py --preserve-state
-    python tracker/scripts/seed_dynamo.py --profile tace-aws-admin --region ca-central-1
+    python app/train/scripts/seed_dynamo.py
+    python app/train/scripts/seed_dynamo.py --dry-run
+    python app/train/scripts/seed_dynamo.py --preserve-state
+    python app/train/scripts/seed_dynamo.py --profile tace-aws-admin --region ca-central-1
 """
 
 import argparse
@@ -22,7 +22,7 @@ from botocore.exceptions import ClientError
 
 TABLE_NAME = "training-plan"
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
+_REPO_ROOT = Path(__file__).resolve().parents[3]
 DAYS_CSV = _REPO_ROOT / "dev" / "training_plan_days.csv"
 WEEKS_CSV = _REPO_ROOT / "dev" / "training_plan_weeks.csv"
 

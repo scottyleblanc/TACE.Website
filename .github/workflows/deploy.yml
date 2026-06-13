@@ -46,7 +46,7 @@ jobs:
 
       - name: Deploy Lambda
         run: |
-          zip -j function.zip lambda/indicators.py
+          zip -j function.zip app/econ/lambda/indicators.py
           aws lambda update-function-code \
             --function-name ${{ vars.ECON_LAMBDA_FUNCTION_NAME }} \
             --zip-file fileb://function.zip \
