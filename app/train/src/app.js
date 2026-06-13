@@ -24,6 +24,25 @@ function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function computeCountdown() {
+  const race = new Date('2026-09-27T00:00:00');
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.max(0, Math.floor((race - today) / 86400000));
+}
+
+function renderCountdown() {
+  const days = computeCountdown();
+  const loginEl = document.getElementById('login-countdown');
+  if (loginEl) {
+    loginEl.textContent = days === 0 ? 'Race day!' : `${days} days to race day`;
+  }
+  const valueEl = document.getElementById('countdown-days');
+  const unitEl  = document.getElementById('countdown-unit');
+  if (valueEl) valueEl.textContent = days === 0 ? 'Today!' : days;
+  if (unitEl)  unitEl.textContent  = days === 0 ? '' : days === 1 ? 'day to go' : 'days to go';
+}
+
 function computeStreak(days) {
   const todayStr = todayISO();
   const active = days
@@ -222,6 +241,7 @@ async function showDashboard(days) {
 }
 
 async function init() {
+  renderCountdown();
   const params = new URLSearchParams(window.location.search);
 
   if (params.has('error')) {

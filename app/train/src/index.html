@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Training Tracker</title>
+  <title>10K Training Program</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,15 +13,16 @@
 
     <div id="login-screen">
       <div class="login-card">
-        <h1>Training Tracker</h1>
-        <p class="login-sub">5K to 10K &mdash; June 15 to September 27, 2026</p>
+        <h1>10K Training Program</h1>
+        <p class="login-sub">June 15 &ndash; September 27, 2026</p>
+        <p id="login-countdown" class="login-countdown"></p>
         <button id="login-btn">Login with Google</button>
       </div>
     </div>
 
     <div id="dashboard" style="display:none">
       <header class="site-header">
-        <span class="site-title">Training Tracker</span>
+        <span class="site-title">10K Training Tracker</span>
         <button id="logout-btn" class="logout-btn">Logout</button>
       </header>
 
@@ -33,6 +34,11 @@
             <span class="stat-label">Current streak</span>
             <span id="streak-count" class="stat-value">0</span>
             <span class="stat-unit">active days</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Race day</span>
+            <span id="countdown-days" class="stat-value">--</span>
+            <span id="countdown-unit" class="stat-unit">days to go</span>
           </div>
           <div class="stat-box progress-box">
             <div class="progress-header">
