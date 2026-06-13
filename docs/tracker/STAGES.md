@@ -7,7 +7,7 @@ Full build brief: `dev/README.md`
 
 ---
 
-## Current Stage: Stage 3.5 — Email Notifications (Not Started)
+## Current Stage: Stage 3.6 — CI/CD Integration (Not Started)
 
 ---
 
@@ -110,6 +110,17 @@ wildcard ACM cert, and Route 53 record in place. DynamoDB table seeded with all 
 ---
 
 ## Completed Stages
+
+### Stage 3.5 — Email Notifications (2026-06-13)
+
+- SES domain `tacedata.ca` verified in ca-central-1 (DKIM CNAMEs added to Route 53)
+- IAM role `tracker-email-execution-role` — DynamoDB read + SES SendEmail + CloudWatch Logs
+- Lambda `tracker-email` — Python 3.12, `daily_email.handler`
+- Env: `DYNAMODB_TABLE=training-plan`, `SES_SENDER=noreply@tacedata.ca`, `RECIPIENT=scott.leblanc@tacedata.ca`
+- EventBridge rule `tracker-daily-email` — `cron(0 11 * * ? *)` (11:00 UTC = 7am EDT)
+- Validated: active day email (Day 1, Strength & Mobility) and rest day email (Week 1 Friday) both received
+
+---
 
 ### Stage 3.4 — Frontend SPA (2026-06-13)
 

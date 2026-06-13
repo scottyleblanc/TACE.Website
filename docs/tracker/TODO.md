@@ -77,18 +77,18 @@ Data dictionary and build brief: `dev/README.md`
 
 ## Stage 3.5 — Email Notifications
 
-- [ ] Write `tracker/lambda/daily_email.py` — active day + rest day email logic
-- [ ] Check SES verification status for tacedata.ca (runbook Step 30 — may already be done)
-- [ ] Verify tacedata.ca in SES if needed; add DKIM CNAMEs to Route 53
-- [ ] Create IAM execution role `tracker-email-execution-role` (runbook Step 19)
-- [ ] Deploy `tracker-email` Lambda (runbook Step 22)
-- [ ] Set Lambda environment variables (runbook Step 23)
-- [ ] Create EventBridge rule `tracker-daily-email` — cron(0 11 * * ? *) (runbook Step 31)
-- [ ] Grant EventBridge permission to invoke Lambda (runbook Step 32)
-- [ ] Add Lambda as EventBridge target (runbook Step 33)
-- [ ] Invoke Lambda manually — confirm email arrives at scott.leblanc@tacedata.ca
-- [ ] Validate rest day email format
-- [ ] Validate active day email format
+- [x] Write `tracker/lambda/daily_email.py` — active day + rest day email logic
+- [x] Check SES verification status for tacedata.ca (runbook Step 30 — already verified)
+- [x] Verify tacedata.ca in SES if needed; add DKIM CNAMEs to Route 53
+- [x] Create IAM execution role `tracker-email-execution-role` (runbook Step 19)
+- [x] Deploy `tracker-email` Lambda (runbook Step 22)
+- [x] Set Lambda environment variables (runbook Step 23)
+- [x] Create EventBridge rule `tracker-daily-email` — cron(0 11 * * ? *) (runbook Step 31)
+- [x] Grant EventBridge permission to invoke Lambda (runbook Step 32)
+- [x] Add Lambda as EventBridge target (runbook Step 33)
+- [x] Invoke Lambda manually — confirm email arrives at scott.leblanc@tacedata.ca
+- [x] Validate rest day email format (test_date=2026-06-19, Week 1 Friday)
+- [x] Validate active day email format (test_date=2026-06-15, Day 1 Strength & Mobility)
 
 ---
 
