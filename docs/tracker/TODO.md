@@ -28,7 +28,7 @@ Data dictionary and build brief: `dev/README.md`
 ## Stage 3.2 — Auth
 
 - [ ] Set up Google OAuth2 app in Google Cloud Console (runbook Prerequisites)
-- [ ] Store Google Client ID + Secret in Bitwarden as "Google OAuth — train.tacedata.ca"
+- [ ] Store Google Client ID + Secret in 1Password as "Google OAuth — train.tacedata.ca"
 - [ ] Create Cognito User Pool `tacedata-train-pool` (runbook Step 14)
 - [ ] Create Google IdP in Cognito (runbook Step 15)
 - [ ] Create Cognito App Client `tacedata-train-client` (runbook Step 16)
