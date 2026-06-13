@@ -7,7 +7,7 @@ Full build brief: `dev/README.md`
 
 ---
 
-## Current Stage: Stage 3.6 — CI/CD Integration (Not Started)
+## Current Stage: Stage 3.7 — Public View (Later Phase)
 
 ---
 
@@ -110,6 +110,16 @@ wildcard ACM cert, and Route 53 record in place. DynamoDB table seeded with all 
 ---
 
 ## Completed Stages
+
+### Stage 3.6 — CI/CD Integration (2026-06-13)
+
+- IAM deploy role `tacedata-github-deploy` updated — S3 tacedata-train, CloudFront <TRACKER_DISTRIBUTION_ID>, Lambda tracker-api + tracker-email
+- deploy.yml: tracker SPA sync, CloudFront invalidation, Lambda updates for both functions
+- GitHub Actions variables: `TRACKER_DISTRIBUTION_ID`, `TRACKER_LAMBDA_API`, `TRACKER_LAMBDA_EMAIL`
+- Validated: full run green in 19s (run <GHA_RUN_ID>)
+- Note: actions/checkout and configure-aws-credentials need Node.js 24 version bumps before 2026-09-16
+
+---
 
 ### Stage 3.5 — Email Notifications (2026-06-13)
 

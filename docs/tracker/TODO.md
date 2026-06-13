@@ -94,13 +94,13 @@ Data dictionary and build brief: `dev/README.md`
 
 ## Stage 3.6 — CI/CD Integration
 
-- [ ] Update `tracker-api-execution-role` to allow Lambda deploy from GitHub Actions role
-- [ ] Update GitHub Actions deploy role policy (runbook Step, Stage 12)
-- [ ] Add tracker SPA sync step to `.github/workflows/deploy.yml`
-- [ ] Add Lambda update steps for `tracker-api` and `tracker-email` to `deploy.yml`
-- [ ] Add CloudFront invalidation for tracker distribution to `deploy.yml`
-- [ ] Add GitHub Actions variables: `TRACKER_DISTRIBUTION_ID`, `TRACKER_LAMBDA_API`, `TRACKER_LAMBDA_EMAIL`
-- [ ] Validate full deploy: push to main → SPA + Lambdas updated
+- [x] Update `tracker-api-execution-role` to allow Lambda deploy from GitHub Actions role
+- [x] Update GitHub Actions deploy role policy (runbook Stage 12)
+- [x] Add tracker SPA sync step to `.github/workflows/deploy.yml`
+- [x] Add Lambda update steps for `tracker-api` and `tracker-email` to `deploy.yml`
+- [x] Add CloudFront invalidation for tracker distribution to `deploy.yml`
+- [x] Add GitHub Actions variables: `TRACKER_DISTRIBUTION_ID`, `TRACKER_LAMBDA_API`, `TRACKER_LAMBDA_EMAIL`
+- [x] Validate full deploy: push to main → SPA + Lambdas updated (run <GHA_RUN_ID>, 19s)
 
 ---
 
