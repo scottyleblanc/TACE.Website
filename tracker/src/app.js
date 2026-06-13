@@ -165,6 +165,48 @@ function renderWeeklyRow(days) {
     </div>`;
 }
 
+function renderWeekSchedule(days) {
+  const weekNum  = currentWeekNumber(days);
+  const weekDays = weekDaysFor(days, weekNum);
+  const todayStr = todayISO();
+  const el       = document.getElementById('week-schedule');
+
+  el.innerHTML = weekDays.map(d => {
+    const isToday = d.date === todayStr;
+    const cls = ['sched-item', isToday ? 'sched-today' : '', !d.is_active_day ? 'sched-rest' : ''].filter(Boolean).join(' ');
+
+    if (!d.is_active_day) {
+      return `
+        <div class="${cls}">
+          <div class="sched-header">
+            <span class="sched-dow">${d.day_of_week}</span>
+            <span class="sched-date">${d.date.slice(5)}</span>
+            <span class="sched-type">Rest</span>
+          </div>
+          <p class="sched-detail">${d.session_detail}</p>
+        </div>`;
+    }
+
+    const chips = [
+      d.session_minutes_target ? `${d.session_minutes_target} min` : '',
+      d.run_walk_ratio         ? `${d.run_walk_ratio} run:walk`    : '',
+    ].filter(Boolean).join('  |  ');
+
+    return `
+      <div class="${cls}">
+        <div class="sched-header">
+          <span class="sched-dow">${d.day_of_week}</span>
+          <span class="sched-date">${d.date.slice(5)}</span>
+          <span class="sched-type">${d.session_type}</span>
+          ${d.completed ? '<span class="sched-done">[x]</span>' : ''}
+        </div>
+        ${chips ? `<p class="sched-chips">${chips}</p>` : ''}
+        <p class="sched-detail">${d.session_detail}</p>
+        <p class="sched-focus">${d.coaching_focus}</p>
+      </div>`;
+  }).join('');
+}
+
 async function showDashboard(days) {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('dashboard').style.display    = '';
@@ -176,6 +218,7 @@ async function showDashboard(days) {
   renderTodayCard(todayDay);
   renderStats(days);
   renderWeeklyRow(days);
+  renderWeekSchedule(days);
 }
 
 async function init() {
