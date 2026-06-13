@@ -92,7 +92,7 @@ wildcard ACM cert, and Route 53 record in place. DynamoDB table seeded with all 
 **Goal:** GitHub Actions deploys SPA and Lambda updates on push to main.
 
 **Definition of done:**
-- `deploy.yml` syncs `tracker/src/` to `tacedata-train` S3 bucket
+- `deploy.yml` syncs `app/train/src/` to `tacedata-train` S3 bucket
 - `deploy.yml` updates `tracker-api` and `tracker-email` Lambda code
 - CloudFront invalidation on deploy
 - GitHub Actions variables added: `TRACKER_DISTRIBUTION_ID`, `TRACKER_LAMBDA_API`, `TRACKER_LAMBDA_EMAIL`
@@ -134,10 +134,10 @@ wildcard ACM cert, and Route 53 record in place. DynamoDB table seeded with all 
 
 ### Stage 3.4 — Frontend SPA (2026-06-13)
 
-- `tracker/src/auth.js` — PKCE flow, token storage, refresh, logout
-- `tracker/src/app.js` — today card, streak, progress bar, weekly row, checkbox, notes
-- `tracker/src/index.html` — login screen + dashboard structure
-- `tracker/src/style.css` — clean, no emojis
+- `app/train/src/auth.js` — PKCE flow, token storage, refresh, logout
+- `app/train/src/app.js` — today card, streak, progress bar, weekly row, checkbox, notes
+- `app/train/src/index.html` — login screen + dashboard structure
+- `app/train/src/style.css` — clean, no emojis
 - Deployed to S3, CloudFront invalidated, validated end-to-end in browser
 
 ---

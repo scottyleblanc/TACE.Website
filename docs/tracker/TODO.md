@@ -34,7 +34,7 @@ Data dictionary and build brief: `dev/README.md`
 - [x] Create Cognito App Client `tacedata-train-client` (runbook Step 16)
 - [x] Create Cognito Hosted UI domain `tacedata-train` (runbook Step 17)
 - [x] Validate end-to-end login: browser → Cognito Hosted UI → Google → redirect back to train.tacedata.ca
-- [x] Write `tracker/lambda/auth_guard.py` — PreSignUp + PreTokenGeneration trigger, rejects non-allowed Google accounts
+- [x] Write `app/train/lambda/auth_guard.py` — PreSignUp + PreTokenGeneration trigger, rejects non-allowed Google accounts
 - [x] Create IAM role `tracker-auth-guard-role` (AWSLambdaBasicExecutionRole only) (runbook Step 18)
 - [x] Deploy `tracker-auth-guard` Lambda (runbook Step 18)
 - [x] Grant Cognito permission to invoke auth guard (runbook Step 19)
@@ -45,7 +45,7 @@ Data dictionary and build brief: `dev/README.md`
 
 ## Stage 3.3 — Backend API
 
-- [x] Write `tracker/lambda/days_api.py` — GET /days, GET /days/{date}, PATCH /days/{date}
+- [x] Write `app/train/lambda/days_api.py` — GET /days, GET /days/{date}, PATCH /days/{date}
 - [x] Create IAM execution role `tracker-api-execution-role` (runbook Step 18)
 - [x] Deploy `tracker-api` Lambda (runbook Step 20)
 - [x] Set Lambda environment variables (runbook Step 21)
@@ -62,10 +62,10 @@ Data dictionary and build brief: `dev/README.md`
 
 ## Stage 3.4 — Frontend SPA
 
-- [x] Write `tracker/src/auth.js` — Cognito PKCE login flow, token storage, refresh
-- [x] Write `tracker/src/app.js` — load days, render today card, streak, weekly row
-- [x] Write `tracker/src/index.html` — layout, login redirect, dashboard container
-- [x] Write `tracker/src/style.css` — clean, readable, no emojis
+- [x] Write `app/train/src/auth.js` — Cognito PKCE login flow, token storage, refresh
+- [x] Write `app/train/src/app.js` — load days, render today card, streak, weekly row
+- [x] Write `app/train/src/index.html` — layout, login redirect, dashboard container
+- [x] Write `app/train/src/style.css` — clean, readable, no emojis
 - [x] Implement checkbox check-off (PATCH /days/{date} completed=true)
 - [x] Implement notes field (PATCH /days/{date} notes=text)
 - [x] Streak logic: consecutive active days completed, rest days skipped
@@ -77,7 +77,7 @@ Data dictionary and build brief: `dev/README.md`
 
 ## Stage 3.5 — Email Notifications
 
-- [x] Write `tracker/lambda/daily_email.py` — active day + rest day email logic
+- [x] Write `app/train/lambda/daily_email.py` — active day + rest day email logic
 - [x] Check SES verification status for tacedata.ca (runbook Step 30 — already verified)
 - [x] Verify tacedata.ca in SES if needed; add DKIM CNAMEs to Route 53
 - [x] Create IAM execution role `tracker-email-execution-role` (runbook Step 19)
