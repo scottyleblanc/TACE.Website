@@ -21,8 +21,8 @@ export async function login() {
   const verifier  = _randomBase64url(32);
   const challenge = await _pkceChallenge(verifier);
   const state     = _randomBase64url(16);
-  sessionStorage.setItem('pkce_verifier', verifier);
-  sessionStorage.setItem('oauth_state', state);
+  localStorage.setItem('pkce_verifier', verifier);
+  localStorage.setItem('oauth_state', state);
   const url = `${AUTH_DOMAIN}/oauth2/authorize`
     + `?client_id=${CLIENT_ID}`
     + `&response_type=code`
@@ -38,8 +38,8 @@ export async function handleCallback() {
   const params        = new URLSearchParams(window.location.search);
   const code          = params.get('code');
   const returnedState = params.get('state');
-  const storedState   = sessionStorage.getItem('oauth_state');
-  const verifier      = sessionStorage.getItem('pkce_verifier');
+  const storedState   = localStorage.getItem('oauth_state');
+  const verifier      = localStorage.getItem('pkce_verifier');
 
   if (!code || !verifier) return false;
   if (returnedState !== storedState) throw new Error('OAuth state mismatch');
@@ -60,31 +60,31 @@ export async function handleCallback() {
   if (!res.ok) throw new Error(`Token exchange failed: ${res.status}`);
 
   _storeTokens(await res.json());
-  sessionStorage.removeItem('pkce_verifier');
-  sessionStorage.removeItem('oauth_state');
+  localStorage.removeItem('pkce_verifier');
+  localStorage.removeItem('oauth_state');
   window.history.replaceState({}, '', '/');
   return true;
 }
 
 function _storeTokens(tokens) {
-  sessionStorage.setItem('access_token',  tokens.access_token);
-  sessionStorage.setItem('id_token',      tokens.id_token);
-  sessionStorage.setItem('refresh_token', tokens.refresh_token);
-  sessionStorage.setItem('token_expiry',  Date.now() + tokens.expires_in * 1000);
+  localStorage.setItem('access_token',  tokens.access_token);
+  localStorage.setItem('id_token',      tokens.id_token);
+  localStorage.setItem('refresh_token', tokens.refresh_token);
+  localStorage.setItem('token_expiry',  Date.now() + tokens.expires_in * 1000);
 }
 
 export function getAccessToken() {
-  return sessionStorage.getItem('access_token');
+  return localStorage.getItem('access_token');
 }
 
 export function isTokenValid() {
-  const token  = sessionStorage.getItem('access_token');
-  const expiry = parseInt(sessionStorage.getItem('token_expiry') || '0', 10);
+  const token  = localStorage.getItem('access_token');
+  const expiry = parseInt(localStorage.getItem('token_expiry') || '0', 10);
   return !!token && Date.now() < expiry - 60_000;
 }
 
 export async function refreshTokens() {
-  const refreshToken = sessionStorage.getItem('refresh_token');
+  const refreshToken = localStorage.getItem('refresh_token');
   if (!refreshToken) return false;
   const body = new URLSearchParams({
     grant_type:    'refresh_token',
@@ -102,7 +102,8 @@ export async function refreshTokens() {
 }
 
 export function logout() {
-  sessionStorage.clear();
+  ['access_token', 'id_token', 'refresh_token', 'token_expiry', 'pkce_verifier', 'oauth_state']
+    .forEach(k => localStorage.removeItem(k));
   window.location.href = `${AUTH_DOMAIN}/logout`
     + `?client_id=${CLIENT_ID}`
     + `&logout_uri=${encodeURIComponent(REDIRECT_URI)}`;

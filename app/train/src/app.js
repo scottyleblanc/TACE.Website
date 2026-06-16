@@ -51,6 +51,7 @@ function computeStreak(days) {
   let streak = 0;
   for (const d of active) {
     if (d.completed) streak++;
+    else if (d.date === todayStr) continue;
     else break;
   }
   return streak;
