@@ -58,6 +58,8 @@ def _compute_streak(days: list[dict], today_str: str) -> int:
     for d in reversed(active_past):
         if d.get("completed"):
             streak += 1
+        elif d["date"] == today_str:
+            continue  # today not yet done -- don't break the streak
         else:
             break
     return streak
@@ -144,7 +146,7 @@ def handler(event: dict, context) -> dict:
     if today_day["is_active_day"]:
         subject, body = _active_day_body(today_day, streak)
     else:
-        tomorrow_day = _day_for(days, (date.today() + timedelta(days=1)).isoformat())
+        tomorrow_day = _day_for(days, (date.fromisoformat(today_str) + timedelta(days=1)).isoformat())
         subject, body = _rest_day_body(today_day, tomorrow_day, streak)
 
     try:
