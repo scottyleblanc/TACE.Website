@@ -6,6 +6,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+- `app/train/lambda/tracker_auth.py` — server-side auth handler that runs the OAuth2 code + PKCE flow and exposes `/auth/login`, `/auth/callback`, `/auth/refresh`, and `/auth/logout`. The SPA holds the access token in memory; the refresh token is kept in an httpOnly cookie.
+
+### Changed
+- `app/train/src/auth.js`, `app/train/src/app.js` — SPA reworked to use the server-side `/auth/*` endpoints; the browser no longer stores tokens or runs the token exchange.
+- `app/train/src/config.example.js` — trimmed to the API base (Cognito values are server-side now).
+- `.github/workflows/deploy.yml` — added the `tracker-auth` Lambda deploy step; trimmed the generated SPA config.
+
 ### Security
 - `app/train/src/app.js` — added an `esc()` HTML-escaping helper and applied it to all values rendered into the dashboard via `innerHTML`.
 - Security hardening tracked privately (see `TACE.Website-private`).

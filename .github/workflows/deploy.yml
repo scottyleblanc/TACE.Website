@@ -56,12 +56,9 @@ jobs:
 
       - name: Generate Tracker config
         env:
-          COGNITO_CLIENT_ID: ${{ vars.COGNITO_CLIENT_ID }}
-          COGNITO_AUTH_DOMAIN: ${{ vars.COGNITO_AUTH_DOMAIN }}
           TRACKER_API_BASE: ${{ vars.TRACKER_API_BASE }}
         run: |
-          printf 'export const CLIENT_ID   = "%s";\nexport const AUTH_DOMAIN = "%s";\nexport const API         = "%s";\n' \
-            "$COGNITO_CLIENT_ID" "$COGNITO_AUTH_DOMAIN" "$TRACKER_API_BASE" > app/train/src/config.js
+          printf 'export const API = "%s";\n' "$TRACKER_API_BASE" > app/train/src/config.js
 
       - name: Deploy Tracker SPA to S3
         run: |
@@ -87,4 +84,12 @@ jobs:
           aws lambda update-function-code \
             --function-name ${{ vars.TRACKER_LAMBDA_EMAIL }} \
             --zip-file fileb://tracker-email.zip \
+            --region ca-central-1
+
+      - name: Update tracker-auth Lambda
+        run: |
+          zip -j tracker-auth.zip app/train/lambda/tracker_auth.py
+          aws lambda update-function-code \
+            --function-name ${{ vars.TRACKER_LAMBDA_AUTH }} \
+            --zip-file fileb://tracker-auth.zip \
             --region ca-central-1

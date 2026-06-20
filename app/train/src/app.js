@@ -1,4 +1,4 @@
-import { login, handleCallback, getAccessToken, isTokenValid, refreshTokens, logout } from './auth.js';
+import { login, getAccessToken, isTokenValid, refreshTokens, logout } from './auth.js';
 import { API } from './config.js';
 
 // HTML-escape any value interpolated into an innerHTML template to prevent HTML/script injection.
@@ -7,7 +7,7 @@ function esc(value) {
   return String(value ?? '').replace(/[&<>"']/g, ch => ESC_MAP[ch]);
 }
 
-async function apiRequest(method, path, body) {
+async function apiRequest(method, path, body, _retried = false) {
   if (!isTokenValid()) {
     const ok = await refreshTokens();
     if (!ok) { login(); return null; }
@@ -20,7 +20,13 @@ async function apiRequest(method, path, body) {
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
-  if (res.status === 401) { login(); return null; }
+  if (res.status === 401) {
+    if (!_retried && await refreshTokens()) {
+      return apiRequest(method, path, body, true);
+    }
+    login();
+    return null;
+  }
   if (!res.ok) throw new Error(`API error ${res.status} on ${method} ${path}`);
   return res.json();
 }
@@ -258,31 +264,19 @@ async function init() {
   renderCountdown();
   const params = new URLSearchParams(window.location.search);
 
-  if (params.has('error')) {
-    const desc = params.get('error_description') || params.get('error') || 'Unknown error';
-    document.getElementById('app-error').textContent = decodeURIComponent(desc.replace(/\+/g, ' '));
+  if (params.has('auth_error')) {
+    document.getElementById('app-error').textContent = 'Login failed. Please try again.';
     document.getElementById('app-error').style.display = '';
+    window.history.replaceState({}, '', '/');
     showLogin();
     return;
   }
 
-  if (params.has('code')) {
-    try {
-      await handleCallback();
-    } catch {
-      document.getElementById('app-error').textContent = 'Login failed. Please try again.';
-      document.getElementById('app-error').style.display = '';
-      showLogin();
-      return;
-    }
-  }
-
-  if (!isTokenValid()) {
-    const ok = await refreshTokens();
-    if (!ok) {
-      showLogin();
-      return;
-    }
+  // Mint an access token from the httpOnly refresh cookie set after login.
+  const ok = await refreshTokens();
+  if (!ok) {
+    showLogin();
+    return;
   }
 
   const days = await apiRequest('GET', '/days');
