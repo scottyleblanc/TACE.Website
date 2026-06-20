@@ -111,6 +111,14 @@ Data dictionary and build brief: `dev/README.md`
 
 ---
 
+## Stage 3.8 — Security Hardening
+
+Detailed findings and remediation tracking are kept in the private repo:
+`TACE.Website-private/docs/train/SECURITY-AUDIT.md`. Frontend output-escaping and `sessionStorage`
+token storage landed 2026-06-20 (see CHANGELOG).
+
+---
+
 ## Parking Lot
 
 - Consider custom Cognito domain `auth.tacedata.ca` (already covered by wildcard cert)

@@ -1,6 +1,11 @@
 import { login, handleCallback, getAccessToken, isTokenValid, refreshTokens, logout } from './auth.js';
+import { API } from './config.js';
 
-const API = 'https://<TRACKER_API_ID>.execute-api.ca-central-1.amazonaws.com';
+// HTML-escape any value interpolated into an innerHTML template to prevent HTML/script injection.
+const ESC_MAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+function esc(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ESC_MAP[ch]);
+}
 
 async function apiRequest(method, path, body) {
   if (!isTokenValid()) {
@@ -85,33 +90,33 @@ function renderTodayCard(day) {
   }
 
   const ratioLine = day.run_walk_ratio
-    ? `<span class="detail-chip">${day.run_walk_ratio} run:walk</span>` : '';
+    ? `<span class="detail-chip">${esc(day.run_walk_ratio)} run:walk</span>` : '';
   const minutesLine = day.session_minutes_target
-    ? `<span class="detail-chip">${day.session_minutes_target} min</span>` : '';
+    ? `<span class="detail-chip">${esc(day.session_minutes_target)} min</span>` : '';
 
   if (!day.is_active_day) {
     el.innerHTML = `
       <div class="card rest-card">
         <div class="card-type">Rest day</div>
-        <p class="card-detail">${day.session_detail}</p>
-        <p class="card-meta">Day ${day.day_of_plan} of 105 &mdash; Week ${day.week_number}</p>
+        <p class="card-detail">${esc(day.session_detail)}</p>
+        <p class="card-meta">Day ${esc(day.day_of_plan)} of 105 &mdash; Week ${esc(day.week_number)}</p>
       </div>`;
     return;
   }
 
   el.innerHTML = `
     <div class="card active-card">
-      <div class="card-type">${day.session_type}</div>
+      <div class="card-type">${esc(day.session_type)}</div>
       <div class="card-chips">${minutesLine}${ratioLine}</div>
-      <p class="card-detail">${day.session_detail}</p>
-      <p class="card-focus">${day.coaching_focus}</p>
-      <p class="card-meta">Day ${day.day_of_plan} of 105 &mdash; Week ${day.week_number} &mdash; ${day.phase}</p>
+      <p class="card-detail">${esc(day.session_detail)}</p>
+      <p class="card-focus">${esc(day.coaching_focus)}</p>
+      <p class="card-meta">Day ${esc(day.day_of_plan)} of 105 &mdash; Week ${esc(day.week_number)} &mdash; ${esc(day.phase)}</p>
       <label class="check-row">
         <input type="checkbox" id="today-check" ${day.completed ? 'checked' : ''}>
         <span>Mark complete</span>
       </label>
       <div class="notes-row">
-        <textarea id="today-notes" placeholder="Notes...">${day.notes || ''}</textarea>
+        <textarea id="today-notes" placeholder="Notes...">${esc(day.notes || '')}</textarea>
         <button id="save-notes-btn">Save</button>
       </div>
     </div>`;
@@ -158,8 +163,8 @@ function renderWeeklyRow(days) {
 
   el.innerHTML = `
     <div class="week-meta">
-      <span class="week-label">Week ${weekNum}</span>
-      <span class="week-focus">${focus}</span>
+      <span class="week-label">Week ${esc(weekNum)}</span>
+      <span class="week-focus">${esc(focus)}</span>
       <span class="week-adherence">${done} / ${active} active days</span>
     </div>
     <div class="week-grid">
@@ -177,9 +182,9 @@ function renderWeeklyRow(days) {
           : `<span class="cell-check">--</span>`;
         return `
           <div class="${cls}">
-            <span class="cell-dow">${d.day_of_week.slice(0, 3)}</span>
-            <span class="cell-date">${d.date.slice(5)}</span>
-            <span class="cell-type">${typeShort}</span>
+            <span class="cell-dow">${esc(d.day_of_week.slice(0, 3))}</span>
+            <span class="cell-date">${esc(d.date.slice(5))}</span>
+            <span class="cell-type">${esc(typeShort)}</span>
             ${checkMark}
           </div>`;
       }).join('')}
@@ -200,30 +205,30 @@ function renderWeekSchedule(days) {
       return `
         <div class="${cls}">
           <div class="sched-header">
-            <span class="sched-dow">${d.day_of_week}</span>
-            <span class="sched-date">${d.date.slice(5)}</span>
+            <span class="sched-dow">${esc(d.day_of_week)}</span>
+            <span class="sched-date">${esc(d.date.slice(5))}</span>
             <span class="sched-type">Rest</span>
           </div>
-          <p class="sched-detail">${d.session_detail}</p>
+          <p class="sched-detail">${esc(d.session_detail)}</p>
         </div>`;
     }
 
     const chips = [
-      d.session_minutes_target ? `${d.session_minutes_target} min` : '',
-      d.run_walk_ratio         ? `${d.run_walk_ratio} run:walk`    : '',
+      d.session_minutes_target ? `${esc(d.session_minutes_target)} min` : '',
+      d.run_walk_ratio         ? `${esc(d.run_walk_ratio)} run:walk`    : '',
     ].filter(Boolean).join('  |  ');
 
     return `
       <div class="${cls}">
         <div class="sched-header">
-          <span class="sched-dow">${d.day_of_week}</span>
-          <span class="sched-date">${d.date.slice(5)}</span>
-          <span class="sched-type">${d.session_type}</span>
+          <span class="sched-dow">${esc(d.day_of_week)}</span>
+          <span class="sched-date">${esc(d.date.slice(5))}</span>
+          <span class="sched-type">${esc(d.session_type)}</span>
           ${d.completed ? '<span class="sched-done">[x]</span>' : ''}
         </div>
         ${chips ? `<p class="sched-chips">${chips}</p>` : ''}
-        <p class="sched-detail">${d.session_detail}</p>
-        <p class="sched-focus">${d.coaching_focus}</p>
+        <p class="sched-detail">${esc(d.session_detail)}</p>
+        <p class="sched-focus">${esc(d.coaching_focus)}</p>
       </div>`;
   }).join('');
 }

@@ -21,6 +21,10 @@ function.zip
 scratch.txt
 *-security-findings.md
 *-Security-Review.md
+*-AUDIT.md
+
+# Tracker SPA config — real values generated in CI from GitHub Actions vars; use config.example.js locally
+app/train/src/config.js
 config/canary.zip
 config/canary-zip/
 .claude/

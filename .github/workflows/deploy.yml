@@ -54,6 +54,15 @@ jobs:
             --zip-file fileb://function.zip \
             --region ca-central-1
 
+      - name: Generate Tracker config
+        env:
+          COGNITO_CLIENT_ID: ${{ vars.COGNITO_CLIENT_ID }}
+          COGNITO_AUTH_DOMAIN: ${{ vars.COGNITO_AUTH_DOMAIN }}
+          TRACKER_API_BASE: ${{ vars.TRACKER_API_BASE }}
+        run: |
+          printf 'export const CLIENT_ID   = "%s";\nexport const AUTH_DOMAIN = "%s";\nexport const API         = "%s";\n' \
+            "$COGNITO_CLIENT_ID" "$COGNITO_AUTH_DOMAIN" "$TRACKER_API_BASE" > app/train/src/config.js
+
       - name: Deploy Tracker SPA to S3
         run: |
           aws s3 sync app/train/src/ s3://${{ vars.TRACKER_S3_BUCKET }}/ --delete

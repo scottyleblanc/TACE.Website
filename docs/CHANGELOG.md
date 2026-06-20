@@ -6,6 +6,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Security
+- `app/train/src/app.js` — added an `esc()` HTML-escaping helper and applied it to all values rendered into the dashboard via `innerHTML`.
+- `app/train/src/auth.js` — store auth tokens and OAuth transient state in `sessionStorage` instead of `localStorage`.
+- Security hardening tracked privately (see `TACE.Website-private`).
+
 ## [0.20.0] - 2026-04-06
 
 ### Added

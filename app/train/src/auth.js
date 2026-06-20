@@ -1,7 +1,11 @@
-const CLIENT_ID   = '<COGNITO_CLIENT_ID>';
-const AUTH_DOMAIN = 'https://<COGNITO_HOSTED_UI_DOMAIN>';
+import { CLIENT_ID, AUTH_DOMAIN } from './config.js';
+
 const REDIRECT_URI = 'https://train.tacedata.ca/';
 const SCOPES = 'openid email profile';
+
+// Persist auth tokens and OAuth transient state in sessionStorage (per-tab, cleared on tab
+// close) rather than localStorage.
+const store = window.sessionStorage;
 
 function _randomBase64url(byteCount) {
   const arr = new Uint8Array(byteCount);
@@ -21,8 +25,8 @@ export async function login() {
   const verifier  = _randomBase64url(32);
   const challenge = await _pkceChallenge(verifier);
   const state     = _randomBase64url(16);
-  localStorage.setItem('pkce_verifier', verifier);
-  localStorage.setItem('oauth_state', state);
+  store.setItem('pkce_verifier', verifier);
+  store.setItem('oauth_state', state);
   const url = `${AUTH_DOMAIN}/oauth2/authorize`
     + `?client_id=${CLIENT_ID}`
     + `&response_type=code`
@@ -38,8 +42,8 @@ export async function handleCallback() {
   const params        = new URLSearchParams(window.location.search);
   const code          = params.get('code');
   const returnedState = params.get('state');
-  const storedState   = localStorage.getItem('oauth_state');
-  const verifier      = localStorage.getItem('pkce_verifier');
+  const storedState   = store.getItem('oauth_state');
+  const verifier      = store.getItem('pkce_verifier');
 
   if (!code || !verifier) return false;
   if (returnedState !== storedState) throw new Error('OAuth state mismatch');
@@ -60,31 +64,31 @@ export async function handleCallback() {
   if (!res.ok) throw new Error(`Token exchange failed: ${res.status}`);
 
   _storeTokens(await res.json());
-  localStorage.removeItem('pkce_verifier');
-  localStorage.removeItem('oauth_state');
+  store.removeItem('pkce_verifier');
+  store.removeItem('oauth_state');
   window.history.replaceState({}, '', '/');
   return true;
 }
 
 function _storeTokens(tokens) {
-  localStorage.setItem('access_token',  tokens.access_token);
-  localStorage.setItem('id_token',      tokens.id_token);
-  localStorage.setItem('refresh_token', tokens.refresh_token);
-  localStorage.setItem('token_expiry',  Date.now() + tokens.expires_in * 1000);
+  store.setItem('access_token',  tokens.access_token);
+  store.setItem('id_token',      tokens.id_token);
+  store.setItem('refresh_token', tokens.refresh_token);
+  store.setItem('token_expiry',  Date.now() + tokens.expires_in * 1000);
 }
 
 export function getAccessToken() {
-  return localStorage.getItem('access_token');
+  return store.getItem('access_token');
 }
 
 export function isTokenValid() {
-  const token  = localStorage.getItem('access_token');
-  const expiry = parseInt(localStorage.getItem('token_expiry') || '0', 10);
+  const token  = store.getItem('access_token');
+  const expiry = parseInt(store.getItem('token_expiry') || '0', 10);
   return !!token && Date.now() < expiry - 60_000;
 }
 
 export async function refreshTokens() {
-  const refreshToken = localStorage.getItem('refresh_token');
+  const refreshToken = store.getItem('refresh_token');
   if (!refreshToken) return false;
   const body = new URLSearchParams({
     grant_type:    'refresh_token',
@@ -103,7 +107,7 @@ export async function refreshTokens() {
 
 export function logout() {
   ['access_token', 'id_token', 'refresh_token', 'token_expiry', 'pkce_verifier', 'oauth_state']
-    .forEach(k => localStorage.removeItem(k));
+    .forEach(k => store.removeItem(k));
   window.location.href = `${AUTH_DOMAIN}/logout`
     + `?client_id=${CLIENT_ID}`
     + `&logout_uri=${encodeURIComponent(REDIRECT_URI)}`;
