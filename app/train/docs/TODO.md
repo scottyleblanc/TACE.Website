@@ -7,103 +7,6 @@ Data dictionary and build brief: `dev/README.md`
 
 ---
 
-## Stage 3.1 — Infrastructure
-
-- [x] Request ACM wildcard cert `*.tacedata.ca` in us-east-1 (runbook Step 1)
-- [x] Add ACM DNS validation CNAME to Route 53 (runbook Step 3) — reused existing CNAME, auto-ISSUED
-- [x] Wait for cert ISSUED status (runbook Step 4)
-- [x] Create S3 bucket `tacedata-train` (runbook Step 5)
-- [x] Block all public access on bucket (runbook Step 6)
-- [x] Create CloudFront OAC (runbook Step 7) — OAC ID: <TRACKER_OAC_ID>
-- [x] Create CloudFront distribution — `train.tacedata.ca`, S3 origin, error page → index.html (runbook Steps 8–9) — ID: <TRACKER_DISTRIBUTION_ID>
-- [x] Apply S3 bucket policy (allow CloudFront OAC) (runbook Step 10)
-- [x] Create Route 53 A alias record `train.tacedata.ca` → CloudFront (runbook Step 11)
-- [x] Create DynamoDB table `training-plan` (PK: `date`) (runbook Step 12)
-- [x] Deploy placeholder `index.html` to S3 — validate https://train.tacedata.ca/ loads
-- [x] Run `seed_dynamo.py` — seed all 105 days (runbook Step 13)
-- [x] Validate seed: count 105 items, spot-check 2026-06-15
-
----
-
-## Stage 3.2 — Auth
-
-- [x] Set up Google OAuth2 app in Google Cloud Console (runbook Prerequisites)
-- [x] Store Google Client ID + Secret in 1Password as "Google OAuth — train.tacedata.ca"
-- [x] Create Cognito User Pool `tacedata-train-pool` (runbook Step 14)
-- [x] Create Google IdP in Cognito (runbook Step 15)
-- [x] Create Cognito App Client `tacedata-train-client` (runbook Step 16)
-- [x] Create Cognito Hosted UI domain `tacedata-train` (runbook Step 17)
-- [x] Validate end-to-end login: browser → Cognito Hosted UI → Google → redirect back to train.tacedata.ca
-- [x] Write `app/train/lambda/auth_guard.py` — PreSignUp + PreTokenGeneration trigger, rejects non-allowed Google accounts
-- [x] Create IAM role `tracker-auth-guard-role` (AWSLambdaBasicExecutionRole only) (runbook Step 18)
-- [x] Deploy `tracker-auth-guard` Lambda (runbook Step 18)
-- [x] Grant Cognito permission to invoke auth guard (runbook Step 19)
-- [x] Wire auth guard as PreSignUp + PreTokenGeneration trigger on `<COGNITO_USER_POOL_ID>` (runbook Step 20)
-- [x] Validate: non-owner Google account is rejected at login (runbook Step 21)
-
----
-
-## Stage 3.3 — Backend API
-
-- [x] Write `app/train/lambda/days_api.py` — GET /days, GET /days/{date}, PATCH /days/{date}
-- [x] Create IAM execution role `tracker-api-execution-role` (runbook Step 18)
-- [x] Deploy `tracker-api` Lambda (runbook Step 20)
-- [x] Set Lambda environment variables (runbook Step 21)
-- [x] Create API Gateway HTTP API `tracker-api` (runbook Step 24)
-- [x] Create Cognito JWT authorizer (runbook Step 25)
-- [x] Create Lambda integration (runbook Step 26)
-- [x] Create routes GET /days, GET /days/{date}, PATCH /days/{date} (runbook Step 27)
-- [x] Create auto-deploy stage (runbook Step 28)
-- [x] Grant API Gateway permission to invoke Lambda (runbook Step 29)
-- [x] Validate: GET /days returns 105 items (2026-06-15 → 2026-09-27)
-- [x] Validate: PATCH /days/2026-06-15 sets completed=true in DynamoDB
-
----
-
-## Stage 3.4 — Frontend SPA
-
-- [x] Write `app/train/src/auth.js` — Cognito PKCE login flow, token storage, refresh
-- [x] Write `app/train/src/app.js` — load days, render today card, streak, weekly row
-- [x] Write `app/train/src/index.html` — layout, login redirect, dashboard container
-- [x] Write `app/train/src/style.css` — clean, readable, no emojis
-- [x] Implement checkbox check-off (PATCH /days/{date} completed=true)
-- [x] Implement notes field (PATCH /days/{date} notes=text)
-- [x] Streak logic: consecutive active days completed, rest days skipped
-- [x] Weekly adherence display: completed/5 for current week
-- [x] Overall progress: completed/75 active days
-- [x] Deploy SPA to S3 and validate end-to-end in browser
-
----
-
-## Stage 3.5 — Email Notifications
-
-- [x] Write `app/train/lambda/daily_email.py` — active day + rest day email logic
-- [x] Check SES verification status for tacedata.ca (runbook Step 30 — already verified)
-- [x] Verify tacedata.ca in SES if needed; add DKIM CNAMEs to Route 53
-- [x] Create IAM execution role `tracker-email-execution-role` (runbook Step 19)
-- [x] Deploy `tracker-email` Lambda (runbook Step 22)
-- [x] Set Lambda environment variables (runbook Step 23)
-- [x] Create EventBridge rule `tracker-daily-email` — cron(0 11 * * ? *) (runbook Step 31)
-- [x] Grant EventBridge permission to invoke Lambda (runbook Step 32)
-- [x] Add Lambda as EventBridge target (runbook Step 33)
-- [x] Invoke Lambda manually — confirm email arrives at scott.leblanc@tacedata.ca
-- [x] Validate rest day email format (test_date=2026-06-19, Week 1 Friday)
-- [x] Validate active day email format (test_date=2026-06-15, Day 1 Strength & Mobility)
-
----
-
-## Stage 3.6 — CI/CD Integration
-
-- [x] Update `tracker-api-execution-role` to allow Lambda deploy from GitHub Actions role
-- [x] Update GitHub Actions deploy role policy (runbook Stage 12)
-- [x] Add tracker SPA sync step to `.github/workflows/deploy.yml`
-- [x] Add Lambda update steps for `tracker-api` and `tracker-email` to `deploy.yml`
-- [x] Add CloudFront invalidation for tracker distribution to `deploy.yml`
-- [x] Add GitHub Actions variables: `TRACKER_DISTRIBUTION_ID`, `TRACKER_LAMBDA_API`, `TRACKER_LAMBDA_EMAIL`
-- [x] Validate full deploy: push to main → SPA + Lambdas updated (run <GHA_RUN_ID>, 19s)
-
----
-
 ## Stage 3.7 — Public View (Later Phase)
 
 - [ ] Design read-only progress page (no auth)
@@ -116,6 +19,75 @@ Data dictionary and build brief: `dev/README.md`
 Detailed findings and remediation tracking are kept in the private repo:
 `TACE.Website-private/docs/train/SECURITY-AUDIT.md`. Frontend output-escaping and CloudFront
 security headers landed 2026-06-20 (see CHANGELOG).
+
+---
+
+# Phase Three — Going Multi-User
+
+Stage definitions and definitions-of-done: `docs/STAGES.md` (Phase Three).
+Public narrative: `hugo/content/projects/running-tracker-proj.md` ("going multi-user").
+
+## Stage 3.9 — Multi-Tenant Data Model
+
+- [ ] Decide composite key design: `user_id` (PK) + `date` (SK); confirm `user_id` = Cognito `sub`
+- [ ] Provision new table (or GSI strategy) with the composite key
+- [ ] `days_api.py`: read `user_id` from JWT claims on every route — never from body/path [SEC]
+- [ ] `GET /days`: replace `Scan` with `Query` on the user partition
+- [ ] `GET /days/{date}` and `PATCH /days/{date}`: key on `{user_id, date}`; cross-user access returns 404 [SEC]
+- [ ] One-time migration script: move existing single-user data into the owner's partition
+- [ ] `seed_dynamo.py`: write items under a `user_id`
+- [ ] Validate: all 105 days load and check off for the original account post-migration
+- [ ] Update execution-role IAM policy if table ARN changes
+
+## Stage 3.10 — Onboarding and Plan Generation
+
+- [ ] Design intake form fields (fitness/run history, race date, distance, days/week, constraints)
+- [ ] Build intake form in the SPA
+- [ ] Plan-generation Lambda: call Claude API with intake + coach prompt
+- [ ] Schema validator: row count, required fields, types, date continuity, active-day flags [SEC]
+- [ ] Reject invalid generated plans — treat model output as untrusted input [SEC]
+- [ ] Write validated plan under the new user's partition (one item/day)
+- [ ] Onboarding writes a `users` record (`user_id`, `email`, start/race dates) for the email Lambda to read
+- [ ] First-run routing: logged-in user with no plan → intake form → populated dashboard
+- [ ] Idempotency: re-submitting intake does not duplicate/corrupt an existing plan
+- [ ] Validate end-to-end with a fresh test account
+
+## Stage 3.11 — Multi-User Email and Registration
+
+- [ ] `daily_email.py`: read the `users` record, brief each user from their own partition
+- [ ] Per-user streak, session detail, tomorrow's preview
+- [ ] Invite store: admin issues an invite for a specific email
+- [ ] `auth_guard.py`: gate signup on the invited-email set instead of static `ALLOWED_EMAILS` [SEC]
+- [ ] Confirm public self-signup remains closed [SEC]
+- [ ] Validate: second account signs up, generates plan, checks off a day, gets its own email
+- [ ] Confirm no cross-user data visibility at any layer (API, email) [SEC]
+
+---
+
+# Phase Four — The AI Layer
+
+Stage definitions and definitions-of-done: `docs/STAGES.md` (Phase Four).
+Public narrative: `hugo/content/projects/running-tracker-proj.md` ("the ai layer").
+
+## Stage 3.12 — Secrets and Coach Endpoint
+
+- [ ] Store Claude API key in AWS Secrets Manager [SEC]
+- [ ] Coach Lambda: read caller's full plan + progress from their partition
+- [ ] Package Anthropic SDK as a Lambda layer; attach to coach function; update `deploy.yml`
+- [ ] Build single-prompt request to Claude API via the SDK (whole dataset in prompt; no RAG)
+- [ ] Choose model (default current Claude: `claude-sonnet-4-6` latency/cost vs `claude-opus-4-8` quality)
+- [ ] New route `POST /coach`, Cognito JWT-protected, CORS scoped to train.tacedata.ca [SEC]
+- [ ] IAM: coach role gets `secretsmanager:GetSecretValue` on the one secret ARN + read on user partition only [SEC]
+- [ ] Validate: "what is my long run Saturday?" returns an answer grounded in caller's real data
+
+## Stage 3.13 — Coach UI and Guardrails
+
+- [ ] Chat UI in the SPA (ask/answer; conversation scoped to signed-in user)
+- [ ] Guardrail: answers only from the user's plan and progress data [SEC]
+- [ ] Guardrail: stays in running-coach role; declines code generation / off-topic [SEC]
+- [ ] Guardrail: defers injury/medical questions to a physio [SEC]
+- [ ] Per-user rate limiting + max-tokens cap on responses [SEC]
+- [ ] Adversarial validation: off-topic, injection attempt, injury question → intended refusals/deferrals [SEC]
 
 ---
 

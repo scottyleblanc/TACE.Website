@@ -94,3 +94,7 @@ Before documenting the rest of the build, the completed single-user app gets a s
 ---
 
 *Next in the series: Stage 2 — security audit — reviewing what the single-user build exposes and whether the controls hold up.*
+
+---
+
+[running tracker — project page](/projects/running-tracker-proj/)

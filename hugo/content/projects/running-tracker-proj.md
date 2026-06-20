@@ -57,3 +57,7 @@ Ship phase one and live with it before adding the rest.  A streak tracker I open
 ## status
 
 In progress.  Phase one — the tracker — first.  Notes and write-ups to follow as the AWS and AI pieces come online.
+
+## build series
+
+- [stage 1 — infrastructure and seed data](/posts/train-stage-1-post/)
