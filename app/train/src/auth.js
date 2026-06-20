@@ -3,9 +3,9 @@ import { CLIENT_ID, AUTH_DOMAIN } from './config.js';
 const REDIRECT_URI = 'https://train.tacedata.ca/';
 const SCOPES = 'openid email profile';
 
-// Persist auth tokens and OAuth transient state in sessionStorage (per-tab, cleared on tab
-// close) rather than localStorage.
-const store = window.sessionStorage;
+// Token and OAuth transient state storage. localStorage persists the session across page
+// reloads and browser restarts.
+const store = window.localStorage;
 
 function _randomBase64url(byteCount) {
   const arr = new Uint8Array(byteCount);

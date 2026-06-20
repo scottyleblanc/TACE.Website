@@ -234,6 +234,7 @@ function renderWeekSchedule(days) {
 }
 
 async function showDashboard(days) {
+  document.getElementById('app-loading').style.display  = 'none';
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('dashboard').style.display    = '';
   document.getElementById('logout-btn').addEventListener('click', logout);
@@ -247,6 +248,12 @@ async function showDashboard(days) {
   renderWeekSchedule(days);
 }
 
+function showLogin() {
+  document.getElementById('app-loading').style.display = 'none';
+  document.getElementById('login-btn').addEventListener('click', login);
+  document.getElementById('login-screen').style.display = '';
+}
+
 async function init() {
   renderCountdown();
   const params = new URLSearchParams(window.location.search);
@@ -255,6 +262,7 @@ async function init() {
     const desc = params.get('error_description') || params.get('error') || 'Unknown error';
     document.getElementById('app-error').textContent = decodeURIComponent(desc.replace(/\+/g, ' '));
     document.getElementById('app-error').style.display = '';
+    showLogin();
     return;
   }
 
@@ -264,6 +272,7 @@ async function init() {
     } catch {
       document.getElementById('app-error').textContent = 'Login failed. Please try again.';
       document.getElementById('app-error').style.display = '';
+      showLogin();
       return;
     }
   }
@@ -271,7 +280,7 @@ async function init() {
   if (!isTokenValid()) {
     const ok = await refreshTokens();
     if (!ok) {
-      document.getElementById('login-btn').addEventListener('click', login);
+      showLogin();
       return;
     }
   }

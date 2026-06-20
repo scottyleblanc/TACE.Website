@@ -1,5 +1,5 @@
 ---
-title: 15-week build running plan and tracker - built on aws and claude
+title: 15-week training plan and tracker - built on aws and claude
 date: 2026-06-13
 draft: false
 tags:

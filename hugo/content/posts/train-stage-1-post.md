@@ -1,9 +1,9 @@
 ---
-title: "running tracker: stage 1 — infrastructure and seed data"
+title: "training tracker: stage 1 — infrastructure and seed data"
 date: 2026-06-13T10:00:00
 draft: false
 tags: ["aws", "dynamodb", "s3", "cloudfront", "acm", "route53", "python", "train", "10k"]
-summary: "first post in the running tracker series: provisioning the AWS infrastructure, designing the data model, and seeding 105 days of plan data into DynamoDB."
+summary: "first post in the training tracker series: provisioning the AWS infrastructure, designing the data model, and seeding 105 days of plan data into DynamoDB."
 ---
 
 ### The Foundation Before the App

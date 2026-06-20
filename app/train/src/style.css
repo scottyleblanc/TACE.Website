@@ -18,6 +18,16 @@ body {
   font-size: 0.9rem;
 }
 
+/* --- Loading state --- */
+.app-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  color: #71717a;
+  font-size: 0.95rem;
+}
+
 /* --- Login screen --- */
 #login-screen {
   display: flex;

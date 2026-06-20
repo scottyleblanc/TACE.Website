@@ -114,8 +114,8 @@ Data dictionary and build brief: `dev/README.md`
 ## Stage 3.8 — Security Hardening
 
 Detailed findings and remediation tracking are kept in the private repo:
-`TACE.Website-private/docs/train/SECURITY-AUDIT.md`. Frontend output-escaping and `sessionStorage`
-token storage landed 2026-06-20 (see CHANGELOG).
+`TACE.Website-private/docs/train/SECURITY-AUDIT.md`. Frontend output-escaping and CloudFront
+security headers landed 2026-06-20 (see CHANGELOG).
 
 ---
 
@@ -124,3 +124,4 @@ token storage landed 2026-06-20 (see CHANGELOG).
 - Consider custom Cognito domain `auth.tacedata.ca` (already covered by wildcard cert)
 - AI coaching hook: notes + coaching_focus → Claude API → contextual feedback
 - DST handling for EventBridge email rule (adjust cron at clock changes)
+- Reduce `/days` first-load latency (observed ~600-900ms, likely `tracker-api` Lambda cold start) — options: provisioned concurrency or a lighter `/days` payload. Login-screen flash on refresh already fixed via the dashboard loading state (2026-06-20); this would shorten the remaining "Loading..." wait.
