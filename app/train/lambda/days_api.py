@@ -23,6 +23,9 @@ _TABLE_NAME = os.environ["DYNAMODB_TABLE"]
 _dynamodb = boto3.resource("dynamodb")
 _table = _dynamodb.Table(_TABLE_NAME)
 
+# Maximum accepted length for the user-supplied notes field.
+_MAX_NOTES_LEN = 2000
+
 _CORS_HEADERS = {
     "Access-Control-Allow-Origin": "https://train.tacedata.ca",
     "Access-Control-Allow-Headers": "Authorization,Content-Type",
@@ -88,7 +91,9 @@ def _patch_day(date: str, raw_body: str | None) -> dict:
     expr_values: dict = {}
 
     if "completed" in payload:
-        completed = bool(payload["completed"])
+        if not isinstance(payload["completed"], bool):
+            return _err(400, "Field 'completed' must be a boolean")
+        completed = payload["completed"]
         set_parts.append("#completed = :completed")
         expr_names["#completed"] = "completed"
         expr_values[":completed"] = completed
@@ -99,9 +104,14 @@ def _patch_day(date: str, raw_body: str | None) -> dict:
             remove_parts.append("completed_date")
 
     if "notes" in payload:
+        notes = payload["notes"]
+        if not isinstance(notes, str):
+            return _err(400, "Field 'notes' must be a string")
+        if len(notes) > _MAX_NOTES_LEN:
+            return _err(400, f"Field 'notes' exceeds maximum length of {_MAX_NOTES_LEN} characters")
         set_parts.append("#notes = :notes")
         expr_names["#notes"] = "notes"
-        expr_values[":notes"] = str(payload["notes"])
+        expr_values[":notes"] = notes
 
     if not set_parts and not remove_parts:
         return _err(400, "No valid fields to update (accepted: completed, notes)")
