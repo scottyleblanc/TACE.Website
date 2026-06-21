@@ -61,3 +61,4 @@ In progress.  Phase one — the tracker — first.  Notes and write-ups to follo
 ## build series
 
 - [stage 1 — infrastructure and seed data](/posts/train-stage-1-post/)
+- [stage 2 — the security audit](/posts/train-stage-2-post/)
