@@ -10,6 +10,19 @@ A map of the work: what was built, how it was documented, and where to find it.
 
 ---
 
+## Running Tracker — 15-week training plan on AWS and Claude
+
+*A personal habit tracker built around a 15-week run/walk training plan — and a vehicle to learn DynamoDB, Lambda, Cognito, and the Claude API by building something I open every day.*
+
+**[Project write-up →](/projects/running-tracker-proj/)**
+
+| Stage | What | Post | Status |
+|---|---|---|---|
+| 2 | Security audit — auth, API, DynamoDB access, secrets, deployment pipeline | [Stage 2 — security audit](/posts/train-stage-2-post/) | Complete |
+| 1 | Infrastructure and seed data — DynamoDB table, plan seeded, single-user MVP | [Stage 1 — infrastructure and seed data](/posts/train-stage-1-post/) | Complete |
+
+---
+
 ## AWS Cost Management — right-sizing a personal estate
 
 *A billing audit that found $59/month accumulating in a personal AWS account that was supposed to cost nearly nothing — idle EIPs, orphaned snapshots, and test secrets nobody cleaned up. Reduced to $3.63/month.*
