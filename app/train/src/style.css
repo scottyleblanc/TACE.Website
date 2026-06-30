@@ -424,3 +424,73 @@ main {
   .stats-row { flex-direction: column; }
   .week-grid  { grid-template-columns: repeat(4, 1fr); }
 }
+
+/* --- Override / Adjusted indicators --- */
+.adjusted-card { border-left-color: #d97706; }
+
+.override-badge {
+  display: inline-block;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  vertical-align: middle;
+  margin-left: 6px;
+}
+
+.override-from {
+  font-size: 0.8rem;
+  color: #a1a1aa;
+  margin-bottom: 8px;
+}
+
+.override-alternate {
+  font-size: 0.85rem;
+  color: #52525b;
+  font-style: italic;
+  margin-top: 6px;
+}
+
+.override-provisional {
+  font-size: 0.82rem;
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-top: 8px;
+}
+
+.week-cell.override { border-color: #d97706; border-style: dashed; }
+
+.sched-item.sched-override { border-left-color: #d97706; }
+
+.sched-override-badge {
+  display: inline-block;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 3px;
+  padding: 0 5px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-left: 4px;
+}
+
+.sched-adjusted-from {
+  font-size: 0.75rem;
+  color: #a1a1aa;
+  margin-bottom: 4px;
+}
+
+.sched-alternate {
+  font-size: 0.8rem;
+  color: #52525b;
+  font-style: italic;
+  margin-top: 4px;
+}

@@ -2,9 +2,15 @@
 days_api.py -- Lambda handler for the tracker API.
 
 Routes (API Gateway HTTP API, payload format 2.0):
-  GET  /days           -- all 105 training days, sorted by date
+  GET  /days           -- all 105 training days, sorted by date, with overrides merged
   GET  /days/{date}    -- single day by ISO date string (e.g. 2026-06-15)
   PATCH /days/{date}   -- update user-state fields: completed (bool), notes (str)
+
+Override layer:
+  If OVERRIDES_TABLE env var is set, GET routes merge active overrides on top of
+  seed rows before returning. PATCH always writes to the seed table (user state).
+  Merged items include has_override=true and original_session_type/original_session_detail
+  so the frontend can display "Adjusted from: ...".
 """
 
 import json
@@ -23,7 +29,9 @@ _TABLE_NAME = os.environ["DYNAMODB_TABLE"]
 _dynamodb = boto3.resource("dynamodb")
 _table = _dynamodb.Table(_TABLE_NAME)
 
-# Maximum accepted length for the user-supplied notes field.
+_OVERRIDES_TABLE_NAME = os.environ.get("OVERRIDES_TABLE")
+_overrides_table = _dynamodb.Table(_OVERRIDES_TABLE_NAME) if _OVERRIDES_TABLE_NAME else None
+
 _MAX_NOTES_LEN = 2000
 
 _CORS_HEADERS = {
@@ -31,6 +39,18 @@ _CORS_HEADERS = {
     "Access-Control-Allow-Headers": "Authorization,Content-Type",
     "Content-Type": "application/json",
 }
+
+# Fields applied from the override item when present and non-empty.
+_OVERRIDE_FIELDS = (
+    "session_type", "session_detail", "coaching_focus",
+    "run_interval_minutes", "run_walk_ratio", "session_minutes_target",
+    "alternate_exercise",
+)
+
+# Fields always stored in the override item (even as empty string).
+# An empty string here means "clear this field from the merged result"
+# rather than "inherit from the seed row."
+_CLEARABLE_FIELDS = frozenset(("run_walk_ratio", "alternate_exercise"))
 
 
 def _json_default(obj):
@@ -55,6 +75,55 @@ def _err(status: int, message: str) -> dict:
     }
 
 
+def _merge_override(seed_item: dict, override_item: dict) -> dict:
+    merged = dict(seed_item)
+    merged["has_override"] = True
+    merged["original_session_type"] = seed_item.get("session_type", "")
+    merged["original_session_detail"] = seed_item.get("session_detail", "")
+
+    for field in _OVERRIDE_FIELDS:
+        if field not in override_item:
+            continue  # not in override item -- inherit from seed
+        val = override_item[field]
+        if field in _CLEARABLE_FIELDS:
+            # Empty string = intentionally cleared; remove from merged result
+            if val == "" or val is None:
+                merged.pop(field, None)
+            else:
+                merged[field] = val
+        elif val not in ("", None):
+            merged[field] = val
+
+    merged["override_reason"] = override_item.get("override_reason", "")
+    merged["override_source"] = override_item.get("override_source", "")
+    merged["override_note"]   = override_item.get("override_note", "")
+    merged["provisional"]     = bool(override_item.get("provisional", False))
+
+    return merged
+
+
+def _scan_overrides() -> dict:
+    overrides: dict = {}
+    kwargs: dict = {}
+    while True:
+        result = _overrides_table.scan(**kwargs)
+        for item in result.get("Items", []):
+            if item.get("override_active"):
+                overrides[item["date"]] = item
+        last = result.get("LastEvaluatedKey")
+        if not last:
+            break
+        kwargs["ExclusiveStartKey"] = last
+    return overrides
+
+
+def _apply_override(seed_item: dict, overrides: dict) -> dict:
+    override = overrides.get(seed_item["date"])
+    if override:
+        return _merge_override(seed_item, override)
+    return seed_item
+
+
 def _get_days() -> dict:
     items = []
     scan_kwargs: dict = {}
@@ -66,6 +135,11 @@ def _get_days() -> dict:
             break
         scan_kwargs["ExclusiveStartKey"] = last
     items.sort(key=lambda x: x["date"])
+
+    if _overrides_table:
+        overrides = _scan_overrides()
+        items = [_apply_override(item, overrides) for item in items]
+
     return _ok(items)
 
 
@@ -74,6 +148,13 @@ def _get_day(date: str) -> dict:
     item = result.get("Item")
     if item is None:
         return _err(404, f"Day {date} not found")
+
+    if _overrides_table:
+        override_result = _overrides_table.get_item(Key={"date": date})
+        override = override_result.get("Item")
+        if override and override.get("override_active"):
+            item = _merge_override(item, override)
+
     return _ok(item)
 
 

@@ -100,22 +100,39 @@ function renderTodayCard(day) {
   const minutesLine = day.session_minutes_target
     ? `<span class="detail-chip">${esc(day.session_minutes_target)} min</span>` : '';
 
+  const overrideBadge = day.has_override
+    ? `<span class="override-badge">${day.provisional ? 'Provisional' : 'Adjusted'}</span>` : '';
+  const overrideFrom = day.has_override && day.original_session_type && day.original_session_type !== day.session_type
+    ? `<p class="override-from">Adjusted from: ${esc(day.original_session_type)}</p>` : '';
+  const overrideAlternate = day.alternate_exercise
+    ? `<p class="override-alternate">Alternative: ${esc(day.alternate_exercise)}</p>` : '';
+  const overrideProvisional = day.provisional
+    ? `<p class="override-provisional">[PROVISIONAL] Flex based on pain response before progressing.</p>` : '';
+  const adjustedClass = day.has_override ? ' adjusted-card' : '';
+
   if (!day.is_active_day) {
+    const restFocus = day.has_override && day.coaching_focus
+      ? `<p class="card-focus">${esc(day.coaching_focus)}</p>` : '';
     el.innerHTML = `
-      <div class="card rest-card">
-        <div class="card-type">Rest day</div>
+      <div class="card rest-card${adjustedClass}">
+        <div class="card-type">Rest day ${overrideBadge}</div>
         <p class="card-detail">${esc(day.session_detail)}</p>
+        ${restFocus}
+        ${overrideAlternate}
         <p class="card-meta">Day ${esc(day.day_of_plan)} of 105 &mdash; Week ${esc(day.week_number)}</p>
       </div>`;
     return;
   }
 
   el.innerHTML = `
-    <div class="card active-card">
-      <div class="card-type">${esc(day.session_type)}</div>
+    <div class="card active-card${adjustedClass}">
+      <div class="card-type">${esc(day.session_type)} ${overrideBadge}</div>
       <div class="card-chips">${minutesLine}${ratioLine}</div>
+      ${overrideFrom}
       <p class="card-detail">${esc(day.session_detail)}</p>
       <p class="card-focus">${esc(day.coaching_focus)}</p>
+      ${overrideAlternate}
+      ${overrideProvisional}
       <p class="card-meta">Day ${esc(day.day_of_plan)} of 105 &mdash; Week ${esc(day.week_number)} &mdash; ${esc(day.phase)}</p>
       <label class="check-row">
         <input type="checkbox" id="today-check" ${day.completed ? 'checked' : ''}>
@@ -181,6 +198,7 @@ function renderWeeklyRow(days) {
           d.is_active_day ? 'active' : 'rest',
           d.completed ? 'done' : '',
           isToday ? 'today' : '',
+          d.has_override ? 'override' : '',
         ].filter(Boolean).join(' ');
         const typeShort = d.session_type.split(' ')[0];
         const checkMark = d.is_active_day
@@ -205,7 +223,13 @@ function renderWeekSchedule(days) {
 
   el.innerHTML = weekDays.map(d => {
     const isToday = d.date === todayStr;
-    const cls = ['sched-item', isToday ? 'sched-today' : '', !d.is_active_day ? 'sched-rest' : ''].filter(Boolean).join(' ');
+    const cls = ['sched-item', isToday ? 'sched-today' : '', !d.is_active_day ? 'sched-rest' : '', d.has_override ? 'sched-override' : ''].filter(Boolean).join(' ');
+    const adjBadge = d.has_override
+      ? `<span class="sched-override-badge">${d.provisional ? 'Prov' : 'Adj'}</span>` : '';
+    const adjFrom = d.has_override && d.original_session_type && d.original_session_type !== d.session_type
+      ? `<p class="sched-adjusted-from">from: ${esc(d.original_session_type)}</p>` : '';
+    const altExercise = d.alternate_exercise
+      ? `<p class="sched-alternate">Alternative: ${esc(d.alternate_exercise)}</p>` : '';
 
     if (!d.is_active_day) {
       return `
@@ -213,9 +237,11 @@ function renderWeekSchedule(days) {
           <div class="sched-header">
             <span class="sched-dow">${esc(d.day_of_week)}</span>
             <span class="sched-date">${esc(d.date.slice(5))}</span>
-            <span class="sched-type">Rest</span>
+            <span class="sched-type">${esc(d.session_type)} ${adjBadge}</span>
           </div>
+          ${adjFrom}
           <p class="sched-detail">${esc(d.session_detail)}</p>
+          ${altExercise}
         </div>`;
     }
 
@@ -229,12 +255,14 @@ function renderWeekSchedule(days) {
         <div class="sched-header">
           <span class="sched-dow">${esc(d.day_of_week)}</span>
           <span class="sched-date">${esc(d.date.slice(5))}</span>
-          <span class="sched-type">${esc(d.session_type)}</span>
+          <span class="sched-type">${esc(d.session_type)} ${adjBadge}</span>
           ${d.completed ? '<span class="sched-done">[x]</span>' : ''}
         </div>
+        ${adjFrom}
         ${chips ? `<p class="sched-chips">${chips}</p>` : ''}
         <p class="sched-detail">${esc(d.session_detail)}</p>
         <p class="sched-focus">${esc(d.coaching_focus)}</p>
+        ${altExercise}
       </div>`;
   }).join('');
 }

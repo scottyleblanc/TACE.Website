@@ -7,10 +7,14 @@ Sends one of two email formats depending on whether today is an active day or re
 Active day:  session type, detail, coaching focus, minutes, run:walk ratio, streak, link
 Rest day:    recovery note, tomorrow's session preview, streak, link
 
+If OVERRIDES_TABLE env var is set, override rows are merged into the day data
+before the email is composed, so the email always reflects the adjusted plan.
+
 Environment variables:
   DYNAMODB_TABLE  -- DynamoDB table name (training-plan)
   SES_SENDER      -- From address (noreply@tacedata.ca)
   RECIPIENT       -- To address (scott.leblanc@tacedata.ca)
+  OVERRIDES_TABLE -- Optional. DynamoDB overrides table name (training-plan-overrides)
   SITE_URL        -- Optional override for the tracker link (default: https://train.tacedata.ca/)
 """
 
@@ -31,9 +35,19 @@ _SENDER     = os.environ["SES_SENDER"]
 _RECIPIENT  = os.environ["RECIPIENT"]
 _SITE_URL   = os.environ.get("SITE_URL", "https://train.tacedata.ca/")
 
-_dynamodb = boto3.resource("dynamodb")
-_table    = _dynamodb.Table(_TABLE_NAME)
-_ses      = boto3.client("sesv2", region_name="ca-central-1")
+_OVERRIDES_TABLE_NAME = os.environ.get("OVERRIDES_TABLE")
+
+_dynamodb        = boto3.resource("dynamodb")
+_table           = _dynamodb.Table(_TABLE_NAME)
+_overrides_table = _dynamodb.Table(_OVERRIDES_TABLE_NAME) if _OVERRIDES_TABLE_NAME else None
+_ses             = boto3.client("sesv2", region_name="ca-central-1")
+
+_OVERRIDE_FIELDS = (
+    "session_type", "session_detail", "coaching_focus",
+    "run_interval_minutes", "run_walk_ratio", "session_minutes_target",
+    "alternate_exercise",
+)
+_CLEARABLE_FIELDS = frozenset(("run_walk_ratio", "alternate_exercise"))
 
 
 def _scan_all() -> list[dict]:
@@ -47,6 +61,57 @@ def _scan_all() -> list[dict]:
             break
         kwargs["ExclusiveStartKey"] = last
     return sorted(items, key=lambda d: d["date"])
+
+
+def _scan_overrides() -> dict:
+    overrides: dict = {}
+    kwargs: dict = {}
+    while True:
+        result = _overrides_table.scan(**kwargs)
+        for item in result.get("Items", []):
+            if item.get("override_active"):
+                overrides[item["date"]] = item
+        last = result.get("LastEvaluatedKey")
+        if not last:
+            break
+        kwargs["ExclusiveStartKey"] = last
+    return overrides
+
+
+def _merge_override(seed_item: dict, override_item: dict) -> dict:
+    merged = dict(seed_item)
+    merged["has_override"] = True
+    merged["original_session_type"] = seed_item.get("session_type", "")
+
+    for field in _OVERRIDE_FIELDS:
+        if field not in override_item:
+            continue
+        val = override_item[field]
+        if field in _CLEARABLE_FIELDS:
+            if val == "" or val is None:
+                merged.pop(field, None)
+            else:
+                merged[field] = val
+        elif val not in ("", None):
+            merged[field] = val
+
+    merged["override_reason"] = override_item.get("override_reason", "")
+    merged["override_source"] = override_item.get("override_source", "")
+    merged["override_note"]   = override_item.get("override_note", "")
+    merged["provisional"]     = bool(override_item.get("provisional", False))
+
+    return merged
+
+
+def _apply_overrides(days: list[dict], overrides: dict) -> list[dict]:
+    result = []
+    for day in days:
+        override = overrides.get(day["date"])
+        if override:
+            result.append(_merge_override(day, override))
+        else:
+            result.append(day)
+    return result
 
 
 def _compute_streak(days: list[dict], today_str: str) -> int:
@@ -69,30 +134,41 @@ def _day_for(days: list[dict], date_str: str) -> dict | None:
     return next((d for d in days if d["date"] == date_str), None)
 
 
-def _next_day(days: list[dict], today_str: str) -> dict | None:
-    return next((d for d in days if d["date"] > today_str), None)
-
-
 def _int(val) -> int:
     return int(val) if isinstance(val, Decimal) else (val or 0)
 
 
 def _active_day_body(day: dict, streak: int) -> tuple[str, str]:
-    subject = f"[Training] {day['session_type']} -- Day {_int(day['day_of_plan'])} of 105"
+    session_type = day["session_type"]
+    prov_prefix  = "[PROVISIONAL] " if day.get("provisional") else ""
+    subject = f"[Training] {prov_prefix}{session_type} -- Day {_int(day['day_of_plan'])} of 105"
 
     lines = [
         f"Day {_int(day['day_of_plan'])} of 105  |  Week {_int(day['week_number'])}  |  {day['phase']}",
         "",
-        f"Session: {day['session_type']}",
+        f"Session: {session_type}",
         f"Detail:  {day['session_detail']}",
         f"Focus:   {day['coaching_focus']}",
     ]
 
     if day.get("session_minutes_target"):
-        mins = _int(day["session_minutes_target"])
-        ratio = day.get("run_walk_ratio", "")
+        mins      = _int(day["session_minutes_target"])
+        ratio     = day.get("run_walk_ratio", "")
         ratio_str = f"  |  {ratio} run:walk" if ratio else ""
         lines.append(f"Target:  {mins} min{ratio_str}")
+
+    if day.get("alternate_exercise"):
+        lines.append(f"Alternative: {day['alternate_exercise']}")
+
+    if day.get("has_override"):
+        original = day.get("original_session_type", "")
+        if original and original != session_type:
+            lines.append(f"Adjusted from: {original}")
+        reason = day.get("override_reason", "")
+        if reason:
+            source = day.get("override_source", "")
+            source_str = f" ({source})" if source else ""
+            lines.append(f"[{prov_prefix.strip() or 'ADJUSTED'}] {reason}{source_str}")
 
     lines += [
         "",
@@ -107,12 +183,24 @@ def _active_day_body(day: dict, streak: int) -> tuple[str, str]:
 def _rest_day_body(day: dict, tomorrow: dict | None, streak: int) -> tuple[str, str]:
     subject = f"[Training] Rest day -- Week {_int(day['week_number'])}"
 
+    if day.get("has_override") and day.get("session_detail"):
+        rest_line = day["session_detail"]
+    else:
+        rest_line = "Rest day. Recovery is part of the plan."
+
     lines = [
         f"Day {_int(day['day_of_plan'])} of 105  |  Week {_int(day['week_number'])}  |  {day['phase']}",
         "",
-        "Rest day. Recovery is part of the plan.",
-        "",
+        rest_line,
     ]
+
+    if day.get("has_override") and day.get("coaching_focus"):
+        lines.append(day["coaching_focus"])
+
+    if day.get("alternate_exercise"):
+        lines.append(f"Alternative: {day['alternate_exercise']}")
+
+    lines.append("")
 
     if tomorrow:
         lines += [
@@ -135,6 +223,12 @@ def handler(event: dict, context) -> dict:
     logger.info("daily_email invoked for %s", today_str)
 
     days = _scan_all()
+
+    if _overrides_table:
+        overrides = _scan_overrides()
+        days = _apply_overrides(days, overrides)
+        logger.info("Applied %d active overrides", len(overrides))
+
     today_day = _day_for(days, today_str)
 
     if today_day is None:
