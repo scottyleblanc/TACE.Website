@@ -11,8 +11,8 @@ change. The put is an overwrite, so the script is idempotent and safe to re-run
 (e.g. to capture a late write after the DYNAMODB_TABLE env-var flip -- see the
 [WRITE FREEZE] note in runbook-tracker.md Step 44).
 
-The overrides table (training-plan-overrides) stays keyed on date and is NOT
-migrated.
+The overrides table (training-plan-overrides) is migrated separately -- see
+migrate_overrides_to_v2.py.
 
 Usage:
     python app/train/scripts/migrate_to_v2.py --owner-sub <SUB> --dry-run

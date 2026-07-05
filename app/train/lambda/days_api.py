@@ -5,6 +5,8 @@ Routes (API Gateway HTTP API, payload format 2.0):
   GET  /days           -- all 105 training days, sorted by date, with overrides merged
   GET  /days/{date}    -- single day by ISO date string (e.g. 2026-06-15)
   PATCH /days/{date}   -- update user-state fields: completed (bool), notes (str)
+  GET  /settings       -- read coach_scope from the caller's users record
+  PATCH /settings      -- update coach_scope (plan_only | plan_plus_general)
 
 Override layer:
   If OVERRIDES_TABLE env var is set, GET routes merge active overrides on top of
@@ -23,6 +25,8 @@ import boto3
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
+import plan_merge
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -33,25 +37,18 @@ _table = _dynamodb.Table(_TABLE_NAME)
 _OVERRIDES_TABLE_NAME = os.environ.get("OVERRIDES_TABLE")
 _overrides_table = _dynamodb.Table(_OVERRIDES_TABLE_NAME) if _OVERRIDES_TABLE_NAME else None
 
+_USERS_TABLE_NAME = os.environ["USERS_TABLE"]
+_users_table = _dynamodb.Table(_USERS_TABLE_NAME)
+
 _MAX_NOTES_LEN = 2000
+
+_COACH_SCOPES = frozenset(("plan_only", "plan_plus_general"))
 
 _CORS_HEADERS = {
     "Access-Control-Allow-Origin": "https://train.tacedata.ca",
     "Access-Control-Allow-Headers": "Authorization,Content-Type",
     "Content-Type": "application/json",
 }
-
-# Fields applied from the override item when present and non-empty.
-_OVERRIDE_FIELDS = (
-    "session_type", "session_detail", "coaching_focus",
-    "run_interval_minutes", "run_walk_ratio", "session_minutes_target",
-    "alternate_exercise",
-)
-
-# Fields always stored in the override item (even as empty string).
-# An empty string here means "clear this field from the merged result"
-# rather than "inherit from the seed row."
-_CLEARABLE_FIELDS = frozenset(("run_walk_ratio", "alternate_exercise"))
 
 
 def _json_default(obj):
@@ -76,68 +73,54 @@ def _err(status: int, message: str) -> dict:
     }
 
 
-def _user_id(event: dict) -> str | None:
+def _claims(event: dict) -> dict:
+    """The verified JWT claims map from the API Gateway Cognito authorizer."""
+    try:
+        return event["requestContext"]["authorizer"]["jwt"]["claims"]
+    except (KeyError, TypeError):
+        return {}
+
+
+def _user_id(claims: dict) -> str | None:
     """The caller's Cognito `sub`, from the verified JWT authorizer claims.
 
     Never trust a `user_id` from the body or path -- it comes only from the token
     the API Gateway Cognito authorizer has already verified. Returns None when the
     claim is absent (treated as unauthenticated by the handler).
     """
-    try:
-        claims = event["requestContext"]["authorizer"]["jwt"]["claims"]
-    except (KeyError, TypeError):
-        return None
     sub = claims.get("sub")
     return sub if sub else None
 
 
-def _merge_override(seed_item: dict, override_item: dict) -> dict:
-    merged = dict(seed_item)
-    merged["has_override"] = True
-    merged["original_session_type"] = seed_item.get("session_type", "")
-    merged["original_session_detail"] = seed_item.get("session_detail", "")
+def _ensure_profile(user_id: str, claims: dict) -> None:
+    """Idempotently provision the users/profile record on first login.
 
-    for field in _OVERRIDE_FIELDS:
-        if field not in override_item:
-            continue  # not in override item -- inherit from seed
-        val = override_item[field]
-        if field in _CLEARABLE_FIELDS:
-            # Empty string = intentionally cleared; remove from merged result
-            if val == "" or val is None:
-                merged.pop(field, None)
-            else:
-                merged[field] = val
-        elif val not in ("", None):
-            merged[field] = val
+    A conditional put on absence of user_id -- a returning user's existing
+    profile (and any coach_scope they've since changed) is left untouched.
+    email/display_name are populated only if the verified token happens to
+    carry them; this Cognito app client's access token does not today, so
+    both are typically omitted rather than written empty.
+    """
+    now = datetime.now(timezone.utc).isoformat()
+    item: dict = {
+        "user_id": user_id,
+        "coach_scope": "plan_only",
+        "created_at": now,
+        "updated_at": now,
+    }
+    email = claims.get("email")
+    if email:
+        item["email"] = email
+    display_name = claims.get("name") or claims.get("given_name")
+    if display_name:
+        item["display_name"] = display_name
 
-    merged["override_reason"] = override_item.get("override_reason", "")
-    merged["override_source"] = override_item.get("override_source", "")
-    merged["override_note"]   = override_item.get("override_note", "")
-    merged["provisional"]     = bool(override_item.get("provisional", False))
-
-    return merged
-
-
-def _scan_overrides() -> dict:
-    overrides: dict = {}
-    kwargs: dict = {}
-    while True:
-        result = _overrides_table.scan(**kwargs)
-        for item in result.get("Items", []):
-            if item.get("override_active"):
-                overrides[item["date"]] = item
-        last = result.get("LastEvaluatedKey")
-        if not last:
-            break
-        kwargs["ExclusiveStartKey"] = last
-    return overrides
-
-
-def _apply_override(seed_item: dict, overrides: dict) -> dict:
-    override = overrides.get(seed_item["date"])
-    if override:
-        return _merge_override(seed_item, override)
-    return seed_item
+    try:
+        _users_table.put_item(Item=item, ConditionExpression="attribute_not_exists(user_id)")
+    except ClientError as exc:
+        if exc.response["Error"]["Code"] != "ConditionalCheckFailedException":
+            raise
+        # Profile already exists -- idempotent no-op, nothing to do.
 
 
 def _get_days(user_id: str) -> dict:
@@ -153,8 +136,8 @@ def _get_days(user_id: str) -> dict:
     items.sort(key=lambda x: x["date"])
 
     if _overrides_table:
-        overrides = _scan_overrides()
-        items = [_apply_override(item, overrides) for item in items]
+        overrides = plan_merge.query_overrides(_overrides_table, user_id)
+        items = plan_merge.apply_overrides_to_items(items, overrides)
 
     return _ok(items)
 
@@ -167,10 +150,10 @@ def _get_day(user_id: str, date: str) -> dict:
         return _err(404, f"Day {date} not found")
 
     if _overrides_table:
-        override_result = _overrides_table.get_item(Key={"date": date})
+        override_result = _overrides_table.get_item(Key={"user_id": user_id, "date": date})
         override = override_result.get("Item")
         if override and override.get("override_active"):
-            item = _merge_override(item, override)
+            item = plan_merge.merge_override(item, override)
 
     return _ok(item)
 
@@ -243,14 +226,58 @@ def _patch_day(user_id: str, date: str, raw_body: str | None) -> dict:
     return _ok(result.get("Attributes", {}))
 
 
+def _get_settings(user_id: str) -> dict:
+    result = _users_table.get_item(Key={"user_id": user_id})
+    item = result.get("Item") or {}
+    return _ok({"coach_scope": item.get("coach_scope", "plan_only")})
+
+
+def _patch_settings(user_id: str, raw_body: str | None) -> dict:
+    if not raw_body:
+        return _err(400, "Request body required")
+    try:
+        payload = json.loads(raw_body)
+    except json.JSONDecodeError:
+        return _err(400, "Invalid JSON")
+
+    coach_scope = payload.get("coach_scope")
+    if coach_scope not in _COACH_SCOPES:
+        return _err(400, f"Field 'coach_scope' must be one of {sorted(_COACH_SCOPES)}")
+
+    try:
+        result = _users_table.update_item(
+            Key={"user_id": user_id},
+            UpdateExpression="SET coach_scope = :scope, updated_at = :now",
+            ConditionExpression="attribute_exists(#pk)",
+            ExpressionAttributeNames={"#pk": "user_id"},
+            ExpressionAttributeValues={
+                ":scope": coach_scope,
+                ":now": datetime.now(timezone.utc).isoformat(),
+            },
+            ReturnValues="ALL_NEW",
+        )
+    except ClientError as exc:
+        if exc.response["Error"]["Code"] == "ConditionalCheckFailedException":
+            # _ensure_profile runs before every route, so this should be
+            # unreachable in practice -- kept for the same defensive reason
+            # as _patch_day's cross-user 404 mapping.
+            return _err(404, "User profile not found")
+        raise
+
+    return _ok({"coach_scope": result["Attributes"]["coach_scope"]})
+
+
 def handler(event: dict, context) -> dict:
     route_key = event.get("routeKey", "")
     path_params = event.get("pathParameters") or {}
     body = event.get("body")
 
-    user_id = _user_id(event)
+    claims = _claims(event)
+    user_id = _user_id(claims)
     if not user_id:
         return _err(401, "Unauthenticated")
+
+    _ensure_profile(user_id, claims)
 
     logger.info("route=%s params=%s user=%s", route_key, path_params, user_id[:8])
 
@@ -260,4 +287,8 @@ def handler(event: dict, context) -> dict:
         return _get_day(user_id, path_params.get("date", ""))
     if route_key == "PATCH /days/{date}":
         return _patch_day(user_id, path_params.get("date", ""), body)
+    if route_key == "GET /settings":
+        return _get_settings(user_id)
+    if route_key == "PATCH /settings":
+        return _patch_settings(user_id, body)
     return _err(400, f"Unhandled route: {route_key}")

@@ -3,11 +3,11 @@ import { API } from './config.js';
 
 // HTML-escape any value interpolated into an innerHTML template to prevent HTML/script injection.
 const ESC_MAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-function esc(value) {
+export function esc(value) {
   return String(value ?? '').replace(/[&<>"']/g, ch => ESC_MAP[ch]);
 }
 
-async function apiRequest(method, path, body, _retried = false) {
+export async function apiRequest(method, path, body, _retried = false) {
   if (!isTokenValid()) {
     const ok = await refreshTokens();
     if (!ok) { login(); return null; }
@@ -267,11 +267,26 @@ function renderWeekSchedule(days) {
   }).join('');
 }
 
+function showDashboardView() {
+  document.getElementById('coach-view').style.display = 'none';
+  document.getElementById('dashboard').style.display  = '';
+}
+
+async function showCoachView() {
+  document.getElementById('dashboard').style.display  = 'none';
+  document.getElementById('coach-view').style.display = '';
+  const { initCoach } = await import('./coach.js');
+  await initCoach();
+}
+
 async function showDashboard(days) {
   document.getElementById('app-loading').style.display  = 'none';
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('dashboard').style.display    = '';
   document.getElementById('logout-btn').addEventListener('click', logout);
+  document.getElementById('logout-btn-coach').addEventListener('click', logout);
+  document.getElementById('coach-nav-btn').addEventListener('click', showCoachView);
+  document.getElementById('dashboard-nav-btn').addEventListener('click', showDashboardView);
 
   const todayStr = todayISO();
   const todayDay = days.find(d => d.date === todayStr) ?? null;

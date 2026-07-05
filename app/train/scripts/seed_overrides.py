@@ -1,15 +1,16 @@
 """
-seed_overrides.py -- Create and seed the training-plan-overrides DynamoDB table.
+seed_overrides.py -- Create and seed the training-plan-overrides-v2 DynamoDB table.
 
-Creates the table (PAY_PER_REQUEST) if it does not exist, waits for it to
-become ACTIVE, then loads all override rows from dev/training_plan_overrides.csv.
+Creates the table (PAY_PER_REQUEST, PK user_id, SK date) if it does not exist,
+waits for it to become ACTIVE, then loads all override rows from
+dev/training_plan_overrides.csv under the given owner's user_id.
 
 Safe to re-run -- uses put_item (upsert), so existing rows are replaced.
 
 Usage:
-    python app/train/scripts/seed_overrides.py
-    python app/train/scripts/seed_overrides.py --dry-run
-    python app/train/scripts/seed_overrides.py --profile tace-aws-admin --region ca-central-1
+    python app/train/scripts/seed_overrides.py --user-id <SUB>
+    python app/train/scripts/seed_overrides.py --user-id <SUB> --dry-run
+    python app/train/scripts/seed_overrides.py --user-id <SUB> --profile tace-aws-admin --region ca-central-1
 """
 
 import argparse
@@ -21,7 +22,7 @@ from pathlib import Path
 import boto3
 from botocore.exceptions import ClientError
 
-TABLE_NAME = "training-plan-overrides"
+TABLE_NAME = "training-plan-overrides-v2"
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 OVERRIDES_CSV = _REPO_ROOT / "dev" / "training_plan_overrides.csv"
@@ -40,8 +41,9 @@ def _nullable_int(value: str) -> int | None:
     return int(s) if s else None
 
 
-def build_item(row: dict) -> dict:
+def build_item(row: dict, user_id: str) -> dict:
     item: dict = {
+        "user_id":              user_id,
         "date":                 row["date"].strip(),
         "week_number":          int(row["week_number"]),
         "override_active":      _parse_bool(row["override_active"]),
@@ -107,8 +109,14 @@ def _ensure_table(client, table_name: str) -> None:
     print(f"[INFO]  Creating table '{table_name}'...")
     client.create_table(
         TableName=table_name,
-        KeySchema=[{"AttributeName": "date", "KeyType": "HASH"}],
-        AttributeDefinitions=[{"AttributeName": "date", "AttributeType": "S"}],
+        KeySchema=[
+            {"AttributeName": "user_id", "KeyType": "HASH"},
+            {"AttributeName": "date", "KeyType": "RANGE"},
+        ],
+        AttributeDefinitions=[
+            {"AttributeName": "user_id", "AttributeType": "S"},
+            {"AttributeName": "date", "AttributeType": "S"},
+        ],
         BillingMode="PAY_PER_REQUEST",
     )
     print("[INFO]  Waiting for table to become ACTIVE...")
@@ -127,8 +135,9 @@ def _wait_active(client, table_name: str, max_attempts: int = 30) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Create and seed the training-plan-overrides DynamoDB table."
+        description="Create and seed the training-plan-overrides-v2 DynamoDB table."
     )
+    parser.add_argument("--user-id", required=True, help="Owner's Cognito sub (the user_id partition key)")
     parser.add_argument("--profile", default="tace-aws-admin", help="AWS CLI profile name")
     parser.add_argument("--region", default="ca-central-1", help="AWS region")
     parser.add_argument("--table", default=TABLE_NAME, help="DynamoDB table name")
@@ -143,7 +152,7 @@ def main() -> None:
     items: list[dict] = []
     with open(OVERRIDES_CSV, encoding="utf-8", newline="") as f:
         for row in csv.DictReader(f):
-            items.append(build_item(row))
+            items.append(build_item(row, args.user_id))
 
     print(f"[INFO]  {len(items)} override rows loaded from CSV")
 

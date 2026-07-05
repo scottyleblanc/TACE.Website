@@ -28,6 +28,8 @@ import boto3
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
+import plan_merge
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -44,13 +46,6 @@ _table           = _dynamodb.Table(_TABLE_NAME)
 _overrides_table = _dynamodb.Table(_OVERRIDES_TABLE_NAME) if _OVERRIDES_TABLE_NAME else None
 _ses             = boto3.client("sesv2", region_name="ca-central-1")
 
-_OVERRIDE_FIELDS = (
-    "session_type", "session_detail", "coaching_focus",
-    "run_interval_minutes", "run_walk_ratio", "session_minutes_target",
-    "alternate_exercise",
-)
-_CLEARABLE_FIELDS = frozenset(("run_walk_ratio", "alternate_exercise"))
-
 
 def _query_user(user_id: str) -> list[dict]:
     items: list[dict] = []
@@ -63,57 +58,6 @@ def _query_user(user_id: str) -> list[dict]:
             break
         kwargs["ExclusiveStartKey"] = last
     return sorted(items, key=lambda d: d["date"])
-
-
-def _scan_overrides() -> dict:
-    overrides: dict = {}
-    kwargs: dict = {}
-    while True:
-        result = _overrides_table.scan(**kwargs)
-        for item in result.get("Items", []):
-            if item.get("override_active"):
-                overrides[item["date"]] = item
-        last = result.get("LastEvaluatedKey")
-        if not last:
-            break
-        kwargs["ExclusiveStartKey"] = last
-    return overrides
-
-
-def _merge_override(seed_item: dict, override_item: dict) -> dict:
-    merged = dict(seed_item)
-    merged["has_override"] = True
-    merged["original_session_type"] = seed_item.get("session_type", "")
-
-    for field in _OVERRIDE_FIELDS:
-        if field not in override_item:
-            continue
-        val = override_item[field]
-        if field in _CLEARABLE_FIELDS:
-            if val == "" or val is None:
-                merged.pop(field, None)
-            else:
-                merged[field] = val
-        elif val not in ("", None):
-            merged[field] = val
-
-    merged["override_reason"] = override_item.get("override_reason", "")
-    merged["override_source"] = override_item.get("override_source", "")
-    merged["override_note"]   = override_item.get("override_note", "")
-    merged["provisional"]     = bool(override_item.get("provisional", False))
-
-    return merged
-
-
-def _apply_overrides(days: list[dict], overrides: dict) -> list[dict]:
-    result = []
-    for day in days:
-        override = overrides.get(day["date"])
-        if override:
-            result.append(_merge_override(day, override))
-        else:
-            result.append(day)
-    return result
 
 
 def _compute_streak(days: list[dict], today_str: str) -> int:
@@ -244,8 +188,8 @@ def _brief_user(user_id: str, recipient: str, today_str: str) -> str | None:
     days = _query_user(user_id)
 
     if _overrides_table:
-        overrides = _scan_overrides()
-        days = _apply_overrides(days, overrides)
+        overrides = plan_merge.query_overrides(_overrides_table, user_id)
+        days = plan_merge.apply_overrides_to_items(days, overrides)
         logger.info("Applied %d active overrides", len(overrides))
 
     today_day = _day_for(days, today_str)

@@ -7,15 +7,41 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- `app/train/docs/IDENTITY-FOUNDATION-SPEC.md`, `AI-COACH-ENDPOINT-SPEC.md`, `AI-COACH-PROMPTS-AND-EVALS-SPEC.md` — authoritative specs for the identity foundation and AI coach, superseding the prior Phase Three/Four plan in `STAGES.md`/`TODO.md`.
+- `app/train/scripts/migrate_to_v2.py` — one-time migration tool (with `--verify`) copying `training-plan` into the `user_id`-partitioned `training-plan-v2`, preserving user state.
+- `app/train/lambda/days_api.py` — `_ensure_profile()`: idempotent first-login provisioning of a `training-users` profile record (`coach_scope=plan_only` default); `GET`/`PATCH /settings` to read/write `coach_scope`.
+- `training-plan-v2` and `training-users` DynamoDB tables (identity foundation, Stage 3.9); `conversations` table (AI coach, Stage 3.10).
 - `app/train/lambda/tracker_auth.py` — server-side auth handler that runs the OAuth2 code + PKCE flow and exposes `/auth/login`, `/auth/callback`, `/auth/refresh`, and `/auth/logout`. The SPA holds the access token in memory; the refresh token is kept in an httpOnly cookie.
+- `app/train/lambda/tracker_coach.py` (new Lambda `tracker-coach`) — the AI running coach: thread CRUD (`POST`/`GET /conversations`, `GET`/`PATCH`/`DELETE /conversations/{id}`), a hard medical rail (`RAIL_MODEL` classifier, fails closed, defers before the coach model is ever called), and the coach turn (`POST /conversations/{id}/messages` — merged plan view, facts computed in code, coach-model call via `COACH_MODEL`, persistence). Anthropic Python SDK packaged as a Lambda layer; API key in Secrets Manager, read server-side only.
+- `app/train/lambda/plan_merge.py` — shared override-merge logic extracted from `days_api.py`/`daily_email.py`, now reused by `tracker_coach.py` too, so all three consumers show an identical physio-adjusted plan view.
+- `app/train/lambda/coach_prompts.py` — the coach's prompt-assembly logic (facts, plan window, history trimming, rail classification, system prompt construction), extracted with zero AWS/env dependencies so it can be imported directly by the eval harness.
+- `app/train/evals/run_coach_evals.py` + `cases.py` — eval harness for the coach: 9 rail-classifier cases (gate: 100% recall on the medical class) and 6 coach behavioral cases (grounding, fact-faithfulness under pressure, scope adherence in both modes, medical backstop, notes-injection resistance), scored deterministically and via an LLM-as-judge.
+- `.github/workflows/coach-evals.yml` — runs the eval harness on PRs touching the coach prompts, plus manual dispatch; separate from the main deploy pipeline.
+- `app/train/scripts/Complete-TrainingDay.ps1` — retroactive day-completion utility, scoped to a caller-supplied `user_id` against `training-plan-v2`.
+- `training-plan-overrides-v2` DynamoDB table (Stage 3.12) and `app/train/scripts/migrate_overrides_to_v2.py` — partitions the physio override layer by `user_id`, same shape as the Stage 3.9 plan-table migration.
+- `app/train/src/coach.js` (Stage 3.13) — the AI coach's chat UI: thread create/rename/delete/switch, chat bubbles distinguishing user/coach/rail-deferred messages, a dependency-free markdown-lite renderer, and a `coach_scope` toggle. Wired into `index.html`/`app.js`/`style.css` as a second SPA view toggled from the dashboard header.
+- `app/train/lambda/coach_prompts.py` / `tracker_coach.py` (Stage 3.14) — the coach now receives a whole-plan `[NOTES_LOG]` digest (`{date, notes}` for every logged day, built from the already-loaded merged view), so it can review the athlete's full journal history on request instead of only the ~2-week plan window; reciting logged notes is treated as data retrieval and no longer trips the medical backstop. New `review_logged_notes` eval case.
 
 ### Changed
+- `app/train/lambda/days_api.py`, `daily_email.py` — repartitioned by `user_id` (Cognito `sub`) instead of `date` alone: routes derive `user_id` from verified JWT claims (never body/path), `GET /days` uses `Query` instead of `Scan`, and cross-user access returns 404. `daily_email.py`'s per-user briefing logic is extracted into `_brief_user()` so a later multi-user fan-out is a loop, not a rewrite.
+- `app/train/scripts/seed_dynamo.py` — `build_item()` takes a required `user_id`; default table is now `training-plan-v2`.
+- `app/train/docs/STAGES.md`, `TODO.md` — rewritten around the three specs; Phase Three retitled "Identity Foundation," Phase Four "The AI Coach."
 - `app/train/src/auth.js`, `app/train/src/app.js` — SPA reworked to use the server-side `/auth/*` endpoints; the browser no longer stores tokens or runs the token exchange.
 - `app/train/src/config.example.js` — trimmed to the API base (Cognito values are server-side now).
-- `.github/workflows/deploy.yml` — added the `tracker-auth` Lambda deploy step; trimmed the generated SPA config.
+- `.github/workflows/deploy.yml` — added the `tracker-auth` Lambda deploy step; trimmed the generated SPA config; bundles `plan_merge.py`/`coach_prompts.py` into the relevant Lambda zips; builds/publishes the Anthropic SDK Lambda layer and deploys `tracker-coach`; syncs the tracker SPA with `Cache-Control: no-cache` (see Fixed).
+- `app/train/lambda/plan_merge.py` — override lookups changed from a table-wide `Scan` to a `Query` scoped to the caller's `user_id` (Stage 3.12); used identically by all three consumers.
+- `app/train/lambda/coach_prompts.py` — rail and coach backstop prompts re-tuned after real usage showed both over-triggering on any body-part *mention* rather than an actual reported symptom (see Security).
+
+### Fixed
+- `deploy.yml` / tracker SPA — the S3 sync set no `Cache-Control` header on any file, so browsers applied heuristic caching and kept serving a stale SPA after a deploy even though the CloudFront cache had been invalidated (worked fine in Incognito, which starts with no cache). Fixed by syncing with `Cache-Control: no-cache` so browsers always revalidate with the origin.
 
 ### Security
+- `app/train/lambda/days_api.py` — cross-user isolation enforced at the DynamoDB key level (`{user_id, date}`); verified against a real second Cognito identity (`GET`/`PATCH` both 404, owner's data confirmed unchanged). `user_id` is trusted only from the verified JWT, never the request body or path.
 - `app/train/src/app.js` — added an `esc()` HTML-escaping helper and applied it to all values rendered into the dashboard via `innerHTML`.
+- `app/train/lambda/tracker_coach.py` — every route re-verifies thread ownership from the JWT `sub`, never body/path; the medical rail fails closed on any classifier error or ambiguous response rather than passing an unclassified message to the coach model; the Anthropic API key is read from Secrets Manager server-side only and never appears in `message`/log output.
+- `app/train/lambda/coach_prompts.py` — the coach's medical backstop was tightened after the eval harness caught it giving a training recommendation ("hold off on the session") alongside a correct referral to the physiotherapist; the instruction now explicitly forbids any training opinion in that path, not just a clean redirect.
+- `training-plan-overrides` (Stage 3.12) — this table was global, un-partitioned reference data, so any caller's plan read could pick up another user's physio overrides regardless of whose account they belonged to. Migrated to a `user_id`-partitioned table and scoped every lookup to the caller; proven with a fixture identity that no longer sees another user's override fields.
+- `app/train/lambda/coach_prompts.py` — the rail classifier and the coach's own medical backstop were both judging by *topic* (any body-part word) instead of *intent* (an actual reported symptom, pain, or injury), causing real over-triggering on messages like a bare "leg" or a positive status update. Both prompts re-tuned with explicit examples distinguishing the two; regression cases added to the eval harness.
 - Security hardening tracked privately (see `TACE.Website-private`).
 
 ## [0.20.0] - 2026-04-06

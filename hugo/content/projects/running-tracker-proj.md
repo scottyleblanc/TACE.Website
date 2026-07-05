@@ -62,3 +62,5 @@ In progress.  Phase one — the tracker — first.  Notes and write-ups to follo
 
 - [stage 1 — infrastructure and seed data](/posts/train-stage-1-post/)
 - [stage 2 — the security audit](/posts/train-stage-2-post/)
+- [stage 3 — identity migration and the coach spec](/posts/train-stage-3-post/)
+- [stage 4 — building the coach](/posts/train-stage-4-post/)

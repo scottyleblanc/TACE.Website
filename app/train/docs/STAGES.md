@@ -27,7 +27,17 @@ decide to add them (see [Deferred] at the end).
 
 ---
 
-## Current Focus: Phase Three — Identity Foundation (Stage 3.9)
+## Current Focus: Phase Four complete, coach live end-to-end in the browser
+
+Stages 3.9–3.13 are all live — see Completed Stages below. The AI coach has a
+working chat UI in the SPA (Stage 3.13) on top of the backend from
+3.10–3.11, `training-plan-overrides` is now partitioned by `user_id` (Stage
+3.12, closing a real gap left open at Stage 3.9), and the rail/coach prompts
+were re-tuned once against real usage after launch (folded into Stage 3.11's
+write-up below). Loose ends carried forward: the old `training-plan` and
+`training-plan-overrides` (v1) tables are retained pending a soak period
+(Steps 50 and 71 in the private runbook), and the Stage 3.9 cutover was
+validated via direct Lambda invocation rather than a live browser session.
 
 Stages 3.1–3.6 (Phase One — MVP) are complete and live. Phase Two (security audit,
 Stage 3.8) is tracked in the private repo. Stage 3.7 (Public View) remains parked.
@@ -37,7 +47,7 @@ Phase mapping to the public project narrative
 - Phase One (single-user MVP) = Stages 3.1–3.6 (done)
 - Phase Two (security audit) = Stage 3.8 (private repo)
 - Phase Three (identity foundation) = Stage 3.9
-- Phase Four (the AI coach) = Stages 3.10–3.11
+- Phase Four (the AI coach) = Stages 3.10–3.13
 
 ---
 
@@ -196,6 +206,11 @@ idempotently on first login. One active user today; the schema supports many.
 on `date` (single-user reference data); the merge logic in both Lambdas is
 unchanged. See the spec's [STEP 1.5] for the full migration sequence.
 
+**Status: live as of 2026-07-05.** See Completed Stages below for what was
+validated and the two known gaps carried forward (old-table retirement pending a
+soak period; `email`/`display_name` unpopulated since this Cognito app client's
+access token carries neither claim).
+
 ---
 
 # Phase Four — The AI Coach
@@ -257,6 +272,11 @@ model; models are swappable via config; no route can read another user's data.
 **Build order (from the spec):** thread CRUD → `/settings` → rail (provably
 deferring) → coach turn. Do not build the coach turn until CRUD and the rail work.
 
+**Status: live as of 2026-07-05.** See Completed Stages below for what was
+validated, two live-observed bugs found and fixed during validation, and the
+known gap carried forward (coach/rail prompt wording is a functional
+placeholder — final wording and eval-driven tuning is Stage 3.11's job).
+
 ---
 
 ## Stage 3.11 — Coach Prompts and Evaluation
@@ -283,6 +303,76 @@ production-assembled prompt, and all release gates pass.
   scope behaviour in both modes; medical backstop holds; the notes-injection case
   does not alter the role or output [SEC]
 
+**Status: live as of 2026-07-05.** See Completed Stages below for the one real
+gap the harness caught and fixed before shipping, plus a follow-up prompt
+retune driven by real usage after launch.
+
+---
+
+## Stage 3.12 — Partition `training-plan-overrides` by `user_id`
+
+**Goal:** Close a real security gap left open at Stage 3.9: the physio
+override layer was global, un-partitioned reference data, so a second user
+would have seen (and been affected by) the first user's overrides.
+
+**Definition of done:**
+- New table `training-plan-overrides-v2`: PK = `user_id`, SK = `date`, same
+  shape as the existing `training-plan-v2` migration
+- One-time migration script copies every override row under the owner's
+  `user_id`, with `--verify` asserting count and field parity
+- `plan_merge.py`'s override lookup changed from a table-wide `Scan` to a
+  `Query` scoped to the caller's own partition — used identically by
+  `days_api.py`, `daily_email.py`, and `tracker_coach.py`
+- IAM least-privilege updated on all three execution roles: `Query` on the
+  new table, old `Scan` grants removed
+- Isolation proven directly: a fixture identity seeded with a row on a date
+  carrying an active owner override sees **no** override fields merged in
+
+**Status: live as of 2026-07-05.** See Completed Stages below.
+
+---
+
+## Stage 3.13 — Coach Chat UI
+
+**Goal:** A working chat interface for the AI coach in the SPA — the backend
+from Stages 3.10–3.11 had only ever been exercised via direct Lambda
+invocation.
+
+**Definition of done:**
+- A second view in the existing single-page app (no router, no build step,
+  no framework — matching the rest of the SPA), toggled from the dashboard
+  header
+- Thread create/rename/delete/switch; chat bubbles distinguishing user,
+  coach, and rail-deferred messages; a minimal markdown-lite renderer
+  (`**bold**`, bullet lists) with no external library or CDN dependency;
+  a `coach_scope` toggle backed by the existing `/settings` route
+- Validated first against a local mock (no backend calls) to sanity-check
+  layout and interaction, then against the live site after deploying
+
+**Status: live as of 2026-07-05.**
+
+---
+
+## Stage 3.14 — Coach whole-plan notes digest
+
+**Goal:** The coach can review the athlete's full logged-note history on
+request. Before this it only saw the plan window (~2 weeks), so "review the
+comments I've logged" surfaced almost none of the athlete's journal.
+
+**Definition of done:**
+- `notes_log(days)` returns `{date, notes}` for every day carrying a note —
+  the whole-plan journal, preloaded as a `[NOTES_LOG]` block; just the note
+  field, not the full rows and not a table scan
+- Built from the merged plan view the coach already loads, so no extra
+  DynamoDB read; override-aware for free
+- The coach system prompt grounds on `[NOTES_LOG]`, extends the notes-injection
+  boundary to it, and treats reciting logged notes as a data-retrieval task, so
+  a note mentioning a past symptom does not trigger the medical backstop
+- `review_logged_notes` eval case; the harness passes `notes_log` through
+
+**Status: committed 2026-07-05; live pending deploy** (prompt/code only, no
+infra or IAM change). Live eval run and `tracker-coach` deploy still outstanding.
+
 ---
 
 ## [Deferred] Multi-User and Later Phases
@@ -305,6 +395,281 @@ Built to accept these later without rework, but out of scope now:
 ---
 
 ## Completed Stages
+
+### Stage 3.14 — Coach whole-plan notes digest (2026-07-05)
+
+Post-launch enhancement from a real conversation: asked to "review the comments
+I've logged and list them with dates," the coach could see only the ~2-week plan
+window and surfaced one note of nine. (The same conversation also tripped the
+medical rail on that retrieval request -- the rail half was folded into the
+Stage 3.11 retune above; this stage is the coach-visibility half.)
+
+- **`notes_log(days)`** returns `{date, notes}` for every day with a note,
+  preloaded as a `[NOTES_LOG]` block -- the whole-plan journal, but only the note
+  field, never the full rows or a table scan. Built from the merged plan view the
+  coach already loads, so it costs no extra DynamoDB read and is override-aware
+  for free.
+- **Prompt:** the coach now grounds on `[NOTES_LOG]` alongside `[FACTS]`/
+  `[PLAN_DATA]`, the notes-injection boundary is extended to it, and reciting
+  logged notes is declared a data-retrieval task -- so a note mentioning past
+  pain no longer trips the coach's own medical backstop.
+- **Evals:** added `review_logged_notes` (one fixture note carries a 2/10 pain,
+  proving the coach lists it by date rather than deferring); the harness now
+  passes `notes_log` through `build_coach_system_prompt`.
+- **Validated statically** (import/compile/behaviour -- no API key needed); the
+  live eval run and the `tracker-coach` deploy are carried forward as the open
+  item.
+
+---
+
+### Stage 3.13 — Coach Chat UI (2026-07-05)
+
+- **New view, no new dependencies:** `src/coach.js` (thread create/rename/
+  delete/switch via a `<select>`, chat bubbles, a minimal markdown-lite
+  renderer -- `**bold**` and bullet lists via regex on already-escaped text,
+  no library or CDN script) wired into `index.html`/`app.js`/`style.css` as a
+  second view toggled from the dashboard header, matching the SPA's existing
+  no-router, no-build-step pattern. `apiRequest`/`esc` exported from `app.js`
+  and reused as-is; the coach routes' `{ok, data, message}` envelope is
+  unwrapped in `coach.js` rather than changing the shared helper, since
+  `/days` callers still expect the bare-body shape.
+- **Local mock preview first:** before touching the live site, built a
+  throwaway local preview (a copy of `coach.js` with only its import line
+  swapped to a mock instead of the real API, so the rendering/interaction
+  logic under test was the literal production code) to sanity-check layout,
+  bubble styling, and markdown rendering without needing real auth or
+  network access.
+- **Deployed and found a real caching bug:** synced `src/` to the live S3
+  bucket and invalidated CloudFront, but the S3 objects had no `Cache-Control`
+  header at all, so browsers applied heuristic caching and kept serving a
+  stale copy in a normal tab (working fine in Incognito, which has no cache) --
+  even after the CloudFront invalidation. Fixed by setting `Cache-Control:
+  no-cache` on all synced SPA files (revalidate-always, not "don't cache") and
+  adding `--cache-control "no-cache"` to `deploy.yml`'s sync step so future
+  deploys don't regress. One hard refresh was needed to clear the
+  already-heuristically-cached copy; every deploy after this one revalidates
+  normally.
+- **Known gap:** not yet re-validated end-to-end in a real logged-in browser
+  session beyond a visual/functional check after the cache fix -- no
+  automated browser test exists for this SPA.
+
+---
+
+### Stage 3.12 — Partition `training-plan-overrides` by `user_id` (2026-07-05)
+
+Security finding, not a planned feature -- see the Stage 3.12 section above
+for the goal. Full mechanics (real resource values, IAM policy diffs, the
+"deploy code and flip the env var together" reasoning) are in the private
+runbook Stage 19; this entry covers what's safe to say in the public repo.
+
+- Migrated 17 override rows from the date-keyed table to the new
+  `user_id`-partitioned one; `--verify` passed count and field parity both
+  before and after the Lambda cutover.
+- `plan_merge.py`'s override lookup is now a `Query` scoped to the caller,
+  never a table-wide `Scan` -- the same shared module used by all three
+  Lambda consumers, so the fix applies everywhere at once.
+- **Isolation proof:** seeded a temporary row for the Stage 3.9 fixture
+  identity on a date carrying an active owner override, confirmed the
+  fixture's response had no override fields merged in, then deleted the test
+  row. Before this fix, any caller's row on that date would have picked up
+  the owner's override via the old table-wide scan.
+- Old table retained pending a soak period, same precedent as the Stage 3.9
+  `training-plan` retirement.
+
+---
+
+### Stage 3.11 — Coach Prompts and Evaluation (2026-07-05)
+
+**Post-launch retune (2026-07-05, same day):** real usage surfaced the rail
+and the coach's own medical backstop both over-triggering on *any* body-part
+mention (a bare "leg", and a positive status update like "my soleus is
+feeling better today") rather than on an actual reported symptom -- both were
+judging by topic instead of intent. Retuned `RAIL_SYSTEM_PROMPT` and
+`COACH_SYSTEM_BASE` with explicit worked examples distinguishing a named body
+part from an actual symptom/pain/injury signal; took two passes on the
+coach's own prompt, since the first pass stopped the hard defer but the coach
+still hedged toward physio pre-emptively on a bare word. Added 5 classifier
+cases and 2 coach-behavioral cases to the eval harness from this exact real
+conversation so the regression is locked in; all gates still pass (100%
+medical recall preserved, both new coach cases pass). Re-validated against
+production with the real messages plus two genuine medical cases, which
+still correctly defer.
+
+- **Extracted `lambda/coach_prompts.py`** from the Stage 3.10 placeholder
+  logic in `tracker_coach.py`: facts computation, the plan-data window,
+  history-window trimming, the rail classifier + `classify_message()`, and
+  the coach system prompt + `build_coach_system_prompt()`. Zero AWS/env
+  dependencies by design, so the eval harness can import it directly without
+  any AWS credentials — only an Anthropic key. Redeployed and re-ran a subset
+  of Stage 3.10's checks to confirm the refactor alone changed nothing.
+- **Harness:** `app/train/evals/run_coach_evals.py` adds `app/train/lambda` to
+  `sys.path` and imports `coach_prompts` as a flat top-level module — the same
+  way the Lambda runtime imports it after `zip -j` — so the harness evaluates
+  the literal production prompt-assembly code. Cases in `evals/cases.py`: the
+  spec's 9 classifier cases and 6 coach behavioral cases (synthetic
+  facts/plan_data matching the real shape, not fetched from DynamoDB, so the
+  harness is deterministic and AWS-free). `JUDGE_MODEL=claude-opus-4-8` scores
+  the subjective cases via a strict pass/fail JSON rubric.
+- **Classifier tuning:** started from the spec's [C1] draft plus the [C2]
+  boundary rule (reassurance-seeking about a specific symptom → `medical`;
+  ambiguous → `medical`). Passed **100% recall on the medical class on the
+  first run** — no iteration needed.
+- **Coach tuning — one real gap found and fixed:** the first run failed the
+  `medical_backstop` case. The coach correctly deferred to the
+  physiotherapist ("that's a question for your physio...") but then *also*
+  added "I'd hold off on the 60-minute session until you've got their
+  input" — itself a training recommendation tied to the symptom, exactly
+  what the backstop is supposed to forbid. The original wording ("do not
+  advise — briefly direct the athlete to their physiotherapist") left room
+  for the model to treat the redirect and the advice as two separate things.
+  Tightened `COACH_SYSTEM_BASE` to state the backstop reply is *only* a brief
+  acknowledgement plus the referral, explicitly ruling out any opinion on
+  training/resting/modifying "even framed cautiously or as 'just in case'" —
+  second run passed all 6 coach cases and the classifier gate.
+- **Redeployed and re-validated:** re-ran the Stage 3.10 direct-invoke checks
+  (grounded race/session question, medical defer, override-day grounding,
+  cross-user 404) against the tuned prompts — all held. The override-day
+  check also showed the tightened backstop generalizing correctly outside
+  the eval set: asked about a physio-adjusted session with a mentioned
+  Achilles symptom in the same thread, the coach deferred the go/no-go
+  decision to the physiotherapist rather than recommending skipping the
+  session itself.
+- **CI:** `.github/workflows/coach-evals.yml` (PR-triggered on changes to
+  `coach_prompts.py`/`evals/`, plus manual dispatch) — deliberately separate
+  from `deploy.yml` and needs no AWS access, only the `ANTHROPIC_API_KEY` repo
+  secret (added by the user directly, never entered the session).
+  `deploy.yml`'s `tracker-coach` zip step now also bundles `coach_prompts.py`.
+- **Known gap, not part of this stage's checklist:** no frontend chat UI
+  exists yet for the coach — Phase Four's backend is complete but there's
+  nothing in the SPA to drive it from a browser. Out of scope until a future
+  stage decides to add it.
+
+---
+
+### Stage 3.10 — Coach Endpoint, Rail, and Data Model (2026-07-05)
+
+Built in the spec's mandated order (CRUD → `/settings` → rail → coach turn),
+each step deployed out-of-band and validated before the next; commits split
+the same way.
+
+- **Merge extraction (prerequisite):** `lambda/plan_merge.py` pulled the
+  duplicated override-merge logic out of `days_api.py` and `daily_email.py`
+  before either was touched further, so the coach reads the identical merged
+  view. Re-ran the Stage 3.9 direct-invoke checks afterward to confirm no
+  behavior change (105 items, 17 active overrides, same merged output).
+- **`conversations` table + thread CRUD:** new Lambda `tracker-coach`
+  (`POST`/`GET /conversations`, `GET`/`PATCH`/`DELETE /conversations/{id}`),
+  `tracker-coach-execution-role` (RW on `conversations`, read-only on
+  `training-plan-v2` + `training-plan-overrides`), routes on the existing HTTP
+  API behind the existing Cognito authorizer. Validated: full CRUD lifecycle
+  for the owner; the Stage 3.9 fixture identity gets 404 on every verb with no
+  write landing; delete removes the thread from the list.
+- **`/settings`:** added to `days_api.py` (tracker-api) rather than the new
+  Lambda — `coach_scope` lives on the `training-users` record tracker-api
+  already owns via `_ensure_profile`, so the coach role never needs
+  `training-users` write access. Required adding `dynamodb:UpdateItem` on
+  `training-users` to `tracker-api-execution-role` (previously `GetItem`/
+  `PutItem` only). Validated: default `plan_only`, update to
+  `plan_plus_general`, persists, invalid value rejected with 400.
+- **Anthropic setup:** API key in Secrets Manager
+  (`<COACH_SECRET_NAME>`, created by the user directly so the key
+  never entered the session); Anthropic Python SDK built as a Lambda layer
+  (`tracker-coach-anthropic-sdk`, `pip install --platform
+  manylinux2014_x86_64 --python-version 3.12` to get `jiter`'s compiled wheel
+  rather than a source build); `tracker-coach-execution-role` scoped to
+  `secretsmanager:GetSecretValue` on that one ARN plus a read-only
+  `training-users` grant for `coach_scope` — the endpoint spec's IAM section
+  didn't list `training-users` even though the pipeline needs it; closed as a
+  spec gap rather than reproduced.
+- **Rail, standalone:** `POST /conversations/{id}/messages` persists the
+  user's message, classifies it via `RAIL_MODEL` (`claude-haiku-4-5-20251001`),
+  and returns the canned deferral on trigger — the coach turn wasn't wired yet
+  at this point, so a non-triggered message hit a deliberate 501 stub, proving
+  the coach model is unreachable either way. **Bug found live:** the
+  classifier sometimes wrapped its JSON in a markdown code fence despite being
+  told not to, so `json.loads` failed and every message defaulted to the
+  fail-closed path (safe, but meant "ok" messages never got through) — fixed
+  by tightening the prompt and defensively stripping fences before parsing.
+  **Bug found live:** `_delete_conversation` deleted the thread item before
+  batch-deleting its messages; a missing `dynamodb:BatchWriteItem` grant
+  (since added) caused a partial failure that orphaned message rows under a
+  conversation_id nothing pointed to anymore — fixed by reordering to delete
+  messages first, thread last, so a partial failure stays retryable instead of
+  leaking orphans. Validated: an injury message defers with
+  `rail_triggered: true`; a normal question reaches the 501 stub; a
+  deliberately broken `RAIL_MODEL` config also defers (fail-closed); delete
+  with real messages present now cleans up completely.
+- **Coach turn:** merged plan view via `plan_merge`, facts computed in code
+  (streak, week completed/planned, next long run, weeks-to-race, today's
+  session — never left for the model to derive from raw rows), a placeholder
+  system prompt with the `coach_scope` delta (final wording is Stage 3.11's
+  job), the model call (`COACH_MODEL` = `claude-sonnet-5`), and persistence
+  with `updated_at`/`message_count` bumped. **Bug found live:**
+  `claude-sonnet-5` returned a `ThinkingBlock` before its `TextBlock` (adaptive
+  thinking runs by default when `thinking` is omitted, per the model's
+  migration notes) and `response.content[0].text` broke on it — fixed with a
+  `_response_text()` helper that finds the first text-type block, used by
+  both the rail and the coach call. Validated end-to-end against the real
+  plan: "how many weeks until my race, and what is today's session" returned
+  12 weeks and the exact Rest-day text from `training-plan-v2`; a follow-up
+  "what did I just ask" correctly recalled the prior exchange; a question
+  about an overridden day (2026-07-06) returned the override's session detail
+  ("no squats or lunges") rather than the seed's ("squats, planks, lunges") —
+  the seed text is the literal opposite of what the physio override calls
+  for, so this is a real proof the merge is load-bearing; a medical follow-up
+  later in the same thread still deferred via the rail; the Stage 3.9 fixture
+  identity gets 404 posting to the owner's thread, no message persisted.
+- **`deploy.yml`:** wired `plan_merge.py` into the `tracker-api`/`tracker-email`
+  zips, added the Anthropic-layer build/publish/attach step and the
+  `tracker-coach` code-update step; `tacedata-github-deploy` granted the
+  matching Lambda/layer permissions; new repo variable
+  `TRACKER_LAMBDA_COACH=tracker-coach`. Not yet exercised through a real CI
+  run — branch not merged/pushed.
+- **Known gap, not part of this stage's checklist:** the coach system prompt
+  and rail classifier prompt are functional placeholders (clearly marked
+  `[DEFERRED]` in the code) — final wording, the label boundary, and an eval
+  set are Stage 3.11's explicit scope, not an oversight here.
+
+---
+
+### Stage 3.9 — Canonical `user_id`, migration, and users table (2026-07-05)
+
+- Owner `user_id` retrieved and verified against a live access token —
+  `<OWNER_SUB>`. Note: Cognito login is Google SSO under
+  a personal Gmail address, distinct from the `tacedata.ca` address SES sends to.
+- `training-plan-v2` (PK `user_id`, SK `date`) and `training-users` (PK `user_id`)
+  created; `training-plan-overrides` left unchanged (still `date`-keyed)
+- `migrate_to_v2.py` (new script): 105/105 items migrated, re-run post-cutover to
+  close the write-freeze gap, `--verify` passed both times (row count + full
+  `completed`/`completed_date`/`notes` parity)
+- IAM: additive inline policies on both execution roles (`Query`/`GetItem` on
+  v2, `GetItem`/`PutItem` on users) — existing grants, including overrides
+  access, untouched
+- `days_api.py`: `user_id` derived from JWT claims on every route; `GET /days`
+  uses `Query`; `GET`/`PATCH /days/{date}` key on `{user_id, date}`;
+  `_ensure_profile()` provisions the `training-users` record idempotently on
+  first request
+- `daily_email.py`: `_scan_all()` replaced with `_query_user()` scoped to
+  `OWNER_USER_ID`; per-user briefing logic extracted into `_brief_user()` so
+  multi-user fan-out is a later loop, not a rewrite
+- `seed_dynamo.py`: `build_item()` takes a required `user_id`; default table is
+  now `training-plan-v2`
+- **Validated** (direct Lambda invocation, real event shape — not yet exercised
+  through a live browser session): `GET /days` returns 105 items; a `PATCH`
+  write lands under the correct key and reverts cleanly; a real second Cognito
+  identity (the pool's existing, otherwise-inactive account) gets 404 on both
+  `GET` and `PATCH` against the owner's data, with the owner's row confirmed
+  unchanged afterward; `tracker-email` manual invoke reads the correct
+  session from v2; profile provisioning is idempotent (second call leaves
+  `created_at` unchanged)
+- **Known gaps carried forward:** `email`/`display_name` are not populated on
+  the profile — this Cognito app client's access token carries neither claim
+  (confirmed by decoding a live token); populated defensively if ever present.
+  Rest-day email format not separately re-tested post-cutover. Old
+  `training-plan` table retained pending a soak period before retirement
+  (private runbook Step 50).
+
+---
 
 ### Stage 3.6 — CI/CD Integration (2026-06-13)
 
