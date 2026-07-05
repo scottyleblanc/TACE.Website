@@ -7,14 +7,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- `app/train/docs/IDENTITY-FOUNDATION-SPEC.md`, `AI-COACH-ENDPOINT-SPEC.md`, `AI-COACH-PROMPTS-AND-EVALS-SPEC.md` — authoritative specs for the identity foundation and AI coach, superseding the prior Phase Three/Four plan in `STAGES.md`/`TODO.md`.
+- `app/train/scripts/migrate_to_v2.py` — one-time migration tool (with `--verify`) copying `training-plan` into the `user_id`-partitioned `training-plan-v2`, preserving user state.
+- `app/train/lambda/days_api.py` — `_ensure_profile()`: idempotent first-login provisioning of a `training-users` profile record (`coach_scope=plan_only` default).
+- `training-plan-v2` and `training-users` DynamoDB tables (identity foundation, Stage 3.9).
 - `app/train/lambda/tracker_auth.py` — server-side auth handler that runs the OAuth2 code + PKCE flow and exposes `/auth/login`, `/auth/callback`, `/auth/refresh`, and `/auth/logout`. The SPA holds the access token in memory; the refresh token is kept in an httpOnly cookie.
 
 ### Changed
+- `app/train/lambda/days_api.py`, `daily_email.py` — repartitioned by `user_id` (Cognito `sub`) instead of `date` alone: routes derive `user_id` from verified JWT claims (never body/path), `GET /days` uses `Query` instead of `Scan`, and cross-user access returns 404. `daily_email.py`'s per-user briefing logic is extracted into `_brief_user()` so a later multi-user fan-out is a loop, not a rewrite.
+- `app/train/scripts/seed_dynamo.py` — `build_item()` takes a required `user_id`; default table is now `training-plan-v2`.
+- `app/train/docs/STAGES.md`, `TODO.md` — rewritten around the three specs; Phase Three retitled "Identity Foundation," Phase Four "The AI Coach."
 - `app/train/src/auth.js`, `app/train/src/app.js` — SPA reworked to use the server-side `/auth/*` endpoints; the browser no longer stores tokens or runs the token exchange.
 - `app/train/src/config.example.js` — trimmed to the API base (Cognito values are server-side now).
 - `.github/workflows/deploy.yml` — added the `tracker-auth` Lambda deploy step; trimmed the generated SPA config.
 
 ### Security
+- `app/train/lambda/days_api.py` — cross-user isolation enforced at the DynamoDB key level (`{user_id, date}`); verified against a real second Cognito identity (`GET`/`PATCH` both 404, owner's data confirmed unchanged). `user_id` is trusted only from the verified JWT, never the request body or path.
 - `app/train/src/app.js` — added an `esc()` HTML-escaping helper and applied it to all values rendered into the dashboard via `innerHTML`.
 - Security hardening tracked privately (see `TACE.Website-private`).
 

@@ -40,39 +40,39 @@ migration, not a code edit.
 ## Stage 3.9 — Canonical `user_id`, migration, and users table
 
 **Verify + migrate**
-- [ ] Confirm current state: `training-plan` keyed on `date` only, no `user_id`, `GET /days` uses `Scan` (spec [STEP 1])
-- [ ] Create `training-plan-v2`: PK = `user_id` (Cognito `sub`), SK = `date`, mirroring the existing item shape + `user_id`
-- [ ] Retrieve the owner's `user_id` (Cognito `sub`) from `tacedata-train-pool`
-- [ ] One-time migration script: read every `date`-keyed item, rewrite under `{user_id, date}`
-- [ ] Repoint `DYNAMODB_TABLE` on **both** `tracker-api` and `tracker-email`
-- [ ] Update IAM policies for the new table ARN on both execution roles [SEC]
+- [x] Confirm current state: `training-plan` keyed on `date` only, no `user_id`, `GET /days` uses `Scan` (spec [STEP 1])
+- [x] Create `training-plan-v2`: PK = `user_id` (Cognito `sub`), SK = `date`, mirroring the existing item shape + `user_id`
+- [x] Retrieve the owner's `user_id` (Cognito `sub`) from `tacedata-train-pool` — verified against a live access token (decoded in-browser), not just the pool record
+- [x] One-time migration script: read every `date`-keyed item, rewrite under `{user_id, date}` — `migrate_to_v2.py`, 105 items
+- [x] Repoint `DYNAMODB_TABLE` on **both** `tracker-api` and `tracker-email`
+- [x] Update IAM policies for the new table ARN on both execution roles [SEC] — additive inline policies; existing grants (incl. overrides access) untouched
 
 **Cutover safety**
-- [ ] Cutover under a write freeze (do not use the app during copy → repoint), OR re-run the copy after `DYNAMODB_TABLE` is repointed on both Lambdas to capture any late write [SEC]
-- [ ] Preserve rollback: leave the old `date`-keyed `training-plan` untouched until v2 passes Validate; do not delete it in this stage
-- [ ] Reconciliation: assert row-count and user-state parity old vs new — 105 = 105, every `completed`/`completed_date`/`notes` carried across intact
+- [x] Cutover under a write freeze (do not use the app during copy → repoint), OR re-run the copy after `DYNAMODB_TABLE` is repointed on both Lambdas to capture any late write [SEC] — no formal freeze enforced; re-ran the migration script post-flip instead, `--verify` passed again
+- [x] Preserve rollback: leave the old `date`-keyed `training-plan` untouched until v2 passes Validate; do not delete it in this stage — untouched, retirement deferred pending a soak period
+- [x] Reconciliation: assert row-count and user-state parity old vs new — 105 = 105, every `completed`/`completed_date`/`notes` carried across intact — `--verify` passed twice (pre- and post-flip)
 
 **API scoping**
-- [ ] `days_api.py`: derive `user_id` from JWT claims (`...jwt.claims.sub`) on every route — never body/path [SEC]
-- [ ] `GET /days`: replace `Scan` with `Query` on the user partition
-- [ ] `GET`/`PATCH /days/{date}`: key on `{user_id, date}`; cross-user access returns 404 [SEC]
+- [x] `days_api.py`: derive `user_id` from JWT claims (`...jwt.claims.sub`) on every route — never body/path [SEC]
+- [x] `GET /days`: replace `Scan` with `Query` on the user partition
+- [x] `GET`/`PATCH /days/{date}`: key on `{user_id, date}`; cross-user access returns 404 [SEC]
 
 **Email + seed**
-- [ ] `daily_email.py`: replace `_scan_all()` with a `Query` on a configured owner `user_id` (env var, resolved from the single `users` record); keep single-recipient; structure for later fan-out
-- [ ] `seed_dynamo.py`: `build_item()` writes a `user_id`; table name + key updated to the composite key
-- [ ] Leave `training-plan-overrides` keyed on `date` (single-user reference data); merge logic unchanged
+- [x] `daily_email.py`: replace `_scan_all()` with a `Query` on a configured owner `user_id` (env var, resolved from the single `users` record); keep single-recipient; structure for later fan-out — `OWNER_USER_ID` env var; per-user briefing extracted into `_brief_user()` so fan-out is a later loop, not a rewrite
+- [x] `seed_dynamo.py`: `build_item()` writes a `user_id`; table name + key updated to the composite key
+- [x] Leave `training-plan-overrides` keyed on `date` (single-user reference data); merge logic unchanged
 
 **Users table**
-- [ ] Create `users` table (or PROFILE item): PK = `user_id`; `email`, `display_name`, `coach_scope` (default `plan_only`), `race_goal`, `race_date`, `created_at`/`updated_at`
-- [ ] Provision the profile idempotently on first authenticated request (conditional put on absence of `user_id`); repeated logins never overwrite it [SEC]
-- [ ] Confirm no foreign keys / join table introduced — tables share `user_id` only
+- [x] Create `users` table (or PROFILE item): PK = `user_id`; `email`, `display_name`, `coach_scope` (default `plan_only`), `race_goal`, `race_date`, `created_at`/`updated_at` — `training-users`; `race_goal`/`race_date` are optional and unset until a feature writes them (by design — nothing consumes them yet)
+- [x] Provision the profile idempotently on first authenticated request (conditional put on absence of `user_id`); repeated logins never overwrite it [SEC] — `_ensure_profile()` in `days_api.py`; verified: first call creates exactly one record, second call leaves `created_at` unchanged. `email`/`display_name` are populated only if present on the token's claims — this Cognito app client's access token does not carry them (confirmed by decoding a live token), so both are correctly omitted rather than written empty
+- [x] Confirm no foreign keys / join table introduced — tables share `user_id` only
 
 **Validate**
-- [ ] All 105 days load and check off end-to-end for the original account against `training-plan-v2`
-- [ ] Daily email still arrives after the migration
-- [ ] Create a disposable second Cognito identity (or a second `sub`) as an isolation fixture; seed it a couple of rows under its own `user_id` partition [SEC]
-- [ ] Verify `/days` isolation with the fixture: identity B requesting identity A's `date` gets 404 — never A's item; B cannot `PATCH` A's days [SEC]
-- [ ] Confirm the fixture is not picked up by the single-recipient daily email (`OWNER_USER_ID` scoping)
+- [x] All 105 days load and check off end-to-end for the original account against `training-plan-v2` — validated via direct Lambda invocation with the real event shape (`GET /days` → 105 items; `PATCH` → write landed, reverted); not yet exercised through a live browser session
+- [x] Daily email still arrives after the migration — manual invoke, correct subject read from v2 (`Day 1 of 105`); inbox delivery not independently re-confirmed this session
+- [x] Create a disposable second Cognito identity (or a second `sub`) as an isolation fixture; seed it a couple of rows under its own `user_id` partition [SEC] — reused the pool's existing second (inactive) identity rather than provisioning a new one; did **not** seed rows under its partition (not needed for the isolation proof below, since it has zero rows in v2 by construction)
+- [x] Verify `/days` isolation with the fixture: identity B requesting identity A's `date` gets 404 — never A's item; B cannot `PATCH` A's days [SEC] — both confirmed via direct invoke; owner's row verified unchanged after the PATCH attempt
+- [x] Confirm the fixture is not picked up by the single-recipient daily email (`OWNER_USER_ID` scoping) — true by code construction (`daily_email.py` briefs only `OWNER_USER_ID`); not separately exercised since the fixture has no routed email address
 
 ---
 

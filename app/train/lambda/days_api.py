@@ -33,6 +33,9 @@ _table = _dynamodb.Table(_TABLE_NAME)
 _OVERRIDES_TABLE_NAME = os.environ.get("OVERRIDES_TABLE")
 _overrides_table = _dynamodb.Table(_OVERRIDES_TABLE_NAME) if _OVERRIDES_TABLE_NAME else None
 
+_USERS_TABLE_NAME = os.environ["USERS_TABLE"]
+_users_table = _dynamodb.Table(_USERS_TABLE_NAME)
+
 _MAX_NOTES_LEN = 2000
 
 _CORS_HEADERS = {
@@ -76,19 +79,54 @@ def _err(status: int, message: str) -> dict:
     }
 
 
-def _user_id(event: dict) -> str | None:
+def _claims(event: dict) -> dict:
+    """The verified JWT claims map from the API Gateway Cognito authorizer."""
+    try:
+        return event["requestContext"]["authorizer"]["jwt"]["claims"]
+    except (KeyError, TypeError):
+        return {}
+
+
+def _user_id(claims: dict) -> str | None:
     """The caller's Cognito `sub`, from the verified JWT authorizer claims.
 
     Never trust a `user_id` from the body or path -- it comes only from the token
     the API Gateway Cognito authorizer has already verified. Returns None when the
     claim is absent (treated as unauthenticated by the handler).
     """
-    try:
-        claims = event["requestContext"]["authorizer"]["jwt"]["claims"]
-    except (KeyError, TypeError):
-        return None
     sub = claims.get("sub")
     return sub if sub else None
+
+
+def _ensure_profile(user_id: str, claims: dict) -> None:
+    """Idempotently provision the users/profile record on first login.
+
+    A conditional put on absence of user_id -- a returning user's existing
+    profile (and any coach_scope they've since changed) is left untouched.
+    email/display_name are populated only if the verified token happens to
+    carry them; this Cognito app client's access token does not today, so
+    both are typically omitted rather than written empty.
+    """
+    now = datetime.now(timezone.utc).isoformat()
+    item: dict = {
+        "user_id": user_id,
+        "coach_scope": "plan_only",
+        "created_at": now,
+        "updated_at": now,
+    }
+    email = claims.get("email")
+    if email:
+        item["email"] = email
+    display_name = claims.get("name") or claims.get("given_name")
+    if display_name:
+        item["display_name"] = display_name
+
+    try:
+        _users_table.put_item(Item=item, ConditionExpression="attribute_not_exists(user_id)")
+    except ClientError as exc:
+        if exc.response["Error"]["Code"] != "ConditionalCheckFailedException":
+            raise
+        # Profile already exists -- idempotent no-op, nothing to do.
 
 
 def _merge_override(seed_item: dict, override_item: dict) -> dict:
@@ -248,9 +286,12 @@ def handler(event: dict, context) -> dict:
     path_params = event.get("pathParameters") or {}
     body = event.get("body")
 
-    user_id = _user_id(event)
+    claims = _claims(event)
+    user_id = _user_id(claims)
     if not user_id:
         return _err(401, "Unauthenticated")
+
+    _ensure_profile(user_id, claims)
 
     logger.info("route=%s params=%s user=%s", route_key, path_params, user_id[:8])
 

@@ -27,7 +27,12 @@ decide to add them (see [Deferred] at the end).
 
 ---
 
-## Current Focus: Phase Three — Identity Foundation (Stage 3.9)
+## Current Focus: Phase Four — The AI Coach (Stage 3.10)
+
+Stage 3.9 (identity foundation) is live — see Completed Stages below. Two loose
+ends carried forward, not blocking Stage 3.10: the old `training-plan` table is
+retained pending a soak period (Step 50 in the private runbook), and the cutover
+was validated via direct Lambda invocation rather than a live browser session.
 
 Stages 3.1–3.6 (Phase One — MVP) are complete and live. Phase Two (security audit,
 Stage 3.8) is tracked in the private repo. Stage 3.7 (Public View) remains parked.
@@ -196,6 +201,11 @@ idempotently on first login. One active user today; the schema supports many.
 on `date` (single-user reference data); the merge logic in both Lambdas is
 unchanged. See the spec's [STEP 1.5] for the full migration sequence.
 
+**Status: live as of 2026-07-05.** See Completed Stages below for what was
+validated and the two known gaps carried forward (old-table retirement pending a
+soak period; `email`/`display_name` unpopulated since this Cognito app client's
+access token carries neither claim).
+
 ---
 
 # Phase Four — The AI Coach
@@ -305,6 +315,45 @@ Built to accept these later without rework, but out of scope now:
 ---
 
 ## Completed Stages
+
+### Stage 3.9 — Canonical `user_id`, migration, and users table (2026-07-05)
+
+- Owner `user_id` retrieved and verified against a live access token —
+  `<OWNER_SUB>`. Note: Cognito login is Google SSO under
+  a personal Gmail address, distinct from the `tacedata.ca` address SES sends to.
+- `training-plan-v2` (PK `user_id`, SK `date`) and `training-users` (PK `user_id`)
+  created; `training-plan-overrides` left unchanged (still `date`-keyed)
+- `migrate_to_v2.py` (new script): 105/105 items migrated, re-run post-cutover to
+  close the write-freeze gap, `--verify` passed both times (row count + full
+  `completed`/`completed_date`/`notes` parity)
+- IAM: additive inline policies on both execution roles (`Query`/`GetItem` on
+  v2, `GetItem`/`PutItem` on users) — existing grants, including overrides
+  access, untouched
+- `days_api.py`: `user_id` derived from JWT claims on every route; `GET /days`
+  uses `Query`; `GET`/`PATCH /days/{date}` key on `{user_id, date}`;
+  `_ensure_profile()` provisions the `training-users` record idempotently on
+  first request
+- `daily_email.py`: `_scan_all()` replaced with `_query_user()` scoped to
+  `OWNER_USER_ID`; per-user briefing logic extracted into `_brief_user()` so
+  multi-user fan-out is a later loop, not a rewrite
+- `seed_dynamo.py`: `build_item()` takes a required `user_id`; default table is
+  now `training-plan-v2`
+- **Validated** (direct Lambda invocation, real event shape — not yet exercised
+  through a live browser session): `GET /days` returns 105 items; a `PATCH`
+  write lands under the correct key and reverts cleanly; a real second Cognito
+  identity (the pool's existing, otherwise-inactive account) gets 404 on both
+  `GET` and `PATCH` against the owner's data, with the owner's row confirmed
+  unchanged afterward; `tracker-email` manual invoke reads the correct
+  session from v2; profile provisioning is idempotent (second call leaves
+  `created_at` unchanged)
+- **Known gaps carried forward:** `email`/`display_name` are not populated on
+  the profile — this Cognito app client's access token carries neither claim
+  (confirmed by decoding a live token); populated defensively if ever present.
+  Rest-day email format not separately re-tested post-cutover. Old
+  `training-plan` table retained pending a soak period before retirement
+  (private runbook Step 50).
+
+---
 
 ### Stage 3.6 — CI/CD Integration (2026-06-13)
 
