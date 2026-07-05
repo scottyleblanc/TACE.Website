@@ -353,6 +353,28 @@ invocation.
 
 ---
 
+## Stage 3.14 — Coach whole-plan notes digest
+
+**Goal:** The coach can review the athlete's full logged-note history on
+request. Before this it only saw the plan window (~2 weeks), so "review the
+comments I've logged" surfaced almost none of the athlete's journal.
+
+**Definition of done:**
+- `notes_log(days)` returns `{date, notes}` for every day carrying a note —
+  the whole-plan journal, preloaded as a `[NOTES_LOG]` block; just the note
+  field, not the full rows and not a table scan
+- Built from the merged plan view the coach already loads, so no extra
+  DynamoDB read; override-aware for free
+- The coach system prompt grounds on `[NOTES_LOG]`, extends the notes-injection
+  boundary to it, and treats reciting logged notes as a data-retrieval task, so
+  a note mentioning a past symptom does not trigger the medical backstop
+- `review_logged_notes` eval case; the harness passes `notes_log` through
+
+**Status: committed 2026-07-05; live pending deploy** (prompt/code only, no
+infra or IAM change). Live eval run and `tracker-coach` deploy still outstanding.
+
+---
+
 ## [Deferred] Multi-User and Later Phases
 
 Built to accept these later without rework, but out of scope now:
@@ -373,6 +395,32 @@ Built to accept these later without rework, but out of scope now:
 ---
 
 ## Completed Stages
+
+### Stage 3.14 — Coach whole-plan notes digest (2026-07-05)
+
+Post-launch enhancement from a real conversation: asked to "review the comments
+I've logged and list them with dates," the coach could see only the ~2-week plan
+window and surfaced one note of nine. (The same conversation also tripped the
+medical rail on that retrieval request -- the rail half was folded into the
+Stage 3.11 retune above; this stage is the coach-visibility half.)
+
+- **`notes_log(days)`** returns `{date, notes}` for every day with a note,
+  preloaded as a `[NOTES_LOG]` block -- the whole-plan journal, but only the note
+  field, never the full rows or a table scan. Built from the merged plan view the
+  coach already loads, so it costs no extra DynamoDB read and is override-aware
+  for free.
+- **Prompt:** the coach now grounds on `[NOTES_LOG]` alongside `[FACTS]`/
+  `[PLAN_DATA]`, the notes-injection boundary is extended to it, and reciting
+  logged notes is declared a data-retrieval task -- so a note mentioning past
+  pain no longer trips the coach's own medical backstop.
+- **Evals:** added `review_logged_notes` (one fixture note carries a 2/10 pain,
+  proving the coach lists it by date rather than deferring); the harness now
+  passes `notes_log` through `build_coach_system_prompt`.
+- **Validated statically** (import/compile/behaviour -- no API key needed); the
+  live eval run and the `tracker-coach` deploy are carried forward as the open
+  item.
+
+---
 
 ### Stage 3.13 — Coach Chat UI (2026-07-05)
 

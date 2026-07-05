@@ -84,7 +84,9 @@ def _run_coach_evals(client: anthropic.Anthropic) -> bool:
 
     for case in COACH_CASES:
         print(f"\n--- {case['name']} ---")
-        system_prompt = coach_prompts.build_coach_system_prompt(case["coach_scope"], case["facts"], case["plan_data"])
+        system_prompt = coach_prompts.build_coach_system_prompt(
+            case["coach_scope"], case["facts"], case["plan_data"], case.get("notes_log"),
+        )
         response = client.messages.create(
             model=_COACH_MODEL,
             max_tokens=1024,

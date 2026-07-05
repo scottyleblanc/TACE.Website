@@ -350,9 +350,10 @@ def _run_coach_turn(user_id: str, content: str, history: list[dict]) -> str:
     today_str = date.today().isoformat()
     facts = coach_prompts.compute_facts(days, today_str)
     plan_data = coach_prompts.plan_window(days, today_str)
+    notes = coach_prompts.notes_log(days)
     coach_scope = _get_coach_scope(user_id)
 
-    system_prompt = coach_prompts.build_coach_system_prompt(coach_scope, facts, plan_data)
+    system_prompt = coach_prompts.build_coach_system_prompt(coach_scope, facts, plan_data, notes)
 
     client = _get_anthropic_client()
     response = client.messages.create(

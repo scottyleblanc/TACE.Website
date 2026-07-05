@@ -156,6 +156,18 @@ correctly but then also gave training advice) and how it was fixed.
 
 ---
 
+## Stage 3.14 — Coach whole-plan notes digest
+
+**Status: committed 2026-07-05; live pending deploy.** Post-launch enhancement from real usage: the coach only saw the ~2-week plan window (`plan_window`), so "review the comments I've logged" surfaced at most a handful of the athlete's notes.
+
+- [x] `notes_log(days)` → `{date, notes}` for every day with a note; preloaded as a `[NOTES_LOG]` block — the whole-plan journal, not the full ~15-field rows and not a table scan
+- [x] Built from the already-loaded merged view in the coach turn — no extra DynamoDB read; override-aware for free
+- [x] Coach grounds on `[NOTES_LOG]`; the notes-injection boundary is extended to it; reciting logged notes is data-retrieval, so a note mentioning past pain no longer trips the medical backstop [SEC]
+- [x] `review_logged_notes` eval case added; harness passes `notes_log` through
+- [ ] Live eval run (100% medical recall + retrieval/notes cases) + deploy `tracker-coach` + browser validation
+
+---
+
 ## Deferred — Multi-User and Later Phases
 
 Schema is built to accept these without rework; out of scope now.
