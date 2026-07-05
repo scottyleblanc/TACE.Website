@@ -20,6 +20,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 
 import boto3
+from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
 logger = logging.getLogger()
@@ -75,6 +76,21 @@ def _err(status: int, message: str) -> dict:
     }
 
 
+def _user_id(event: dict) -> str | None:
+    """The caller's Cognito `sub`, from the verified JWT authorizer claims.
+
+    Never trust a `user_id` from the body or path -- it comes only from the token
+    the API Gateway Cognito authorizer has already verified. Returns None when the
+    claim is absent (treated as unauthenticated by the handler).
+    """
+    try:
+        claims = event["requestContext"]["authorizer"]["jwt"]["claims"]
+    except (KeyError, TypeError):
+        return None
+    sub = claims.get("sub")
+    return sub if sub else None
+
+
 def _merge_override(seed_item: dict, override_item: dict) -> dict:
     merged = dict(seed_item)
     merged["has_override"] = True
@@ -124,16 +140,16 @@ def _apply_override(seed_item: dict, overrides: dict) -> dict:
     return seed_item
 
 
-def _get_days() -> dict:
+def _get_days(user_id: str) -> dict:
     items = []
-    scan_kwargs: dict = {}
+    query_kwargs: dict = {"KeyConditionExpression": Key("user_id").eq(user_id)}
     while True:
-        result = _table.scan(**scan_kwargs)
+        result = _table.query(**query_kwargs)
         items.extend(result.get("Items", []))
         last = result.get("LastEvaluatedKey")
         if not last:
             break
-        scan_kwargs["ExclusiveStartKey"] = last
+        query_kwargs["ExclusiveStartKey"] = last
     items.sort(key=lambda x: x["date"])
 
     if _overrides_table:
@@ -143,10 +159,11 @@ def _get_days() -> dict:
     return _ok(items)
 
 
-def _get_day(date: str) -> dict:
-    result = _table.get_item(Key={"date": date})
+def _get_day(user_id: str, date: str) -> dict:
+    result = _table.get_item(Key={"user_id": user_id, "date": date})
     item = result.get("Item")
     if item is None:
+        # Missing in the caller's partition -- a non-owned row simply isn't here.
         return _err(404, f"Day {date} not found")
 
     if _overrides_table:
@@ -158,7 +175,7 @@ def _get_day(date: str) -> dict:
     return _ok(item)
 
 
-def _patch_day(date: str, raw_body: str | None) -> dict:
+def _patch_day(user_id: str, date: str, raw_body: str | None) -> dict:
     if not raw_body:
         return _err(400, "Request body required")
     try:
@@ -168,7 +185,7 @@ def _patch_day(date: str, raw_body: str | None) -> dict:
 
     set_parts: list[str] = []
     remove_parts: list[str] = []
-    expr_names: dict = {"#pk": "date"}
+    expr_names: dict = {"#pk": "user_id"}
     expr_values: dict = {}
 
     if "completed" in payload:
@@ -204,8 +221,11 @@ def _patch_day(date: str, raw_body: str | None) -> dict:
         update_expr_parts.append("REMOVE " + ", ".join(remove_parts))
 
     update_kwargs: dict = {
-        "Key": {"date": date},
+        "Key": {"user_id": user_id, "date": date},
         "UpdateExpression": " ".join(update_expr_parts),
+        # attribute_exists(user_id) is false when the item is absent from the
+        # caller's partition (nonexistent date, or another user's row) -- the
+        # update is rejected rather than creating a row, and we map it to 404.
         "ConditionExpression": "attribute_exists(#pk)",
         "ExpressionAttributeNames": expr_names,
         "ReturnValues": "ALL_NEW",
@@ -227,12 +247,17 @@ def handler(event: dict, context) -> dict:
     route_key = event.get("routeKey", "")
     path_params = event.get("pathParameters") or {}
     body = event.get("body")
-    logger.info("route=%s params=%s", route_key, path_params)
+
+    user_id = _user_id(event)
+    if not user_id:
+        return _err(401, "Unauthenticated")
+
+    logger.info("route=%s params=%s user=%s", route_key, path_params, user_id[:8])
 
     if route_key == "GET /days":
-        return _get_days()
+        return _get_days(user_id)
     if route_key == "GET /days/{date}":
-        return _get_day(path_params.get("date", ""))
+        return _get_day(user_id, path_params.get("date", ""))
     if route_key == "PATCH /days/{date}":
-        return _patch_day(path_params.get("date", ""), body)
+        return _patch_day(user_id, path_params.get("date", ""), body)
     return _err(400, f"Unhandled route: {route_key}")

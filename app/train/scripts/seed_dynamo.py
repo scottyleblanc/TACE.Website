@@ -20,7 +20,7 @@ from pathlib import Path
 import boto3
 from botocore.exceptions import ClientError
 
-TABLE_NAME = "training-plan"
+TABLE_NAME = "training-plan-v2"
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 DAYS_CSV = _REPO_ROOT / "dev" / "training_plan_days.csv"
@@ -59,8 +59,9 @@ def load_weeks(path: Path) -> dict[int, dict]:
     return weeks
 
 
-def build_item(row: dict, week: dict) -> dict:
+def build_item(row: dict, week: dict, user_id: str) -> dict:
     item: dict = {
+        "user_id": user_id,
         "date": row["date"].strip(),
         "day_of_week": row["day_of_week"].strip(),
         "week_number": int(row["week_number"]),
@@ -120,6 +121,7 @@ def seed_table(
 
     for item in items:
         date = item["date"]
+        user_id = item["user_id"]
 
         if dry_run:
             active = "[ACTIVE]" if item["is_active_day"] else "[REST]  "
@@ -129,7 +131,7 @@ def seed_table(
 
         if preserve_state:
             try:
-                existing = table.get_item(Key={"date": date}).get("Item")
+                existing = table.get_item(Key={"user_id": user_id, "date": date}).get("Item")
             except ClientError as exc:
                 print(f"[ERROR] get_item failed for {date}: {exc}", file=sys.stderr)
                 raise
@@ -153,6 +155,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Seed the training-plan DynamoDB table from the plan CSVs."
     )
+    parser.add_argument("--user-id", required=True, help="Owner's Cognito sub (the user_id partition key)")
     parser.add_argument("--profile", default="tace-aws-admin", help="AWS CLI profile name")
     parser.add_argument("--region", default="ca-central-1", help="AWS region")
     parser.add_argument("--table", default=TABLE_NAME, help="DynamoDB table name")
@@ -181,7 +184,7 @@ def main() -> None:
     with open(DAYS_CSV, encoding="utf-8", newline="") as f:
         for row in csv.DictReader(f):
             wn = int(row["week_number"])
-            items.append(build_item(row, weeks[wn]))
+            items.append(build_item(row, weeks[wn], args.user_id))
 
     print(f"[INFO]  {len(items)} days loaded from CSV")
 

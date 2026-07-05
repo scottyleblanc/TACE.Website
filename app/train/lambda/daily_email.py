@@ -25,6 +25,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 import boto3
+from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
 logger = logging.getLogger()
@@ -33,6 +34,7 @@ logger.setLevel(logging.INFO)
 _TABLE_NAME = os.environ["DYNAMODB_TABLE"]
 _SENDER     = os.environ["SES_SENDER"]
 _RECIPIENT  = os.environ["RECIPIENT"]
+_OWNER_USER_ID = os.environ["OWNER_USER_ID"]  # Cognito sub of the single active user
 _SITE_URL   = os.environ.get("SITE_URL", "https://train.tacedata.ca/")
 
 _OVERRIDES_TABLE_NAME = os.environ.get("OVERRIDES_TABLE")
@@ -50,11 +52,11 @@ _OVERRIDE_FIELDS = (
 _CLEARABLE_FIELDS = frozenset(("run_walk_ratio", "alternate_exercise"))
 
 
-def _scan_all() -> list[dict]:
+def _query_user(user_id: str) -> list[dict]:
     items: list[dict] = []
-    kwargs: dict = {}
+    kwargs: dict = {"KeyConditionExpression": Key("user_id").eq(user_id)}
     while True:
-        result = _table.scan(**kwargs)
+        result = _table.query(**kwargs)
         items.extend(result.get("Items", []))
         last = result.get("LastEvaluatedKey")
         if not last:
@@ -218,11 +220,28 @@ def _rest_day_body(day: dict, tomorrow: dict | None, streak: int) -> tuple[str, 
     return subject, "\n".join(lines)
 
 
-def handler(event: dict, context) -> dict:
-    today_str  = event.get("test_date") or date.today().isoformat()
-    logger.info("daily_email invoked for %s", today_str)
+def _send(recipient: str, subject: str, body: str) -> None:
+    try:
+        _ses.send_email(
+            FromEmailAddress=_SENDER,
+            Destination={"ToAddresses": [recipient]},
+            Content={
+                "Simple": {
+                    "Subject": {"Data": subject, "Charset": "UTF-8"},
+                    "Body":    {"Text": {"Data": body,    "Charset": "UTF-8"}},
+                }
+            },
+        )
+        logger.info("Email sent to %s: %s", recipient, subject)
+    except ClientError as exc:
+        logger.error("SES send failed: %s", exc.response["Error"]["Message"])
+        raise
 
-    days = _scan_all()
+
+def _brief_user(user_id: str, recipient: str, today_str: str) -> str | None:
+    """Compose and send one user's briefing for today, scoped to their partition.
+    Returns the subject sent, or None if today is outside that user's plan window."""
+    days = _query_user(user_id)
 
     if _overrides_table:
         overrides = _scan_overrides()
@@ -230,10 +249,10 @@ def handler(event: dict, context) -> dict:
         logger.info("Applied %d active overrides", len(overrides))
 
     today_day = _day_for(days, today_str)
-
     if today_day is None:
-        logger.info("No training day for %s -- outside plan window, skipping email", today_str)
-        return {"statusCode": 200, "body": "outside plan window"}
+        logger.info("No training day for %s (user %s) -- outside plan window, skipping",
+                    today_str, user_id[:8])
+        return None
 
     streak = _compute_streak(days, today_str)
 
@@ -243,20 +262,18 @@ def handler(event: dict, context) -> dict:
         tomorrow_day = _day_for(days, (date.fromisoformat(today_str) + timedelta(days=1)).isoformat())
         subject, body = _rest_day_body(today_day, tomorrow_day, streak)
 
-    try:
-        _ses.send_email(
-            FromEmailAddress=_SENDER,
-            Destination={"ToAddresses": [_RECIPIENT]},
-            Content={
-                "Simple": {
-                    "Subject": {"Data": subject, "Charset": "UTF-8"},
-                    "Body":    {"Text": {"Data": body,    "Charset": "UTF-8"}},
-                }
-            },
-        )
-        logger.info("Email sent to %s: %s", _RECIPIENT, subject)
-    except ClientError as exc:
-        logger.error("SES send failed: %s", exc.response["Error"]["Message"])
-        raise
+    _send(recipient, subject, body)
+    return subject
 
+
+def handler(event: dict, context) -> dict:
+    today_str = event.get("test_date") or date.today().isoformat()
+    logger.info("daily_email invoked for %s", today_str)
+
+    # Single-recipient today. Multi-user fan-out (deferred) loops the users table
+    # here -- resolving (user_id, email) pairs and calling _brief_user for each.
+    subject = _brief_user(_OWNER_USER_ID, _RECIPIENT, today_str)
+
+    if subject is None:
+        return {"statusCode": 200, "body": "outside plan window"}
     return {"statusCode": 200, "body": json.dumps({"subject": subject})}
