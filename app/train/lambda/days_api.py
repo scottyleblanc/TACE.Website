@@ -23,6 +23,8 @@ import boto3
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
+import plan_merge
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -43,18 +45,6 @@ _CORS_HEADERS = {
     "Access-Control-Allow-Headers": "Authorization,Content-Type",
     "Content-Type": "application/json",
 }
-
-# Fields applied from the override item when present and non-empty.
-_OVERRIDE_FIELDS = (
-    "session_type", "session_detail", "coaching_focus",
-    "run_interval_minutes", "run_walk_ratio", "session_minutes_target",
-    "alternate_exercise",
-)
-
-# Fields always stored in the override item (even as empty string).
-# An empty string here means "clear this field from the merged result"
-# rather than "inherit from the seed row."
-_CLEARABLE_FIELDS = frozenset(("run_walk_ratio", "alternate_exercise"))
 
 
 def _json_default(obj):
@@ -129,55 +119,6 @@ def _ensure_profile(user_id: str, claims: dict) -> None:
         # Profile already exists -- idempotent no-op, nothing to do.
 
 
-def _merge_override(seed_item: dict, override_item: dict) -> dict:
-    merged = dict(seed_item)
-    merged["has_override"] = True
-    merged["original_session_type"] = seed_item.get("session_type", "")
-    merged["original_session_detail"] = seed_item.get("session_detail", "")
-
-    for field in _OVERRIDE_FIELDS:
-        if field not in override_item:
-            continue  # not in override item -- inherit from seed
-        val = override_item[field]
-        if field in _CLEARABLE_FIELDS:
-            # Empty string = intentionally cleared; remove from merged result
-            if val == "" or val is None:
-                merged.pop(field, None)
-            else:
-                merged[field] = val
-        elif val not in ("", None):
-            merged[field] = val
-
-    merged["override_reason"] = override_item.get("override_reason", "")
-    merged["override_source"] = override_item.get("override_source", "")
-    merged["override_note"]   = override_item.get("override_note", "")
-    merged["provisional"]     = bool(override_item.get("provisional", False))
-
-    return merged
-
-
-def _scan_overrides() -> dict:
-    overrides: dict = {}
-    kwargs: dict = {}
-    while True:
-        result = _overrides_table.scan(**kwargs)
-        for item in result.get("Items", []):
-            if item.get("override_active"):
-                overrides[item["date"]] = item
-        last = result.get("LastEvaluatedKey")
-        if not last:
-            break
-        kwargs["ExclusiveStartKey"] = last
-    return overrides
-
-
-def _apply_override(seed_item: dict, overrides: dict) -> dict:
-    override = overrides.get(seed_item["date"])
-    if override:
-        return _merge_override(seed_item, override)
-    return seed_item
-
-
 def _get_days(user_id: str) -> dict:
     items = []
     query_kwargs: dict = {"KeyConditionExpression": Key("user_id").eq(user_id)}
@@ -191,8 +132,8 @@ def _get_days(user_id: str) -> dict:
     items.sort(key=lambda x: x["date"])
 
     if _overrides_table:
-        overrides = _scan_overrides()
-        items = [_apply_override(item, overrides) for item in items]
+        overrides = plan_merge.scan_overrides(_overrides_table)
+        items = plan_merge.apply_overrides_to_items(items, overrides)
 
     return _ok(items)
 
@@ -208,7 +149,7 @@ def _get_day(user_id: str, date: str) -> dict:
         override_result = _overrides_table.get_item(Key={"date": date})
         override = override_result.get("Item")
         if override and override.get("override_active"):
-            item = _merge_override(item, override)
+            item = plan_merge.merge_override(item, override)
 
     return _ok(item)
 

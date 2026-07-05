@@ -17,6 +17,8 @@ Thumbs.db
 # Lambda invoke output — local testing artifact
 response.json
 function.zip
+__pycache__/
+*.pyc
 
 scratch.txt
 *-security-findings.md
