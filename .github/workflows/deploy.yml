@@ -62,7 +62,7 @@ jobs:
 
       - name: Deploy Tracker SPA to S3
         run: |
-          aws s3 sync app/train/src/ s3://${{ vars.TRACKER_S3_BUCKET }}/ --delete
+          aws s3 sync app/train/src/ s3://${{ vars.TRACKER_S3_BUCKET }}/ --delete --cache-control "no-cache"
 
       - name: Invalidate Tracker CloudFront cache
         run: |
