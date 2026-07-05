@@ -3,28 +3,32 @@
 .SYNOPSIS
     Marks a training day as completed in DynamoDB.
 .DESCRIPTION
-    Updates the training-plan table to set completed=true and completed_date
-    for a given date. Use this to retroactively check off a session that was
-    not logged in the tracker UI.
+    Updates the training-plan-v2 table to set completed=true and completed_date
+    for a given date, scoped to a caller-supplied user_id (the table's partition
+    key). Use this to retroactively check off a session that was not logged in
+    the tracker UI.
 
     Reads the current item first and reports its state before writing.
     Supports -WhatIf to preview without writing.
 .PARAMETER Date
     ISO date of the training day to mark complete (e.g. 2026-07-01).
     Defaults to yesterday.
+.PARAMETER UserId
+    Owner's Cognito sub -- the training-plan-v2 partition key. Mandatory; never
+    defaulted in this public repo. See the private runbook for the real value.
 .PARAMETER Table
-    DynamoDB table name. Defaults to training-plan.
+    DynamoDB table name. Defaults to training-plan-v2.
 .PARAMETER Profile
     AWS CLI profile name. Defaults to tace-aws-admin.
 .PARAMETER Region
     AWS region. Defaults to ca-central-1.
 .EXAMPLE
-    .\Complete-TrainingDay.ps1
+    .\Complete-TrainingDay.ps1 -UserId <OWNER_SUB>
     Marks yesterday complete.
 .EXAMPLE
-    .\Complete-TrainingDay.ps1 -Date 2026-07-01
+    .\Complete-TrainingDay.ps1 -UserId <OWNER_SUB> -Date 2026-07-01
 .EXAMPLE
-    .\Complete-TrainingDay.ps1 -Date 2026-07-01 -WhatIf
+    .\Complete-TrainingDay.ps1 -UserId <OWNER_SUB> -Date 2026-07-01 -WhatIf
     Shows what would be updated without writing to DynamoDB.
 .NOTES
     completed_date is set to the training date (not today) for retroactive accuracy.
@@ -32,7 +36,9 @@
 [CmdletBinding(SupportsShouldProcess)]
 param(
     [string] $Date    = (Get-Date).AddDays(-1).ToString('yyyy-MM-dd'),
-    [string] $Table   = 'training-plan',
+    [Parameter(Mandatory)]
+    [string] $UserId,
+    [string] $Table   = 'training-plan-v2',
     [string] $Profile = 'tace-aws-admin',
     [string] $Region  = 'ca-central-1'
 )
@@ -40,7 +46,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$key        = '{"date":{"S":"' + $Date + '"}}'
+$key        = '{"user_id":{"S":"' + $UserId + '"},"date":{"S":"' + $Date + '"}}'
 $sharedArgs = @('--profile', $Profile, '--region', $Region)
 
 # --- Read current state ---
@@ -86,7 +92,7 @@ $updateArgs = @(
     '--update-expression',          'SET completed = :c, completed_date = :d',
     '--expression-attribute-values', $exprValues,
     '--condition-expression',       'attribute_exists(#pk)',
-    '--expression-attribute-names', '{"#pk":"date"}',
+    '--expression-attribute-names', '{"#pk":"user_id"}',
     '--return-values',              'ALL_NEW'
 ) + $sharedArgs
 
