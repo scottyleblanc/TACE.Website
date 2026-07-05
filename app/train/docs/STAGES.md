@@ -7,19 +7,37 @@ Full build brief: `dev/README.md`
 
 ---
 
-## Current Focus: Phase Three — Multi-User (Stage 3.9)
+## Source of Truth
+
+Phases Three and Four are now defined by three specs in `docs/`, which **supersede
+any earlier multi-user / AI-layer plan**:
+
+1. `IDENTITY-FOUNDATION-SPEC.md` — canonical `user_id` and the users table. Build first.
+2. `AI-COACH-ENDPOINT-SPEC.md` — coach routes, pipeline, hard medical rail, data model, IAM. Build second.
+3. `AI-COACH-PROMPTS-AND-EVALS-SPEC.md` — coach system prompts, rail classifier prompt, eval harness. Build last.
+
+Where a stage below and a spec differ on mechanics, the **spec wins** — the stage
+is the checklist, the spec owns the contract. Build sessions should read the
+relevant spec, not re-derive from this file.
+
+**Multi-user is deferred.** The identity foundation is built now so that a second
+user can be added later with no further migration, but second-user onboarding,
+plan generation, invites, and per-user email fan-out are out of scope until we
+decide to add them (see [Deferred] at the end).
+
+---
+
+## Current Focus: Phase Three — Identity Foundation (Stage 3.9)
 
 Stages 3.1–3.6 (Phase One — MVP) are complete and live. Phase Two (security audit,
-Stage 3.8) is tracked in the private repo. Phase Three (multi-user) and Phase Four
-(AI layer) are the next build-out, broken into Stages 3.9–3.13 below.
-Stage 3.7 (Public View) remains parked as a later, optional phase.
+Stage 3.8) is tracked in the private repo. Stage 3.7 (Public View) remains parked.
 
-Phase definitions map to the public project narrative at
-`hugo/content/projects/running-tracker-proj.md`:
+Phase mapping to the public project narrative
+(`hugo/content/projects/running-tracker-proj.md`):
 - Phase One (single-user MVP) = Stages 3.1–3.6 (done)
-- Phase Two (security audit) = Stage 3.8
-- Phase Three (going multi-user) = Stages 3.9–3.11
-- Phase Four (the AI layer) = Stages 3.12–3.13
+- Phase Two (security audit) = Stage 3.8 (private repo)
+- Phase Three (identity foundation) = Stage 3.9
+- Phase Four (the AI coach) = Stages 3.10–3.11
 
 ---
 
@@ -51,6 +69,13 @@ wildcard ACM cert, and Route 53 record in place. DynamoDB table seeded with all 
 
 **Runbook:** `TACE.Website-private/config/runbook-tracker.md` Stage 6
 
+**Note:** The browser-side token flow described here was later hardened to a
+Backend-for-Frontend (BFF) pattern in Stage 3.8 — the refresh token lives only in
+an httpOnly cookie and the SPA holds a short-lived access token in memory
+(`lambda/tracker_auth.py`). The API still receives that access token as a Bearer
+JWT, so the API Gateway Cognito authorizer exposes the `sub` claim at
+`event.requestContext.authorizer.jwt.claims.sub` — that is the canonical `user_id`.
+
 ---
 
 ## Stage 3.3 — Backend API
@@ -73,12 +98,9 @@ wildcard ACM cert, and Route 53 record in place. DynamoDB table seeded with all 
 **Goal:** Working habit tracker UI at train.tacedata.ca.
 
 **Definition of done:**
-- Login flow: redirect to Cognito Hosted UI, handle callback, store tokens
-- Today's session card: session type, detail, coaching focus, minutes target
-- Streak counter and overall progress bar
+- Login flow, today's session card, streak counter, overall progress bar
 - Weekly checklist row (current week's active days)
-- Checkbox completes a day (PATCH to API)
-- Notes field saves per-day journal entry (PATCH to API)
+- Checkbox completes a day (PATCH to API); notes field saves per-day journal entry
 - Rest days shown but not checkable
 
 ---
@@ -90,8 +112,7 @@ wildcard ACM cert, and Route 53 record in place. DynamoDB table seeded with all 
 **Definition of done:**
 - SES domain `tacedata.ca` verified in ca-central-1
 - Lambda `tracker-email` deployed
-- Active day email: session type, detail, coaching focus, minutes, run/walk ratio, current streak, link
-- Rest day email: recovery note, tomorrow's session preview, current streak, link
+- Active day and rest day email formats with streak + link
 - EventBridge rule `tracker-daily-email` fires daily at 11:00 UTC (7am EDT)
 - Email arrives at scott.leblanc@tacedata.ca
 
@@ -104,188 +125,182 @@ wildcard ACM cert, and Route 53 record in place. DynamoDB table seeded with all 
 **Goal:** GitHub Actions deploys SPA and Lambda updates on push to main.
 
 **Definition of done:**
-- `deploy.yml` syncs `app/train/src/` to `tacedata-train` S3 bucket
-- `deploy.yml` updates `tracker-api` and `tracker-email` Lambda code
+- `deploy.yml` syncs `app/train/src/` to S3 and updates `tracker-api` + `tracker-email`
 - CloudFront invalidation on deploy
-- GitHub Actions variables added: `TRACKER_DISTRIBUTION_ID`, `TRACKER_LAMBDA_API`, `TRACKER_LAMBDA_EMAIL`
+- GitHub Actions variables added
 
 **Runbook:** `TACE.Website-private/config/runbook-tracker.md` Stage 12, 14
 
 ---
 
-## Stage 3.7 — Public View (Later Phase)
+## Stage 3.7 — Public View (Parked)
 
 **Goal:** Read-only shareable progress page. No auth, no check-off ability.
 
-**Definition of done:** TBD
+**Definition of done:** TBD — parked as a later, optional phase.
 
 ---
 
-# Phase Three — Going Multi-User
+# Phase Three — Identity Foundation
 
-Let a second person log in and generate their own plan from an intake form. Claude
-writes the plan in the same schema the tracker already understands; generated output is
-validated before it is stored (treated as untrusted input). Multi-tenancy comes from a
-composite key (user + date) and Cognito for isolation, so each person sees only their
-own data.
+Spec: `docs/IDENTITY-FOUNDATION-SPEC.md` (authoritative).
 
-The single-user build keys every DynamoDB item on `date` alone, and the API does no
-per-user scoping — the JWT only gates access (see `lambda/days_api.py`). Phase Three's
-core change is partitioning all data and reads by the authenticated user.
+Establish one stable per-user identity (Cognito `sub`) as the partition key across
+every table, and add a small users/profile record. This is the prerequisite for
+the AI coach (every read scoped to the caller) and for future multi-user, built
+now so multi-user is a later drop-in with no second migration.
 
----
-
-## Stage 3.9 — Multi-Tenant Data Model
-
-**Goal:** Every training day belongs to a user. Reads and writes are scoped to the
-authenticated caller — no user can see or modify another user's data.
-
-**Definition of done:**
-- DynamoDB table uses composite key: `user_id` (PK, partition) + `date` (SK, sort)
-  - `user_id` is the Cognito `sub` claim — stable, opaque, not the email
-- `days_api.py` derives `user_id` from the JWT claims
-  (`event.requestContext.authorizer.jwt.claims.sub`) on every route — never from the
-  request body or path
-- `GET /days` uses `Query` on the user partition (not `Scan`)
-- `GET /days/{date}` and `PATCH /days/{date}` key on `{user_id, date}`; cross-user access
-  returns 404, never another user's item
-- Existing single-user data migrated into the owner's partition (one-time migration
-  script; `seed_dynamo.py` updated to write under a `user_id`)
-- All 105 days still load and check off end-to-end for the original account after migration
-
-**Implementer notes:**
-- DynamoDB key schema is **immutable** — you cannot add a partition key to the existing
-  `training-plan` table, and a GSI does not solve write-partitioning (writes still collide
-  on `date` across users). Create a **new table** (e.g. `training-plan-v2`), migrate, then
-  repoint the `DYNAMODB_TABLE` env var on both `tracker-api` and `tracker-email`. Table
-  name is hardcoded as `TABLE_NAME` in `scripts/seed_dynamo.py` and read from
-  `DYNAMODB_TABLE` in both Lambdas.
-- The original account's `user_id` (Cognito `sub`) is needed for the migration — retrieve
-  it from the Cognito User Pool `tacedata-train-pool` (see completed Stage 3.2 for the
-  pool/client IDs in the private runbook). The migration script reads every existing item
-  (keyed on `date`) and rewrites it with `{user_id: <sub>, date}`.
-- Cross-user 404: a `get_item`/`update_item` on `{user_id, date}` for a non-owned row
-  simply misses — no extra ownership check needed, since the partition key isolates it.
+The single-user build keys every item on `date` alone and does no per-user scoping
+(`lambda/days_api.py`, `lambda/daily_email.py`). Because DynamoDB key schema is
+immutable, going `user_id`-partitioned is a **new-table migration**, not a code
+edit.
 
 ---
 
-## Stage 3.10 — Onboarding and Plan Generation
+## Stage 3.9 — Canonical `user_id`, migration, and users table
 
-**Goal:** A new user fills in an intake form and gets a personalized plan generated by
-Claude, stored in the same schema the tracker reads.
+**Goal:** Every training day belongs to a user; reads and writes are scoped to the
+authenticated caller. A users/profile record exists per account, created
+idempotently on first login. One active user today; the schema supports many.
 
-**Definition of done:**
-- Intake form (frontend) collects the plan inputs: current fitness/run history, race
-  date, target distance, days/week available, known constraints
-- Plan-generation Lambda calls the Claude API with the intake inputs and a coach prompt
-  (API key from Secrets Manager — see Stage 3.12; never in the browser)
-- Generated plan is **validated against the day/week schema before any write** — generated
-  output is treated as untrusted input; an invalid plan is rejected, not stored. Validate:
-  - one item per calendar day from start to race date (no gaps, no duplicate dates) —
-    count is **derived from the intake start/race dates**, not the original fixed 105
-  - every required field present with the correct type (the canonical item shape is the
-    single source of truth: `build_item()` in `scripts/seed_dynamo.py`; data dictionary in
-    `dev/README.md`)
-  - `is_active_day` / `is_run_day` are booleans; `session_minutes_target` an int; nullable
-    fields (`run_interval_minutes`, `run_walk_ratio`, etc.) omitted rather than empty
-- Validated plan written under the new user's `user_id` partition (one item per day)
-- Onboarding writes a `users` record (`user_id`, `email`, and plan metadata such as start
-  and race dates) — this is the list the email Lambda reads in Stage 3.11
-- First-run flow: a logged-in user with no plan is routed to the intake form; on success
-  they land on the populated dashboard
-- Idempotency: re-submitting intake does not silently duplicate or corrupt an existing plan
+**Definition of done (per the spec):**
+- New table `training-plan-v2`: PK = `user_id` (Cognito `sub`), SK = `date`,
+  mirroring the existing item shape plus `user_id`
+- One-time migration script rewrites every existing `date`-keyed item under
+  `{user_id: <owner sub>, date}`; owner `sub` retrieved from `tacedata-train-pool`
+- `DYNAMODB_TABLE` repointed on **both** `tracker-api` and `tracker-email`
+- `days_api.py` derives `user_id` from the JWT claims (`...jwt.claims.sub`) on
+  every route — never from body or path [SEC]; `GET /days` uses `Query` on the
+  user partition; `GET`/`PATCH /days/{date}` key on `{user_id, date}`; cross-user
+  access returns 404, never another user's item [SEC]
+- `daily_email.py` replaces the full-table scan with a `Query` on a configured
+  owner `user_id`, single-recipient, structured for a later multi-user fan-out
+- `seed_dynamo.py` writes items under a `user_id`; table/key updated
+- `users` table (or PROFILE item): PK = `user_id`; attributes `email`,
+  `display_name`, `coach_scope` (`plan_only` default), `race_goal`, `race_date`,
+  `created_at`/`updated_at`
+- Profile provisioned idempotently on first authenticated request (conditional put
+  on absence of `user_id`); repeated logins never overwrite it
+- All writes take `user_id` from the verified token, never the request body [SEC];
+  no foreign keys, no join table, no cross-table referential mechanism
+- Cutover safety: migrate under a write freeze (or re-run the copy after the
+  env-var flip); reconcile row-count and user-state parity (105 = 105, every
+  `completed`/`completed_date`/`notes` intact); leave the old table until v2 passes
+- Isolation proven with a real second identity: a disposable second Cognito `sub`
+  (fixture, retained for regression) confirms cross-user 404 on every `/days` verb
+  [SEC]
+- Validation: all 105 days load and check off end-to-end for the original account
+  post-migration; the daily email still arrives
 
-**Implementer notes:**
-- Claude API integration: see the `claude-api` skill for current model IDs, the Anthropic
-  SDK, structured-output/tool-use patterns, and token counting. Have the model return the
-  plan as JSON matching the item schema; validate that JSON before any DynamoDB write.
-- The originating coach prompt that produced the seed data is quoted in the public
-  narrative (`hugo/content/projects/running-tracker-proj.md`) — reuse it as the basis for
-  the generation system prompt.
-
----
-
-## Stage 3.11 — Multi-User Email and Registration
-
-**Goal:** Each user gets their own daily briefing, and a second account can be admitted
-without code changes to a hardcoded allowlist.
-
-**Definition of done:**
-- `daily_email.py` sends a per-user briefing: it resolves each active user, reads that
-  user's partition, and sends to that user's verified address
-- Streak, session detail, and tomorrow's preview are computed per user
-- Registration is **invite-only**: the two-email `ALLOWED_EMAILS` allowlist in
-  `auth_guard.py` is replaced by an invite mechanism — an admin issues an invite for a
-  specific email, and only invited emails can complete signup. Public self-signup stays
-  closed.
-- A second real account completes signup, generates a plan, checks off a day, and
-  receives its own briefing email — with no visibility into the first user's data
-
-**Implementer notes:**
-- User enumeration (decided): onboarding (Stage 3.10) writes a lightweight `users` record
-  per user; the email Lambda reads that list of `(user_id, email)` to brief — no
-  full-table scan, no Cognito `ListUsers` dependency in the email path.
-- Invite mechanism: an invited-emails store gates signup. `auth_guard.py` checks the
-  invited set instead of a static `ALLOWED_EMAILS` env var. Keep the existing PreSignUp /
-  PreTokenGeneration trigger model from Stage 3.2 (PreAuthentication does not fire for
-  Google federated logins).
-- Keep the single daily EventBridge rule; loop over users **inside** one invocation rather
-  than one rule per user.
+**Implementer notes:** the overrides table (`training-plan-overrides`) stays keyed
+on `date` (single-user reference data); the merge logic in both Lambdas is
+unchanged. See the spec's [STEP 1.5] for the full migration sequence.
 
 ---
 
-# Phase Four — The AI Layer
+# Phase Four — The AI Coach
 
-The plan is small enough that the entire dataset fits in a single prompt, so the coach
-endpoint sends the whole thing to the Claude API with each question — no vector database,
-no retrieval machinery. It answers grounded in the user's real plan and progress.
-Guardrails matter: it answers only from the plan, it is a running coach (not a code
-generator), and it defers anything injury-related to a physio rather than playing doctor.
+Specs: `docs/AI-COACH-ENDPOINT-SPEC.md` (contract/architecture) and
+`docs/AI-COACH-PROMPTS-AND-EVALS-SPEC.md` (prompts + evals). Both authoritative.
 
----
-
-## Stage 3.12 — Secrets and Coach Endpoint
-
-**Goal:** An authenticated user can ask the coach a question and get an answer grounded
-in their own plan and progress.
-
-**Definition of done:**
-- Claude API key stored in AWS Secrets Manager — never in the browser, never in Lambda
-  env vars in plaintext, never in source
-- Coach Lambda reads the caller's full plan + progress from their `user_id` partition and
-  sends it in a single prompt to the Claude API (default to a current Claude model —
-  e.g. `claude-sonnet-4-6` for latency/cost, `claude-opus-4-8` for quality)
-- New route `POST /coach` on the existing HTTP API, Cognito JWT-protected, CORS scoped to
-  `https://train.tacedata.ca`
-- IAM: coach execution role granted `secretsmanager:GetSecretValue` on that one secret ARN
-  plus DynamoDB read on the user's partition only
-- End-to-end: a question like "what is my long run Saturday?" returns an answer that
-  reflects the caller's actual plan data
-
-**Implementer notes:**
-- The existing Lambdas (`days_api.py`, `daily_email.py`) use only boto3, which is in the
-  Lambda runtime. The coach Lambda uses the **Anthropic SDK** (decided), which is not —
-  package it as a **Lambda layer** and attach it to the coach function; update `deploy.yml`
-  to build/publish the layer (or pin a prebuilt layer version). See the `claude-api` skill
-  for the SDK usage and current model IDs.
-- Cache the secret value across warm invocations (module scope), not per request.
+A per-user AI running coach the user talks to in multiple named, saved, resumable
+conversation threads, grounded in their real plan and progress. A hard pre-model
+rail intercepts clinical/injury/medical questions and defers them to the user's
+physiotherapist before the coach model is ever called. Models are config-driven;
+the Anthropic key lives in Secrets Manager. Depends on Stage 3.9 (canonical
+`user_id`).
 
 ---
 
-## Stage 3.13 — Coach UI and Guardrails
+## Stage 3.10 — Coach Endpoint, Rail, and Data Model
 
-**Goal:** A usable in-app coach with enforced behavioural guardrails and cost controls.
+**Goal:** An authenticated user holds multiple named, resumable conversations
+grounded in their own plan; medical questions are deflected before the coach
+model; models are swappable via config; no route can read another user's data.
 
-**Definition of done:**
-- Chat UI in the SPA (ask a question, see the answer; conversation scoped to the signed-in
-  user)
-- System prompt guardrails enforced and tested:
-  - answers only from the user's plan and progress data
-  - stays in the running-coach role — declines code generation and off-topic requests
-  - defers injury/medical questions to a physio rather than giving medical advice
-- Cost/abuse controls: per-user rate limiting and a max-tokens cap on responses
-- Guardrail behaviour validated with adversarial prompts (off-topic, injection attempt,
-  injury question) producing the intended refusals/deferrals
+**Definition of done (per the endpoint spec):**
+- Separate `conversations` table: PK = `user_id`, SK type-prefixed
+  (`CONV#{id}`, `MSG#{id}#{ts}`); one `Query` serves list-threads and load-thread
+- Thread CRUD, all scoped to the caller [SEC]:
+  `POST/GET /conversations`, `GET/PATCH/DELETE /conversations/{id}`
+- `GET`/`PATCH /settings` read/write `coach_scope` (`plan_only` |
+  `plan_plus_general`) on the users record — not a separate settings store
+- **Hard medical rail** as a standalone, provable step first: a cheap/fast
+  `RAIL_MODEL` classifier runs **before** the coach; on trigger it persists a
+  canned deferral (`role: rail`, `rail_triggered: true`) and never calls the coach
+  model; fails **closed** (classifier error/ambiguous → defer) [SEC]
+- The coach turn `POST /conversations/{id}/messages`: auth → ownership (404 if not
+  the caller's) → load the **merged plan view** (seed `training-plan-v2` +
+  `training-plan-overrides` + user-state, same merge as `days_api.py`/
+  `daily_email.py` — never the raw seed) → rail → **facts computed in code**
+  (streak, week completed/planned, next long run, today's session, weeks-to-race,
+  from the merged view) → prompt assembly → coach model call → persist user +
+  coach messages, bump `updated_at`/`message_count` → return. Extract the merge
+  into one shared module reused by all three consumers.
+- House response envelope `{ok, data, message}`; `message` always safe to log
+- Config via **Lambda env vars** (repo convention; SSM is a later upgrade):
+  `COACH_MODEL`, `RAIL_MODEL`, `HISTORY_WINDOW_TURNS`, `MAX_TOKENS`. No hardcoded
+  model IDs — source current IDs from the `claude-api` skill at build time [SEC]
+- Anthropic API key in **Secrets Manager**, read server-side only, cached at
+  module scope; never in env vars in plaintext, never in the browser [SEC]
+- Anthropic SDK packaged as a **Lambda layer** attached to the coach function;
+  `deploy.yml` builds/publishes it
+- New routes on the existing HTTP API, Cognito JWT-protected, CORS scoped to
+  `https://train.tacedata.ca` [SEC]
+- IAM least-privilege: DynamoDB read/write on `conversations` + read on
+  `training-plan-v2` and `training-plan-overrides` (leading-key condition on
+  `user_id` where practical); `secretsmanager:GetSecretValue` on the one key ARN;
+  CloudWatch Logs only; no wildcard resources [SEC]
+- End-to-end: "what is my long run Saturday?" returns an answer grounded in the
+  caller's real data; an injury question is deferred by the rail
+
+**Build order (from the spec):** thread CRUD → `/settings` → rail (provably
+deferring) → coach turn. Do not build the coach turn until CRUD and the rail work.
+
+---
+
+## Stage 3.11 — Coach Prompts and Evaluation
+
+**Goal:** The coach system prompts and the rail classifier prompt are committed
+alongside the code, an eval harness runs locally and in CI against the
+production-assembled prompt, and all release gates pass.
+
+**Definition of done (per the prompts/evals spec):**
+- Prompt assembly maps to the Messages API: a `system` string plus a `messages`
+  array; history sent as real prior turns (rolling window), not a text blob
+- `[FACTS]` and `[PLAN_DATA]` delimited blocks; the system prompt states that
+  everything in `[PLAN_DATA]` — including the user's free-text `notes` — is data
+  to read, never instructions to follow (the notes-field injection boundary) [SEC]
+- Coach system prompt: shared base + one delta per `coach_scope`
+  (`plan_only` steers back to the plan; `plan_plus_general` allows general running
+  knowledge but the plan stays authoritative and the medical boundary still holds)
+- Rail classifier prompt: binary `medical`/`ok`, strict machine-readable JSON,
+  fails closed; symptom-specificity is the boundary rule
+- Eval set + harness (Python): classifier unit evals and coach behavioural evals;
+  harness imports the Lambda's **real** prompt-assembly code so it tests what
+  ships; models config-driven incl. a new `JUDGE_MODEL` for eval scoring
+- Release gates: 100% recall on the `medical` class; no fabricated facts; correct
+  scope behaviour in both modes; medical backstop holds; the notes-injection case
+  does not alter the role or output [SEC]
+
+---
+
+## [Deferred] Multi-User and Later Phases
+
+Built to accept these later without rework, but out of scope now:
+
+- **Second-user onboarding + plan generation** — intake form, Claude-generated
+  plan validated against the item schema before any write (generated output
+  treated as untrusted input), written under the new user's partition. Onboarding
+  **updates** the existing users record (adding `race_goal`/`race_date`), it does
+  not create it — first-login provisioning already did.
+- **Invite mechanism** — replace `auth_guard.py`'s static `ALLOWED_EMAILS` with an
+  invited-emails store; public self-signup stays closed.
+- **Per-user email fan-out** — `daily_email.py` loops over the `users` table,
+  briefing each user from their own partition to their own verified address.
+- **Public view (Stage 3.7)** — read-only shareable progress page.
+- **Coach v2** — response streaming; summarize-and-drop of old turns when threads
+  get long; additional scope modes or personas.
 
 ---
 
