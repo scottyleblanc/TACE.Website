@@ -115,13 +115,17 @@ Depends on Stage 3.9. Build order within 3.10: CRUD → settings → rail → co
 
 ## Stage 3.11 — Coach Prompts and Evaluation
 
-- [ ] Prompt assembly: `system` string + `messages` array; history as real prior turns (rolling window), not a text blob
-- [ ] `[FACTS]` + `[PLAN_DATA]` delimited blocks; system prompt declares `[PLAN_DATA]` (incl. `notes`) is data, never instructions [SEC]
-- [ ] Coach system prompt: shared base + `plan_only` delta + `plan_plus_general` delta
-- [ ] Rail classifier prompt: binary `medical`/`ok`, strict JSON, fails closed; symptom-specificity boundary
-- [ ] Eval set: classifier unit evals + coach behavioural evals (grounding, scope, medical backstop, notes injection)
-- [ ] Harness (Python) imports the Lambda's real prompt-assembly code; models config-driven incl. `JUDGE_MODEL`; runnable locally and in CI
-- [ ] Release gates pass: 100% recall on `medical`; no fabricated facts; correct scope in both modes; medical backstop holds; notes-injection does not alter role/output [SEC]
+**Status: live as of 2026-07-05.** See Completed Stages in `STAGES.md` for the
+one real gap the harness caught (a medical-backstop reply that deferred
+correctly but then also gave training advice) and how it was fixed.
+
+- [x] Prompt assembly: `system` string + `messages` array; history as real prior turns (rolling window), not a text blob
+- [x] `[FACTS]` + `[PLAN_DATA]` delimited blocks; system prompt declares `[PLAN_DATA]` (incl. `notes`) is data, never instructions [SEC]
+- [x] Coach system prompt: shared base + `plan_only` delta + `plan_plus_general` delta — `lambda/coach_prompts.py`
+- [x] Rail classifier prompt: binary `medical`/`ok`, strict JSON, fails closed; symptom-specificity boundary
+- [x] Eval set: classifier unit evals + coach behavioural evals (grounding, scope, medical backstop, notes injection) — `app/train/evals/cases.py`
+- [x] Harness (Python) imports the Lambda's real prompt-assembly code; models config-driven incl. `JUDGE_MODEL`; runnable locally and in CI — `app/train/evals/run_coach_evals.py` imports `coach_prompts.py` from `lambda/` via `sys.path`, the same flat-module import the Lambda runtime uses after `zip -j`; CI wiring in `.github/workflows/coach-evals.yml` (PR + manual dispatch, separate from `deploy.yml`)
+- [x] Release gates pass: 100% recall on `medical`; no fabricated facts; correct scope in both modes; medical backstop holds; notes-injection does not alter role/output [SEC] — all pass as of the second harness run (see STAGES.md for the one fix needed between runs)
 
 ---
 

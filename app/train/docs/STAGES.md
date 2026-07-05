@@ -27,15 +27,15 @@ decide to add them (see [Deferred] at the end).
 
 ---
 
-## Current Focus: Phase Four — The AI Coach (Stage 3.11 next)
+## Current Focus: Phase Four complete — no frontend chat UI yet
 
-Stage 3.9 (identity foundation) and Stage 3.10 (coach endpoint, rail, data model)
-are both live — see Completed Stages below. Loose ends carried forward, not
-blocking Stage 3.11: the old `training-plan` table is retained pending a soak
-period (Step 50 in the private runbook); the Stage 3.9 cutover was validated via
-direct Lambda invocation rather than a live browser session; and Stage 3.10's
-coach system prompt / rail classifier prompt are functional placeholders whose
-final wording and eval-driven tuning is exactly what Stage 3.11 owns.
+Stages 3.9, 3.10, and 3.11 are all live — see Completed Stages below. The AI
+coach backend (conversations, rail, coach turn, tuned prompts, eval harness)
+is fully built and validated via direct Lambda invocation; there is currently
+no chat UI in the SPA to drive it from a browser. Loose ends carried forward:
+the old `training-plan` table is retained pending a soak period (Step 50 in
+the private runbook), and the Stage 3.9 cutover was validated via direct
+Lambda invocation rather than a live browser session.
 
 Stages 3.1–3.6 (Phase One — MVP) are complete and live. Phase Two (security audit,
 Stage 3.8) is tracked in the private repo. Stage 3.7 (Public View) remains parked.
@@ -301,6 +301,9 @@ production-assembled prompt, and all release gates pass.
   scope behaviour in both modes; medical backstop holds; the notes-injection case
   does not alter the role or output [SEC]
 
+**Status: live as of 2026-07-05.** See Completed Stages below for the one real
+gap the harness caught and fixed before shipping.
+
 ---
 
 ## [Deferred] Multi-User and Later Phases
@@ -323,6 +326,59 @@ Built to accept these later without rework, but out of scope now:
 ---
 
 ## Completed Stages
+
+### Stage 3.11 — Coach Prompts and Evaluation (2026-07-05)
+
+- **Extracted `lambda/coach_prompts.py`** from the Stage 3.10 placeholder
+  logic in `tracker_coach.py`: facts computation, the plan-data window,
+  history-window trimming, the rail classifier + `classify_message()`, and
+  the coach system prompt + `build_coach_system_prompt()`. Zero AWS/env
+  dependencies by design, so the eval harness can import it directly without
+  any AWS credentials — only an Anthropic key. Redeployed and re-ran a subset
+  of Stage 3.10's checks to confirm the refactor alone changed nothing.
+- **Harness:** `app/train/evals/run_coach_evals.py` adds `app/train/lambda` to
+  `sys.path` and imports `coach_prompts` as a flat top-level module — the same
+  way the Lambda runtime imports it after `zip -j` — so the harness evaluates
+  the literal production prompt-assembly code. Cases in `evals/cases.py`: the
+  spec's 9 classifier cases and 6 coach behavioral cases (synthetic
+  facts/plan_data matching the real shape, not fetched from DynamoDB, so the
+  harness is deterministic and AWS-free). `JUDGE_MODEL=claude-opus-4-8` scores
+  the subjective cases via a strict pass/fail JSON rubric.
+- **Classifier tuning:** started from the spec's [C1] draft plus the [C2]
+  boundary rule (reassurance-seeking about a specific symptom → `medical`;
+  ambiguous → `medical`). Passed **100% recall on the medical class on the
+  first run** — no iteration needed.
+- **Coach tuning — one real gap found and fixed:** the first run failed the
+  `medical_backstop` case. The coach correctly deferred to the
+  physiotherapist ("that's a question for your physio...") but then *also*
+  added "I'd hold off on the 60-minute session until you've got their
+  input" — itself a training recommendation tied to the symptom, exactly
+  what the backstop is supposed to forbid. The original wording ("do not
+  advise — briefly direct the athlete to their physiotherapist") left room
+  for the model to treat the redirect and the advice as two separate things.
+  Tightened `COACH_SYSTEM_BASE` to state the backstop reply is *only* a brief
+  acknowledgement plus the referral, explicitly ruling out any opinion on
+  training/resting/modifying "even framed cautiously or as 'just in case'" —
+  second run passed all 6 coach cases and the classifier gate.
+- **Redeployed and re-validated:** re-ran the Stage 3.10 direct-invoke checks
+  (grounded race/session question, medical defer, override-day grounding,
+  cross-user 404) against the tuned prompts — all held. The override-day
+  check also showed the tightened backstop generalizing correctly outside
+  the eval set: asked about a physio-adjusted session with a mentioned
+  Achilles symptom in the same thread, the coach deferred the go/no-go
+  decision to the physiotherapist rather than recommending skipping the
+  session itself.
+- **CI:** `.github/workflows/coach-evals.yml` (PR-triggered on changes to
+  `coach_prompts.py`/`evals/`, plus manual dispatch) — deliberately separate
+  from `deploy.yml` and needs no AWS access, only the `ANTHROPIC_API_KEY` repo
+  secret (added by the user directly, never entered the session).
+  `deploy.yml`'s `tracker-coach` zip step now also bundles `coach_prompts.py`.
+- **Known gap, not part of this stage's checklist:** no frontend chat UI
+  exists yet for the coach — Phase Four's backend is complete but there's
+  nothing in the SPA to drive it from a browser. Out of scope until a future
+  stage decides to add it.
+
+---
 
 ### Stage 3.10 — Coach Endpoint, Rail, and Data Model (2026-07-05)
 
