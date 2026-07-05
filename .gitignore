@@ -25,6 +25,10 @@ scratch.txt
 *-Security-Review.md
 *-AUDIT.md
 
+# Session-handoff notes -- real session/resource detail, not for the public repo.
+# Matches at any depth, not just docs/, in case the handoff skill writes it elsewhere.
+**/MEMORY.md
+
 # Tracker SPA config — real values generated in CI from GitHub Actions vars; use config.example.js locally
 app/train/src/config.js
 config/canary.zip
