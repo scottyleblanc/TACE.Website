@@ -2,11 +2,12 @@
 tracker_coach.py -- Lambda handler for the AI coach (Stage 3.10).
 
 Routes (API Gateway HTTP API, payload format 2.0):
-  POST   /conversations             -- create a named thread. Body: {title}
-  GET    /conversations              -- list the caller's threads (metadata only)
-  GET    /conversations/{id}         -- load a thread's messages
-  PATCH  /conversations/{id}         -- rename. Body: {title}
-  DELETE /conversations/{id}         -- delete a thread and all its messages
+  POST   /conversations                    -- create a named thread. Body: {title}
+  GET    /conversations                     -- list the caller's threads (metadata only)
+  GET    /conversations/{id}                -- load a thread's messages
+  PATCH  /conversations/{id}                -- rename. Body: {title}
+  DELETE /conversations/{id}                -- delete a thread and all its messages
+  POST   /conversations/{id}/messages       -- the coach turn (rail-only for now; see below)
 
 Every route derives user_id from the verified Cognito JWT claims (never body or
 path) and scopes reads/writes to that partition; a thread that isn't the
@@ -19,6 +20,14 @@ Anthropic key.
 Data model -- conversations table, PK user_id, SK sk:
   CONV#{conversation_id}       -- thread metadata (title, created_at, updated_at, message_count)
   MSG#{conversation_id}#{ts}   -- one message (role, content, created_at)
+
+Stage 3.10 build order (per docs/AI-COACH-ENDPOINT-SPEC.md): thread CRUD, then
+/settings (in days_api.py), then the medical rail proven standalone, then the
+coach turn itself. This file currently implements the rail step: the message
+route persists the user's message, classifies it, and either returns the canned
+deferral (rail_triggered) or -- until the coach turn is built -- a 501. The
+merged plan view, facts-in-code, prompt assembly, and the coach-model call are
+[DEFERRED] to the next step in this stage.
 """
 
 import json
@@ -28,6 +37,7 @@ import uuid
 from datetime import datetime, timezone
 from decimal import Decimal
 
+import anthropic
 import boto3
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
@@ -39,13 +49,41 @@ _CONVERSATIONS_TABLE_NAME = os.environ["CONVERSATIONS_TABLE"]
 _dynamodb = boto3.resource("dynamodb")
 _conversations_table = _dynamodb.Table(_CONVERSATIONS_TABLE_NAME)
 
+_ANTHROPIC_SECRET_ARN = os.environ["ANTHROPIC_SECRET_ARN"]
+_RAIL_MODEL = os.environ["RAIL_MODEL"]
+_COACH_MODEL = os.environ["COACH_MODEL"]
+_HISTORY_WINDOW_TURNS = int(os.environ.get("HISTORY_WINDOW_TURNS", "10"))
+_MAX_TOKENS = int(os.environ.get("MAX_TOKENS", "1024"))
+
+_secretsmanager = boto3.client("secretsmanager")
+_anthropic_client: "anthropic.Anthropic | None" = None  # cached at module scope, built lazily
+
 _MAX_TITLE_LEN = 200
+_MAX_MESSAGE_LEN = 4000
 
 _CORS_HEADERS = {
     "Access-Control-Allow-Origin": "https://train.tacedata.ca",
     "Access-Control-Allow-Headers": "Authorization,Content-Type",
     "Content-Type": "application/json",
 }
+
+# [DEFERRED to Stage 3.11] Final classifier prompt wording and label boundary are
+# built with an eval set (docs/AI-COACH-PROMPTS-AND-EVALS-SPEC.md). This is a
+# functional placeholder so the hard rail can be proven standalone now.
+_RAIL_SYSTEM_PROMPT = (
+    "You are a safety classifier for a running-training coach app. Decide whether "
+    "the user's message is seeking clinical, injury, medical, diagnostic, or "
+    "treatment guidance (pain, symptoms, an existing condition, medication, or what "
+    "to do about an injury). Respond with strict JSON only: "
+    '{"label": "medical"} or {"label": "ok"}. '
+    "No other text, no markdown, no code fences, no backticks -- the raw JSON object only."
+)
+
+_RAIL_DEFERRAL_REPLY = (
+    "That sounds like a question for your physiotherapist or another qualified "
+    "clinician rather than for me -- I'm not able to give medical, injury, or "
+    "treatment guidance. Please reach out to them directly."
+)
 
 
 def _json_default(obj):
@@ -224,17 +262,14 @@ def _patch_conversation(user_id: str, conversation_id: str, raw_body: str | None
 
 
 def _delete_conversation(user_id: str, conversation_id: str) -> dict:
-    try:
-        _conversations_table.delete_item(
-            Key={"user_id": user_id, "sk": _conv_sk(conversation_id)},
-            ConditionExpression="attribute_exists(#pk)",
-            ExpressionAttributeNames={"#pk": "user_id"},
-        )
-    except ClientError as exc:
-        if exc.response["Error"]["Code"] == "ConditionalCheckFailedException":
-            return _err(404, f"Conversation {conversation_id} not found")
-        raise
+    if _get_thread_item(user_id, conversation_id) is None:
+        return _err(404, f"Conversation {conversation_id} not found")
 
+    # Delete messages before the thread item itself: if this fails partway
+    # through, the thread stays visible (just short some messages) and the
+    # whole delete is safely retryable -- deleting the thread item first would
+    # instead orphan any remaining messages under a conversation_id nothing
+    # points to anymore.
     message_keys = []
     query_kwargs: dict = {
         "KeyConditionExpression": Key("user_id").eq(user_id) & Key("sk").begins_with(f"MSG#{conversation_id}#"),
@@ -252,7 +287,104 @@ def _delete_conversation(user_id: str, conversation_id: str) -> dict:
         for key in message_keys:
             batch.delete_item(Key={"user_id": user_id, "sk": key["sk"]})
 
+    _conversations_table.delete_item(Key={"user_id": user_id, "sk": _conv_sk(conversation_id)})
+
     return _ok(None, "Conversation deleted")
+
+
+def _get_anthropic_client() -> anthropic.Anthropic:
+    global _anthropic_client
+    if _anthropic_client is None:
+        secret = json.loads(_secretsmanager.get_secret_value(SecretId=_ANTHROPIC_SECRET_ARN)["SecretString"])
+        _anthropic_client = anthropic.Anthropic(api_key=secret["api_key"])
+    return _anthropic_client
+
+
+def _rail_check(message_content: str) -> bool:
+    """True if the message should be deferred (medical/injury/clinical).
+
+    Fails closed: any classifier error, or a response that doesn't parse to
+    exactly {"label": "medical"|"ok"}, is treated as triggered -- the rail
+    contract requires ambiguity to defer, not pass through to the coach.
+    """
+    try:
+        client = _get_anthropic_client()
+        response = client.messages.create(
+            model=_RAIL_MODEL,
+            max_tokens=40,
+            system=_RAIL_SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": message_content}],
+        )
+        raw = response.content[0].text.strip()
+        if raw.startswith("```"):
+            # Strip a markdown code fence (optionally language-tagged) if the
+            # model added one despite being told not to -- belt and suspenders.
+            raw = raw.strip("`")
+            raw = raw.removeprefix("json").strip()
+        label = json.loads(raw).get("label")
+        if label not in ("medical", "ok"):
+            logger.warning("[tracker_coach] rail: ambiguous label %r -- deferring closed", label)
+            return True
+        return label == "medical"
+    except Exception:
+        logger.exception("[tracker_coach] rail: classifier call failed -- deferring closed")
+        return True
+
+
+def _bump_thread(user_id: str, conversation_id: str, message_increment: int) -> None:
+    _conversations_table.update_item(
+        Key={"user_id": user_id, "sk": _conv_sk(conversation_id)},
+        UpdateExpression="SET updated_at = :now ADD message_count :incr",
+        ExpressionAttributeValues={":now": _now(), ":incr": message_increment},
+    )
+
+
+def _post_message(user_id: str, conversation_id: str, raw_body: str | None) -> dict:
+    thread = _get_thread_item(user_id, conversation_id)
+    if thread is None:
+        return _err(404, f"Conversation {conversation_id} not found")
+
+    if not raw_body:
+        return _err(400, "Request body required")
+    try:
+        payload = json.loads(raw_body)
+    except json.JSONDecodeError:
+        return _err(400, "Invalid JSON")
+
+    content = payload.get("content")
+    if not isinstance(content, str) or not content.strip():
+        return _err(400, "Field 'content' is required")
+    if len(content) > _MAX_MESSAGE_LEN:
+        return _err(400, f"Field 'content' exceeds maximum length of {_MAX_MESSAGE_LEN} characters")
+    content = content.strip()
+
+    user_ts = _now()
+    _conversations_table.put_item(Item={
+        "user_id": user_id,
+        "sk": f"MSG#{conversation_id}#{user_ts}#user",
+        "role": "user",
+        "content": content,
+        "created_at": user_ts,
+    })
+
+    if _rail_check(content):
+        reply_ts = _now()
+        _conversations_table.put_item(Item={
+            "user_id": user_id,
+            "sk": f"MSG#{conversation_id}#{reply_ts}#rail",
+            "role": "rail",
+            "content": _RAIL_DEFERRAL_REPLY,
+            "created_at": reply_ts,
+            "rail_triggered": True,
+        })
+        _bump_thread(user_id, conversation_id, message_increment=2)
+        return _ok({"role": "rail", "content": _RAIL_DEFERRAL_REPLY, "rail_triggered": True})
+
+    # [DEFERRED to the next Stage 3.10 step] Merged plan view, facts-in-code,
+    # prompt assembly, and the coach-model call are not yet wired -- the rail is
+    # proven standalone first, per the endpoint spec's build order. The user
+    # message above is already persisted; nothing else is written on this path.
+    return _err(501, "Coach turn not yet implemented -- rail-only build")
 
 
 def handler(event: dict, context) -> dict:
@@ -278,4 +410,6 @@ def handler(event: dict, context) -> dict:
         return _patch_conversation(user_id, conversation_id, body)
     if route_key == "DELETE /conversations/{id}":
         return _delete_conversation(user_id, conversation_id)
+    if route_key == "POST /conversations/{id}/messages":
+        return _post_message(user_id, conversation_id, body)
     return _err(400, f"Unhandled route: {route_key}")
