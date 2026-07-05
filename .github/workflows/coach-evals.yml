@@ -1,0 +1,34 @@
+name: Coach Prompt Evals
+
+on:
+  pull_request:
+    paths:
+      - 'app/train/lambda/coach_prompts.py'
+      - 'app/train/evals/**'
+  workflow_dispatch:        # allow manual trigger from GitHub Actions UI
+
+# No AWS access here by design -- the harness imports coach_prompts.py directly
+# (zero AWS/env dependencies) and only needs an Anthropic API key. Kept separate
+# from deploy.yml so a prompt eval run never adds latency or Anthropic spend to
+# every push-to-main deploy.
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Anthropic SDK
+        run: pip install anthropic
+
+      - name: Run coach prompt evals
+        working-directory: app/train/evals
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python run_coach_evals.py

@@ -122,7 +122,7 @@ jobs:
 
       - name: Update tracker-coach Lambda
         run: |
-          zip -j tracker-coach.zip app/train/lambda/tracker_coach.py app/train/lambda/plan_merge.py
+          zip -j tracker-coach.zip app/train/lambda/tracker_coach.py app/train/lambda/plan_merge.py app/train/lambda/coach_prompts.py
           aws lambda update-function-code \
             --function-name ${{ vars.TRACKER_LAMBDA_COACH }} \
             --zip-file fileb://tracker-coach.zip \
