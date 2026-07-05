@@ -334,7 +334,7 @@ def _load_merged_plan(user_id: str) -> list[dict]:
     items.sort(key=lambda d: d["date"])
 
     if _overrides_table:
-        overrides = plan_merge.scan_overrides(_overrides_table)
+        overrides = plan_merge.query_overrides(_overrides_table, user_id)
         items = plan_merge.apply_overrides_to_items(items, overrides)
 
     return items

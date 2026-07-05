@@ -2,14 +2,21 @@
 plan_merge.py -- shared override-merge logic for the training plan.
 
 Single source of truth for applying the physio override layer
-(training-plan-overrides) on top of seed training-plan-v2 rows. Reused by
+(training-plan-overrides-v2) on top of seed training-plan-v2 rows. Reused by
 days_api.py, daily_email.py, and tracker_coach.py so all three consumers show
 an identical merged view -- the coach must never read the raw seed alone, or
 it will contradict the physio-adjusted plan the user sees in the app and email.
 
+training-plan-overrides-v2 is partitioned by user_id (PK user_id, SK date),
+same as training-plan-v2 -- every query here is scoped to the caller, never a
+table-wide scan, so one user's physio overrides can never apply to (or leak
+into) another user's plan.
+
 Deployed by being zipped alongside each caller's own file (zip -j junks paths,
 so this module lands at the same flat level and imports as a top-level module).
 """
+
+from boto3.dynamodb.conditions import Key
 
 # Fields applied from the override item when present and non-empty.
 OVERRIDE_FIELDS = (
@@ -51,12 +58,15 @@ def merge_override(seed_item: dict, override_item: dict) -> dict:
     return merged
 
 
-def scan_overrides(overrides_table) -> dict:
-    """Scan the overrides table; returns {date: override_item} for active overrides."""
+def query_overrides(overrides_table, user_id: str) -> dict:
+    """Query the caller's overrides only; returns {date: override_item} for
+    active overrides. Never a table-wide scan -- overrides are partitioned by
+    user_id exactly like the plan table, so this can't read another user's
+    physio adjustments."""
     overrides: dict = {}
-    kwargs: dict = {}
+    kwargs: dict = {"KeyConditionExpression": Key("user_id").eq(user_id)}
     while True:
-        result = overrides_table.scan(**kwargs)
+        result = overrides_table.query(**kwargs)
         for item in result.get("Items", []):
             if item.get("override_active"):
                 overrides[item["date"]] = item

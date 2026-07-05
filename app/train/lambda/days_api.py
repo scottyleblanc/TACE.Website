@@ -136,7 +136,7 @@ def _get_days(user_id: str) -> dict:
     items.sort(key=lambda x: x["date"])
 
     if _overrides_table:
-        overrides = plan_merge.scan_overrides(_overrides_table)
+        overrides = plan_merge.query_overrides(_overrides_table, user_id)
         items = plan_merge.apply_overrides_to_items(items, overrides)
 
     return _ok(items)
@@ -150,7 +150,7 @@ def _get_day(user_id: str, date: str) -> dict:
         return _err(404, f"Day {date} not found")
 
     if _overrides_table:
-        override_result = _overrides_table.get_item(Key={"date": date})
+        override_result = _overrides_table.get_item(Key={"user_id": user_id, "date": date})
         override = override_result.get("Item")
         if override and override.get("override_active"):
             item = plan_merge.merge_override(item, override)

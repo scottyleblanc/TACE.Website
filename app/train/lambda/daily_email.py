@@ -188,7 +188,7 @@ def _brief_user(user_id: str, recipient: str, today_str: str) -> str | None:
     days = _query_user(user_id)
 
     if _overrides_table:
-        overrides = plan_merge.scan_overrides(_overrides_table)
+        overrides = plan_merge.query_overrides(_overrides_table, user_id)
         days = plan_merge.apply_overrides_to_items(days, overrides)
         logger.info("Applied %d active overrides", len(overrides))
 
