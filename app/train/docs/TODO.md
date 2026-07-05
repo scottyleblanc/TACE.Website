@@ -126,6 +126,33 @@ correctly but then also gave training advice) and how it was fixed.
 - [x] Eval set: classifier unit evals + coach behavioural evals (grounding, scope, medical backstop, notes injection) — `app/train/evals/cases.py`
 - [x] Harness (Python) imports the Lambda's real prompt-assembly code; models config-driven incl. `JUDGE_MODEL`; runnable locally and in CI — `app/train/evals/run_coach_evals.py` imports `coach_prompts.py` from `lambda/` via `sys.path`, the same flat-module import the Lambda runtime uses after `zip -j`; CI wiring in `.github/workflows/coach-evals.yml` (PR + manual dispatch, separate from `deploy.yml`)
 - [x] Release gates pass: 100% recall on `medical`; no fabricated facts; correct scope in both modes; medical backstop holds; notes-injection does not alter role/output [SEC] — all pass as of the second harness run (see STAGES.md for the one fix needed between runs)
+- [x] Post-launch retune: real usage showed the rail and the coach's own backstop over-triggering on any body-part mention rather than an actual symptom — re-tuned both prompts, added 7 new eval cases from the real conversation, re-validated against production
+
+---
+
+## Stage 3.12 — Partition `training-plan-overrides` by `user_id`
+
+**Status: live as of 2026-07-05.** Security finding, not a planned feature — see `STAGES.md` for the goal and the private runbook (Stage 19) for full mechanics.
+
+- [x] New table `training-plan-overrides-v2` (PK `user_id`, SK `date`); 17 rows migrated with `--verify` parity
+- [x] `plan_merge.py`'s override lookup changed from a table-wide `Scan` to a `Query` scoped to the caller [SEC]
+- [x] All three consumers (`days_api.py`, `daily_email.py`, `tracker_coach.py`) updated via the shared module
+- [x] IAM updated on all three execution roles: `Query` on the new table, old `Scan` grants removed [SEC]
+- [x] Isolation proven: a fixture identity seeded on a date with an active owner override sees no override fields merged in [SEC]
+- [x] Old table retained pending soak period, matching the Stage 3.9 `training-plan` precedent
+
+---
+
+## Stage 3.13 — Coach Chat UI
+
+**Status: live as of 2026-07-05.**
+
+- [x] Second SPA view (no router, no build step) toggled from the dashboard header
+- [x] Thread create/rename/delete/switch; chat bubbles (user/coach/rail-deferred); markdown-lite rendering (no library)
+- [x] `coach_scope` toggle backed by the existing `/settings` route
+- [x] Local mock preview built and reviewed before touching the live site
+- [x] Deployed to S3 + CloudFront; found and fixed a real caching bug (no `Cache-Control` header meant browsers served stale content even after a CloudFront invalidation) — `deploy.yml` updated so future deploys don't regress
+- [ ] Full end-to-end validation in a real logged-in browser session beyond the post-cache-fix functional check
 
 ---
 

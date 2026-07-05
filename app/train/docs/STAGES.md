@@ -27,15 +27,17 @@ decide to add them (see [Deferred] at the end).
 
 ---
 
-## Current Focus: Phase Four complete — no frontend chat UI yet
+## Current Focus: Phase Four complete, coach live end-to-end in the browser
 
-Stages 3.9, 3.10, and 3.11 are all live — see Completed Stages below. The AI
-coach backend (conversations, rail, coach turn, tuned prompts, eval harness)
-is fully built and validated via direct Lambda invocation; there is currently
-no chat UI in the SPA to drive it from a browser. Loose ends carried forward:
-the old `training-plan` table is retained pending a soak period (Step 50 in
-the private runbook), and the Stage 3.9 cutover was validated via direct
-Lambda invocation rather than a live browser session.
+Stages 3.9–3.13 are all live — see Completed Stages below. The AI coach has a
+working chat UI in the SPA (Stage 3.13) on top of the backend from
+3.10–3.11, `training-plan-overrides` is now partitioned by `user_id` (Stage
+3.12, closing a real gap left open at Stage 3.9), and the rail/coach prompts
+were re-tuned once against real usage after launch (folded into Stage 3.11's
+write-up below). Loose ends carried forward: the old `training-plan` and
+`training-plan-overrides` (v1) tables are retained pending a soak period
+(Steps 50 and 71 in the private runbook), and the Stage 3.9 cutover was
+validated via direct Lambda invocation rather than a live browser session.
 
 Stages 3.1–3.6 (Phase One — MVP) are complete and live. Phase Two (security audit,
 Stage 3.8) is tracked in the private repo. Stage 3.7 (Public View) remains parked.
@@ -45,7 +47,7 @@ Phase mapping to the public project narrative
 - Phase One (single-user MVP) = Stages 3.1–3.6 (done)
 - Phase Two (security audit) = Stage 3.8 (private repo)
 - Phase Three (identity foundation) = Stage 3.9
-- Phase Four (the AI coach) = Stages 3.10–3.11
+- Phase Four (the AI coach) = Stages 3.10–3.13
 
 ---
 
@@ -302,7 +304,52 @@ production-assembled prompt, and all release gates pass.
   does not alter the role or output [SEC]
 
 **Status: live as of 2026-07-05.** See Completed Stages below for the one real
-gap the harness caught and fixed before shipping.
+gap the harness caught and fixed before shipping, plus a follow-up prompt
+retune driven by real usage after launch.
+
+---
+
+## Stage 3.12 — Partition `training-plan-overrides` by `user_id`
+
+**Goal:** Close a real security gap left open at Stage 3.9: the physio
+override layer was global, un-partitioned reference data, so a second user
+would have seen (and been affected by) the first user's overrides.
+
+**Definition of done:**
+- New table `training-plan-overrides-v2`: PK = `user_id`, SK = `date`, same
+  shape as the existing `training-plan-v2` migration
+- One-time migration script copies every override row under the owner's
+  `user_id`, with `--verify` asserting count and field parity
+- `plan_merge.py`'s override lookup changed from a table-wide `Scan` to a
+  `Query` scoped to the caller's own partition — used identically by
+  `days_api.py`, `daily_email.py`, and `tracker_coach.py`
+- IAM least-privilege updated on all three execution roles: `Query` on the
+  new table, old `Scan` grants removed
+- Isolation proven directly: a fixture identity seeded with a row on a date
+  carrying an active owner override sees **no** override fields merged in
+
+**Status: live as of 2026-07-05.** See Completed Stages below.
+
+---
+
+## Stage 3.13 — Coach Chat UI
+
+**Goal:** A working chat interface for the AI coach in the SPA — the backend
+from Stages 3.10–3.11 had only ever been exercised via direct Lambda
+invocation.
+
+**Definition of done:**
+- A second view in the existing single-page app (no router, no build step,
+  no framework — matching the rest of the SPA), toggled from the dashboard
+  header
+- Thread create/rename/delete/switch; chat bubbles distinguishing user,
+  coach, and rail-deferred messages; a minimal markdown-lite renderer
+  (`**bold**`, bullet lists) with no external library or CDN dependency;
+  a `coach_scope` toggle backed by the existing `/settings` route
+- Validated first against a local mock (no backend calls) to sanity-check
+  layout and interaction, then against the live site after deploying
+
+**Status: live as of 2026-07-05.**
 
 ---
 
@@ -327,7 +374,78 @@ Built to accept these later without rework, but out of scope now:
 
 ## Completed Stages
 
+### Stage 3.13 — Coach Chat UI (2026-07-05)
+
+- **New view, no new dependencies:** `src/coach.js` (thread create/rename/
+  delete/switch via a `<select>`, chat bubbles, a minimal markdown-lite
+  renderer -- `**bold**` and bullet lists via regex on already-escaped text,
+  no library or CDN script) wired into `index.html`/`app.js`/`style.css` as a
+  second view toggled from the dashboard header, matching the SPA's existing
+  no-router, no-build-step pattern. `apiRequest`/`esc` exported from `app.js`
+  and reused as-is; the coach routes' `{ok, data, message}` envelope is
+  unwrapped in `coach.js` rather than changing the shared helper, since
+  `/days` callers still expect the bare-body shape.
+- **Local mock preview first:** before touching the live site, built a
+  throwaway local preview (a copy of `coach.js` with only its import line
+  swapped to a mock instead of the real API, so the rendering/interaction
+  logic under test was the literal production code) to sanity-check layout,
+  bubble styling, and markdown rendering without needing real auth or
+  network access.
+- **Deployed and found a real caching bug:** synced `src/` to the live S3
+  bucket and invalidated CloudFront, but the S3 objects had no `Cache-Control`
+  header at all, so browsers applied heuristic caching and kept serving a
+  stale copy in a normal tab (working fine in Incognito, which has no cache) --
+  even after the CloudFront invalidation. Fixed by setting `Cache-Control:
+  no-cache` on all synced SPA files (revalidate-always, not "don't cache") and
+  adding `--cache-control "no-cache"` to `deploy.yml`'s sync step so future
+  deploys don't regress. One hard refresh was needed to clear the
+  already-heuristically-cached copy; every deploy after this one revalidates
+  normally.
+- **Known gap:** not yet re-validated end-to-end in a real logged-in browser
+  session beyond a visual/functional check after the cache fix -- no
+  automated browser test exists for this SPA.
+
+---
+
+### Stage 3.12 — Partition `training-plan-overrides` by `user_id` (2026-07-05)
+
+Security finding, not a planned feature -- see the Stage 3.12 section above
+for the goal. Full mechanics (real resource values, IAM policy diffs, the
+"deploy code and flip the env var together" reasoning) are in the private
+runbook Stage 19; this entry covers what's safe to say in the public repo.
+
+- Migrated 17 override rows from the date-keyed table to the new
+  `user_id`-partitioned one; `--verify` passed count and field parity both
+  before and after the Lambda cutover.
+- `plan_merge.py`'s override lookup is now a `Query` scoped to the caller,
+  never a table-wide `Scan` -- the same shared module used by all three
+  Lambda consumers, so the fix applies everywhere at once.
+- **Isolation proof:** seeded a temporary row for the Stage 3.9 fixture
+  identity on a date carrying an active owner override, confirmed the
+  fixture's response had no override fields merged in, then deleted the test
+  row. Before this fix, any caller's row on that date would have picked up
+  the owner's override via the old table-wide scan.
+- Old table retained pending a soak period, same precedent as the Stage 3.9
+  `training-plan` retirement.
+
+---
+
 ### Stage 3.11 — Coach Prompts and Evaluation (2026-07-05)
+
+**Post-launch retune (2026-07-05, same day):** real usage surfaced the rail
+and the coach's own medical backstop both over-triggering on *any* body-part
+mention (a bare "leg", and a positive status update like "my soleus is
+feeling better today") rather than on an actual reported symptom -- both were
+judging by topic instead of intent. Retuned `RAIL_SYSTEM_PROMPT` and
+`COACH_SYSTEM_BASE` with explicit worked examples distinguishing a named body
+part from an actual symptom/pain/injury signal; took two passes on the
+coach's own prompt, since the first pass stopped the hard defer but the coach
+still hedged toward physio pre-emptively on a bare word. Added 5 classifier
+cases and 2 coach-behavioral cases to the eval harness from this exact real
+conversation so the regression is locked in; all gates still pass (100%
+medical recall preserved, both new coach cases pass). Re-validated against
+production with the real messages plus two genuine medical cases, which
+still correctly defer.
 
 - **Extracted `lambda/coach_prompts.py`** from the Stage 3.10 placeholder
   logic in `tracker_coach.py`: facts computation, the plan-data window,
