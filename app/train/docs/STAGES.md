@@ -27,12 +27,15 @@ decide to add them (see [Deferred] at the end).
 
 ---
 
-## Current Focus: Phase Four — The AI Coach (Stage 3.10)
+## Current Focus: Phase Four — The AI Coach (Stage 3.11 next)
 
-Stage 3.9 (identity foundation) is live — see Completed Stages below. Two loose
-ends carried forward, not blocking Stage 3.10: the old `training-plan` table is
-retained pending a soak period (Step 50 in the private runbook), and the cutover
-was validated via direct Lambda invocation rather than a live browser session.
+Stage 3.9 (identity foundation) and Stage 3.10 (coach endpoint, rail, data model)
+are both live — see Completed Stages below. Loose ends carried forward, not
+blocking Stage 3.11: the old `training-plan` table is retained pending a soak
+period (Step 50 in the private runbook); the Stage 3.9 cutover was validated via
+direct Lambda invocation rather than a live browser session; and Stage 3.10's
+coach system prompt / rail classifier prompt are functional placeholders whose
+final wording and eval-driven tuning is exactly what Stage 3.11 owns.
 
 Stages 3.1–3.6 (Phase One — MVP) are complete and live. Phase Two (security audit,
 Stage 3.8) is tracked in the private repo. Stage 3.7 (Public View) remains parked.
@@ -267,6 +270,11 @@ model; models are swappable via config; no route can read another user's data.
 **Build order (from the spec):** thread CRUD → `/settings` → rail (provably
 deferring) → coach turn. Do not build the coach turn until CRUD and the rail work.
 
+**Status: live as of 2026-07-05.** See Completed Stages below for what was
+validated, two live-observed bugs found and fixed during validation, and the
+known gap carried forward (coach/rail prompt wording is a functional
+placeholder — final wording and eval-driven tuning is Stage 3.11's job).
+
 ---
 
 ## Stage 3.11 — Coach Prompts and Evaluation
@@ -315,6 +323,92 @@ Built to accept these later without rework, but out of scope now:
 ---
 
 ## Completed Stages
+
+### Stage 3.10 — Coach Endpoint, Rail, and Data Model (2026-07-05)
+
+Built in the spec's mandated order (CRUD → `/settings` → rail → coach turn),
+each step deployed out-of-band and validated before the next; commits split
+the same way.
+
+- **Merge extraction (prerequisite):** `lambda/plan_merge.py` pulled the
+  duplicated override-merge logic out of `days_api.py` and `daily_email.py`
+  before either was touched further, so the coach reads the identical merged
+  view. Re-ran the Stage 3.9 direct-invoke checks afterward to confirm no
+  behavior change (105 items, 17 active overrides, same merged output).
+- **`conversations` table + thread CRUD:** new Lambda `tracker-coach`
+  (`POST`/`GET /conversations`, `GET`/`PATCH`/`DELETE /conversations/{id}`),
+  `tracker-coach-execution-role` (RW on `conversations`, read-only on
+  `training-plan-v2` + `training-plan-overrides`), routes on the existing HTTP
+  API behind the existing Cognito authorizer. Validated: full CRUD lifecycle
+  for the owner; the Stage 3.9 fixture identity gets 404 on every verb with no
+  write landing; delete removes the thread from the list.
+- **`/settings`:** added to `days_api.py` (tracker-api) rather than the new
+  Lambda — `coach_scope` lives on the `training-users` record tracker-api
+  already owns via `_ensure_profile`, so the coach role never needs
+  `training-users` write access. Required adding `dynamodb:UpdateItem` on
+  `training-users` to `tracker-api-execution-role` (previously `GetItem`/
+  `PutItem` only). Validated: default `plan_only`, update to
+  `plan_plus_general`, persists, invalid value rejected with 400.
+- **Anthropic setup:** API key in Secrets Manager
+  (`<COACH_SECRET_NAME>`, created by the user directly so the key
+  never entered the session); Anthropic Python SDK built as a Lambda layer
+  (`tracker-coach-anthropic-sdk`, `pip install --platform
+  manylinux2014_x86_64 --python-version 3.12` to get `jiter`'s compiled wheel
+  rather than a source build); `tracker-coach-execution-role` scoped to
+  `secretsmanager:GetSecretValue` on that one ARN plus a read-only
+  `training-users` grant for `coach_scope` — the endpoint spec's IAM section
+  didn't list `training-users` even though the pipeline needs it; closed as a
+  spec gap rather than reproduced.
+- **Rail, standalone:** `POST /conversations/{id}/messages` persists the
+  user's message, classifies it via `RAIL_MODEL` (`claude-haiku-4-5-20251001`),
+  and returns the canned deferral on trigger — the coach turn wasn't wired yet
+  at this point, so a non-triggered message hit a deliberate 501 stub, proving
+  the coach model is unreachable either way. **Bug found live:** the
+  classifier sometimes wrapped its JSON in a markdown code fence despite being
+  told not to, so `json.loads` failed and every message defaulted to the
+  fail-closed path (safe, but meant "ok" messages never got through) — fixed
+  by tightening the prompt and defensively stripping fences before parsing.
+  **Bug found live:** `_delete_conversation` deleted the thread item before
+  batch-deleting its messages; a missing `dynamodb:BatchWriteItem` grant
+  (since added) caused a partial failure that orphaned message rows under a
+  conversation_id nothing pointed to anymore — fixed by reordering to delete
+  messages first, thread last, so a partial failure stays retryable instead of
+  leaking orphans. Validated: an injury message defers with
+  `rail_triggered: true`; a normal question reaches the 501 stub; a
+  deliberately broken `RAIL_MODEL` config also defers (fail-closed); delete
+  with real messages present now cleans up completely.
+- **Coach turn:** merged plan view via `plan_merge`, facts computed in code
+  (streak, week completed/planned, next long run, weeks-to-race, today's
+  session — never left for the model to derive from raw rows), a placeholder
+  system prompt with the `coach_scope` delta (final wording is Stage 3.11's
+  job), the model call (`COACH_MODEL` = `claude-sonnet-5`), and persistence
+  with `updated_at`/`message_count` bumped. **Bug found live:**
+  `claude-sonnet-5` returned a `ThinkingBlock` before its `TextBlock` (adaptive
+  thinking runs by default when `thinking` is omitted, per the model's
+  migration notes) and `response.content[0].text` broke on it — fixed with a
+  `_response_text()` helper that finds the first text-type block, used by
+  both the rail and the coach call. Validated end-to-end against the real
+  plan: "how many weeks until my race, and what is today's session" returned
+  12 weeks and the exact Rest-day text from `training-plan-v2`; a follow-up
+  "what did I just ask" correctly recalled the prior exchange; a question
+  about an overridden day (2026-07-06) returned the override's session detail
+  ("no squats or lunges") rather than the seed's ("squats, planks, lunges") —
+  the seed text is the literal opposite of what the physio override calls
+  for, so this is a real proof the merge is load-bearing; a medical follow-up
+  later in the same thread still deferred via the rail; the Stage 3.9 fixture
+  identity gets 404 posting to the owner's thread, no message persisted.
+- **`deploy.yml`:** wired `plan_merge.py` into the `tracker-api`/`tracker-email`
+  zips, added the Anthropic-layer build/publish/attach step and the
+  `tracker-coach` code-update step; `tacedata-github-deploy` granted the
+  matching Lambda/layer permissions; new repo variable
+  `TRACKER_LAMBDA_COACH=tracker-coach`. Not yet exercised through a real CI
+  run — branch not merged/pushed.
+- **Known gap, not part of this stage's checklist:** the coach system prompt
+  and rail classifier prompt are functional placeholders (clearly marked
+  `[DEFERRED]` in the code) — final wording, the label boundary, and an eval
+  set are Stage 3.11's explicit scope, not an oversight here.
+
+---
 
 ### Stage 3.9 — Canonical `user_id`, migration, and users table (2026-07-05)
 

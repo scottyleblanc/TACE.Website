@@ -83,33 +83,35 @@ Depends on Stage 3.9. Build order within 3.10: CRUD → settings → rail → co
 
 ## Stage 3.10 — Coach Endpoint, Rail, and Data Model
 
+**Status: live as of 2026-07-05.** See Completed Stages in `STAGES.md` for what was built, the two live-observed bugs found during validation, and known gaps carried forward. Deployed out-of-band this session; `deploy.yml` wiring is committed but not yet exercised through a real CI run (branch not merged/pushed).
+
 **Data model + secrets + config**
-- [ ] Create `conversations` table: PK = `user_id`, SK type-prefixed (`CONV#{id}`, `MSG#{id}#{ts}`)
-- [ ] Store Anthropic API key in Secrets Manager; read server-side, cache at module scope [SEC]
-- [ ] Package Anthropic SDK as a Lambda layer; attach to the coach function; update `deploy.yml`
-- [ ] Config via Lambda env vars: `COACH_MODEL`, `RAIL_MODEL`, `HISTORY_WINDOW_TURNS`, `MAX_TOKENS` — no hardcoded model IDs; source current IDs from the `claude-api` skill at build time [SEC]
+- [x] Create `conversations` table: PK = `user_id`, SK type-prefixed (`CONV#{id}`, `MSG#{id}#{ts}`)
+- [x] Store Anthropic API key in Secrets Manager; read server-side, cache at module scope [SEC]
+- [x] Package Anthropic SDK as a Lambda layer; attach to the coach function; update `deploy.yml`
+- [x] Config via Lambda env vars: `COACH_MODEL`, `RAIL_MODEL`, `HISTORY_WINDOW_TURNS`, `MAX_TOKENS` — no hardcoded model IDs; source current IDs from the `claude-api` skill at build time [SEC] — `claude-sonnet-5` / `claude-haiku-4-5-20251001`
 
 **Routes (in build order)**
-- [ ] Thread CRUD scoped to `user_id`: `POST`/`GET /conversations`, `GET`/`PATCH`/`DELETE /conversations/{id}`; every handler confirms thread `user_id` matches caller or returns 404 [SEC]
-- [ ] `GET`/`PATCH /settings`: read/write `coach_scope` on the users record (not a separate store)
-- [ ] Hard medical rail as a standalone step: `RAIL_MODEL` classifier before the coach; on trigger persist canned deferral (`role: rail`, `rail_triggered: true`), never call the coach; fails **closed** on error/ambiguous [SEC]
-- [ ] Coach turn `POST /conversations/{id}/messages`: auth → ownership → load context (rolling window + `coach_scope` + merged plan view) → rail → facts-in-code → prompt assembly → coach model call → persist + bump `updated_at`/`message_count` → return
-- [ ] House envelope `{ok, data, message}`; `message` always safe to log (no secrets/key) [SEC]
+- [x] Thread CRUD scoped to `user_id`: `POST`/`GET /conversations`, `GET`/`PATCH`/`DELETE /conversations/{id}`; every handler confirms thread `user_id` matches caller or returns 404 [SEC]
+- [x] `GET`/`PATCH /settings`: read/write `coach_scope` on the users record (not a separate store) — lives in `days_api.py` (tracker-api), not the coach Lambda, so the coach role never needs `training-users` write access
+- [x] Hard medical rail as a standalone step: `RAIL_MODEL` classifier before the coach; on trigger persist canned deferral (`role: rail`, `rail_triggered: true`), never call the coach; fails **closed** on error/ambiguous [SEC]
+- [x] Coach turn `POST /conversations/{id}/messages`: auth → ownership → load context (rolling window + `coach_scope` + merged plan view) → rail → facts-in-code → prompt assembly → coach model call → persist + bump `updated_at`/`message_count` → return
+- [x] House envelope `{ok, data, message}`; `message` always safe to log (no secrets/key) [SEC]
 
 **Plan view (merge — coach must not read raw seed)**
-- [ ] Coach loads the **merged** plan view (seed `training-plan-v2` + `training-plan-overrides` + user-state), applying the same merge logic as `days_api.py`/`daily_email.py` — never the raw seed alone [SEC]
-- [ ] Facts-in-code (next long run, today's session, week completed/planned, weeks-to-race) computed from the merged view, so coach guidance matches the physio-adjusted plan
-- [ ] Extract the merge into one shared module reused by `days_api.py`, `daily_email.py`, and the coach — single source of truth for the plan view (also consolidates streak/counts computed in three places)
+- [x] Coach loads the **merged** plan view (seed `training-plan-v2` + `training-plan-overrides` + user-state), applying the same merge logic as `days_api.py`/`daily_email.py` — never the raw seed alone [SEC]
+- [x] Facts-in-code (next long run, today's session, week completed/planned, weeks-to-race) computed from the merged view, so coach guidance matches the physio-adjusted plan
+- [x] Extract the merge into one shared module reused by `days_api.py`, `daily_email.py`, and the coach — single source of truth for the plan view (also consolidates streak/counts computed in three places) — `lambda/plan_merge.py`
 
 **Wiring + IAM**
-- [ ] New routes on the existing HTTP API, Cognito JWT-protected, CORS scoped to `https://train.tacedata.ca` [SEC]
-- [ ] IAM least-privilege: DynamoDB rw on `conversations` + read on `training-plan-v2` and `training-plan-overrides` (leading-key `user_id` condition where practical); `secretsmanager:GetSecretValue` on the one ARN; CloudWatch Logs only; no wildcards [SEC]
+- [x] New routes on the existing HTTP API, Cognito JWT-protected, CORS scoped to `https://train.tacedata.ca` [SEC]
+- [x] IAM least-privilege: DynamoDB rw on `conversations` + read on `training-plan-v2` and `training-plan-overrides` (leading-key `user_id` condition where practical); `secretsmanager:GetSecretValue` on the one ARN; CloudWatch Logs only; no wildcards [SEC] — plus a read-only `training-users` grant the spec's IAM section omitted despite the pipeline needing `coach_scope` (closed as a spec gap, not skipped)
 
 **Validate**
-- [ ] "what is my long run Saturday?" returns an answer grounded in the caller's real data
-- [ ] An injury/medical question is deferred by the rail before the coach model is called [SEC]
-- [ ] For a day carrying an active override, the coach's stated session equals the override value, not the seed; streak/counts match the SPA [SEC]
-- [ ] Reusing the Stage 3.9 fixture identity: B cannot list, read, rename, delete, or `POST .../messages` on A's threads — every verb returns 404, never A's data [SEC]
+- [x] "what is my long run Saturday?" returns an answer grounded in the caller's real data — tested as "how many weeks until my race, and what is today's session" and "what is my session tomorrow"; both matched direct DynamoDB reads exactly
+- [x] An injury/medical question is deferred by the rail before the coach model is called [SEC] — also confirmed fail-closed with a deliberately broken `RAIL_MODEL`, and confirmed the rail still triggers on a medical follow-up later in an otherwise-normal thread
+- [x] For a day carrying an active override, the coach's stated session equals the override value, not the seed; streak/counts match the SPA [SEC] — strong proof: the seed's own text for that day recommends squats/lunges, the physio override says "no squats or lunges," and the coach's answer matched the override verbatim
+- [x] Reusing the Stage 3.9 fixture identity: B cannot list, read, rename, delete, or `POST .../messages` on A's threads — every verb returns 404, never A's data [SEC]
 
 ## Stage 3.11 — Coach Prompts and Evaluation
 
