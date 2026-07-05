@@ -5,6 +5,8 @@ Routes (API Gateway HTTP API, payload format 2.0):
   GET  /days           -- all 105 training days, sorted by date, with overrides merged
   GET  /days/{date}    -- single day by ISO date string (e.g. 2026-06-15)
   PATCH /days/{date}   -- update user-state fields: completed (bool), notes (str)
+  GET  /settings       -- read coach_scope from the caller's users record
+  PATCH /settings      -- update coach_scope (plan_only | plan_plus_general)
 
 Override layer:
   If OVERRIDES_TABLE env var is set, GET routes merge active overrides on top of
@@ -39,6 +41,8 @@ _USERS_TABLE_NAME = os.environ["USERS_TABLE"]
 _users_table = _dynamodb.Table(_USERS_TABLE_NAME)
 
 _MAX_NOTES_LEN = 2000
+
+_COACH_SCOPES = frozenset(("plan_only", "plan_plus_general"))
 
 _CORS_HEADERS = {
     "Access-Control-Allow-Origin": "https://train.tacedata.ca",
@@ -222,6 +226,47 @@ def _patch_day(user_id: str, date: str, raw_body: str | None) -> dict:
     return _ok(result.get("Attributes", {}))
 
 
+def _get_settings(user_id: str) -> dict:
+    result = _users_table.get_item(Key={"user_id": user_id})
+    item = result.get("Item") or {}
+    return _ok({"coach_scope": item.get("coach_scope", "plan_only")})
+
+
+def _patch_settings(user_id: str, raw_body: str | None) -> dict:
+    if not raw_body:
+        return _err(400, "Request body required")
+    try:
+        payload = json.loads(raw_body)
+    except json.JSONDecodeError:
+        return _err(400, "Invalid JSON")
+
+    coach_scope = payload.get("coach_scope")
+    if coach_scope not in _COACH_SCOPES:
+        return _err(400, f"Field 'coach_scope' must be one of {sorted(_COACH_SCOPES)}")
+
+    try:
+        result = _users_table.update_item(
+            Key={"user_id": user_id},
+            UpdateExpression="SET coach_scope = :scope, updated_at = :now",
+            ConditionExpression="attribute_exists(#pk)",
+            ExpressionAttributeNames={"#pk": "user_id"},
+            ExpressionAttributeValues={
+                ":scope": coach_scope,
+                ":now": datetime.now(timezone.utc).isoformat(),
+            },
+            ReturnValues="ALL_NEW",
+        )
+    except ClientError as exc:
+        if exc.response["Error"]["Code"] == "ConditionalCheckFailedException":
+            # _ensure_profile runs before every route, so this should be
+            # unreachable in practice -- kept for the same defensive reason
+            # as _patch_day's cross-user 404 mapping.
+            return _err(404, "User profile not found")
+        raise
+
+    return _ok({"coach_scope": result["Attributes"]["coach_scope"]})
+
+
 def handler(event: dict, context) -> dict:
     route_key = event.get("routeKey", "")
     path_params = event.get("pathParameters") or {}
@@ -242,4 +287,8 @@ def handler(event: dict, context) -> dict:
         return _get_day(user_id, path_params.get("date", ""))
     if route_key == "PATCH /days/{date}":
         return _patch_day(user_id, path_params.get("date", ""), body)
+    if route_key == "GET /settings":
+        return _get_settings(user_id)
+    if route_key == "PATCH /settings":
+        return _patch_settings(user_id, body)
     return _err(400, f"Unhandled route: {route_key}")
