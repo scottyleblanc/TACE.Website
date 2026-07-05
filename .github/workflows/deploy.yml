@@ -72,7 +72,7 @@ jobs:
 
       - name: Update tracker-api Lambda
         run: |
-          zip -j tracker-api.zip app/train/lambda/days_api.py
+          zip -j tracker-api.zip app/train/lambda/days_api.py app/train/lambda/plan_merge.py
           aws lambda update-function-code \
             --function-name ${{ vars.TRACKER_LAMBDA_API }} \
             --zip-file fileb://tracker-api.zip \
@@ -80,7 +80,7 @@ jobs:
 
       - name: Update tracker-email Lambda
         run: |
-          zip -j tracker-email.zip app/train/lambda/daily_email.py
+          zip -j tracker-email.zip app/train/lambda/daily_email.py app/train/lambda/plan_merge.py
           aws lambda update-function-code \
             --function-name ${{ vars.TRACKER_LAMBDA_EMAIL }} \
             --zip-file fileb://tracker-email.zip \
@@ -92,4 +92,38 @@ jobs:
           aws lambda update-function-code \
             --function-name ${{ vars.TRACKER_LAMBDA_AUTH }} \
             --zip-file fileb://tracker-auth.zip \
+            --region ca-central-1
+
+      - name: Build and publish Anthropic SDK layer for tracker-coach
+        run: |
+          pip install anthropic \
+            --platform manylinux2014_x86_64 \
+            --python-version 3.12 \
+            --implementation cp \
+            --only-binary=:all: \
+            --target layer/python \
+            --no-cache-dir
+          cd layer && zip -r ../anthropic-layer.zip python && cd ..
+          LAYER_VERSION_ARN=$(aws lambda publish-layer-version \
+            --layer-name tracker-coach-anthropic-sdk \
+            --description "Anthropic Python SDK for the tracker-coach Lambda" \
+            --zip-file fileb://anthropic-layer.zip \
+            --compatible-runtimes python3.12 \
+            --compatible-architectures x86_64 \
+            --region ca-central-1 \
+            --query "LayerVersionArn" --output text)
+          aws lambda update-function-configuration \
+            --function-name ${{ vars.TRACKER_LAMBDA_COACH }} \
+            --layers "$LAYER_VERSION_ARN" \
+            --region ca-central-1
+          aws lambda wait function-updated \
+            --function-name ${{ vars.TRACKER_LAMBDA_COACH }} \
+            --region ca-central-1
+
+      - name: Update tracker-coach Lambda
+        run: |
+          zip -j tracker-coach.zip app/train/lambda/tracker_coach.py app/train/lambda/plan_merge.py
+          aws lambda update-function-code \
+            --function-name ${{ vars.TRACKER_LAMBDA_COACH }} \
+            --zip-file fileb://tracker-coach.zip \
             --region ca-central-1
