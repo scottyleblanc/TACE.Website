@@ -18,6 +18,8 @@ A map of the work: what was built, how it was documented, and where to find it.
 
 | Stage | What | Post | Status |
 |---|---|---|---|
+| 4 | AI coach implementation — Claude API endpoint, chat UI, a security gap closed before a second user | [Stage 4 — building the coach](/posts/train-stage-4-post/) | Complete |
+| 3 | Multi-tenant data model and AI coach spec — migrate single-user to real identity, spec the coach before building it | [Stage 3 — building for a user who isn't here yet](/posts/train-stage-3-post/) | Complete |
 | 2 | Security audit — auth, API, DynamoDB access, secrets, deployment pipeline | [Stage 2 — security audit](/posts/train-stage-2-post/) | Complete |
 | 1 | Infrastructure and seed data — DynamoDB table, plan seeded, single-user MVP | [Stage 1 — infrastructure and seed data](/posts/train-stage-1-post/) | Complete |
 
