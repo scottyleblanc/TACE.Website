@@ -87,7 +87,7 @@ existing `training-plan` table, and a GSI does not solve write-partitioning
    `sub`), SK = `date`. Mirror the existing item shape (`build_item()` in
    `scripts/seed_dynamo.py`) plus the `user_id` attribute.
 2. Retrieve the existing account's `user_id` (Cognito `sub`) from the User Pool
-   `tacedata-train-pool`. Write a one-time migration script that reads every
+   `<COGNITO_USER_POOL_NAME>`. Write a one-time migration script that reads every
    current item (keyed on `date`) and rewrites it under `{user_id: <sub>, date}`.
 3. **Repoint `DYNAMODB_TABLE` on BOTH Lambdas** — `tracker-api` *and*
    `tracker-email`. Both read this table; the migration breaks either one left

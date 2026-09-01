@@ -27,7 +27,7 @@ graph TD
     end
 
     subgraph Fastmail
-        MX[Email\nscott.leblanc@tacedata.ca]
+        MX[Email\n<OWNER_EMAIL>]
     end
 
     subgraph GitHub
@@ -217,7 +217,7 @@ aws acm describe-certificate `
 
 - Browse to `https://tacedata.ca` — site loads, padlock shows
 - Browse to `https://www.tacedata.ca` — site loads
-- Send test email to `scott.leblanc@tacedata.ca` — confirm receipt in Fastmail
+- Send test email to `<OWNER_EMAIL>` — confirm receipt in Fastmail
 
 ---
 

@@ -42,7 +42,7 @@ migration, not a code edit.
 **Verify + migrate**
 - [x] Confirm current state: `training-plan` keyed on `date` only, no `user_id`, `GET /days` uses `Scan` (spec [STEP 1])
 - [x] Create `training-plan-v2`: PK = `user_id` (Cognito `sub`), SK = `date`, mirroring the existing item shape + `user_id`
-- [x] Retrieve the owner's `user_id` (Cognito `sub`) from `tacedata-train-pool` — verified against a live access token (decoded in-browser), not just the pool record
+- [x] Retrieve the owner's `user_id` (Cognito `sub`) from `<COGNITO_USER_POOL_NAME>` — verified against a live access token (decoded in-browser), not just the pool record
 - [x] One-time migration script: read every `date`-keyed item, rewrite under `{user_id, date}` — `migrate_to_v2.py`, 105 items
 - [x] Repoint `DYNAMODB_TABLE` on **both** `tracker-api` and `tracker-email`
 - [x] Update IAM policies for the new table ARN on both execution roles [SEC] — additive inline policies; existing grants (incl. overrides access) untouched
@@ -186,7 +186,7 @@ removing the assumption that a user has one fixed-length, race-ending plan.
 - [x] `migrate_add_plan_id.py`: idempotent backfill, guarded truncate, cutover flag
 - [x] Truncate aborts if any candidate row carries `completed` or `notes` [SEC] — logged history is never deleted by the script
 - [x] Backfill run: 131 rows tagged `block-01` (78 plan + 53 override), `--verify` passed
-- [x] Confirm no IAM change needed — `tracker-email-execution-role` already held `GetItem` on `training-users` from Stage 3.9
+- [x] Confirm no IAM change needed — `<TRACKER_EMAIL_ROLE>` already held `GetItem` on `training-users` from Stage 3.9
 - [x] `USERS_TABLE` env var added to `tracker-email`
 
 ## Stage 3.16 — De-hardcode the plan shape
@@ -201,7 +201,7 @@ removing the assumption that a user has one fixed-length, race-ending plan.
 - [x] Coach prompt: never quote `[FACTS]` field names at the athlete (found in live validation)
 - [x] `[NOTES_LOG]` spans every block, so a reset doesn't erase logged history [SEC — injection boundary extended with it]
 - [x] `no_race_block_invents_no_goal` eval case added
-- [ ] Re-run the eval-harness gates against the rewritten prompt (needs `ANTHROPIC_API_KEY` or the `coach-evals` workflow)
+- [x] Re-run the eval-harness gates against the rewritten prompt — run via the `coach-evals` workflow on main (2026-08-31): 100% medical recall (7/7) and all 10 coach behavioural cases pass, including the new no-race case
 
 ## Stage 3.17 — Block 2, the consistency block
 
@@ -215,8 +215,9 @@ removing the assumption that a user has one fixed-length, race-ending plan.
 - [x] Flip `active_plan_id` to `block-02`; deploy `tracker-api`, `tracker-email`, `tracker-coach`, SPA
 - [x] Validate: 18 production checks (block scoping, `?plan_id=` history, override isolation, derived email length)
 - [x] Validate the coach live: no invented race; Block 1 notes still recalled while Block 2 is active
-- [ ] Browser validation of the SPA — `app.js` has never been parser-checked (no JS runtime on the build machine)
-- [ ] Add a dry-run path to the email validation so testing it can't send to the real recipient
+- [x] Add a dry-run path to the email validation so testing it can't send to the real recipient — `dry_run` on the invocation event; verified composing without sending
+- [x] Static SPA check in place of a parser — `scripts/check_spa_ids.py` verifies every id the JS looks up exists in the HTML, and flags stale markup. Passes: 31 ids consistent
+- [ ] Browser validation of the SPA — still outstanding. The id check catches renamed-element bugs, but `app.js` has never been parsed by a JS engine (none installed on the build machine)
 
 ---
 

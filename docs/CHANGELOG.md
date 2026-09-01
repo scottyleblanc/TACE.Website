@@ -6,6 +6,51 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+---
+
+## [3.2.1] - 2026-08-31
+
+### Added
+- `app/train/scripts/check_spa_ids.py` — static consistency check between the SPA's JS and its HTML, in both directions. The SPA has no build step, bundler or test runner, so a renamed element id fails silently in the browser; this catches that class of bug without needing a JS runtime installed.
+- `app/train/lambda/daily_email.py` — a `dry_run` key on the invocation event composes and returns the briefing without calling SES. The only way to exercise this Lambda was a `test_date` invoke, which sends real mail to the real recipient — as happened while validating the Block 2 cutover.
+
+### Fixed
+- `docs/CHANGELOG.md` — restructured into the per-release `## [X.Y.Z] - date` headings `VERSIONING.md` requires. Everything since v3.1.0 had been accumulating under `[Unreleased]`, so entries for Stages 3.9–3.14 are now filed under v3.1.0 and Phase Five under v3.2.0.
+- `app/train/docs/STAGES.md` — recorded since Stage 3.10 that the `tracker-coach` CI deploy step had never been exercised through a real run. It was, on 2026-08-31, by the Stage 3.15–3.17 merge.
+
+### Security
+- Git tags `v0.10.0` and `v0.11.0` on the remote still pointed at pre-scrub commits, which carried the raw AWS account ID, a CloudFront distribution ID and the deploy role ARN in `config/`. The July 2026 history rewrite corrected `main` but never updated the tags, leaving them as the last publicly reachable pointers to that content on a public repo. Force-updated to the scrubbed commits after confirming no pull-request ref reaches the old ones; the raw account ID now appears in no tag and not in `main`.
+- Swept the remaining live infrastructure identifiers out of tracked files into placeholders — S3 bucket names, Cognito user-pool and app-client names, the three Lambda execution-role names, and the GitHub deploy role — across seven files including a published blog post. `CLAUDE.md` classes all of these as not-for-public-repo, and the earlier scrub had only redacted account and distribution IDs.
+
+---
+
+## [3.2.0] - 2026-08-31
+
+### Added
+- **Training blocks** (Stage 3.15) — a user now works through several sequential training blocks rather than one fixed plan. Every plan and override row carries a `plan_id`; the `training-users` record names the current one in `active_plan_id`. Because block date ranges never overlap, `{user_id, date}` stays unique and `plan_id` is a plain attribute — an in-place attribute add, not a fourth new-table migration like Stages 3.9 and 3.12.
+- `app/train/lambda/plan_merge.py` — `filter_to_plan()`, the shared block-scoping helper used by all three Lambda consumers.
+- `GET /days?plan_id=<id>` — reads a past block. Completed blocks stay readable, and stay writable via `PATCH /days/{date}`, so history can still be corrected after a block ends.
+- `app/train/scripts/migrate_add_plan_id.py` — Stage 3.15 migration with three independent operations: `--plan-id` backfill (idempotent; only ever tags rows missing the attribute), `--truncate-from` (retires the unlived tail of an abandoned block; dry-run by default, `--yes` to execute), and `--set-active-plan` (the cutover). The truncate aborts outright if any candidate row carries `completed` or `notes` — logged history is never deleted by this script.
+- `app/train/lambda/coach_prompts.py` — block-progress facts (`block_day`, `block_total_days`, `block_active_days`, `block_active_days_completed`), the meaningful scoreboard when a block has no race to count down to.
+- `dev/block-02-days.csv`, `dev/block-02-weeks.csv` (Stage 3.17) — Block 2, an 8-week consistency block (2026-09-05 → 2026-10-30, 56 days): 5 active days a week at 60 min, two run/walks (one always Saturday, never on consecutive days) and three yoga/stretching/cross-training days, with no long run and no goal race.
+- `no_race_block_invents_no_goal` eval case — guards against the coach filling a null `race_date` with a plausible-sounding event instead of saying there isn't one.
+
+### Changed
+- `app/train/lambda/days_api.py`, `daily_email.py`, `tracker_coach.py` (Stage 3.15) — all three now scope plan reads to the caller's active block via `plan_merge.filter_to_plan()`. `tracker_coach.py` reads the users record once per turn for both `coach_scope` and `active_plan_id`, and splits the old `_load_merged_plan()` into `_load_plan_rows()` (all blocks, one query) and `_merge_active_block()` — so `[NOTES_LOG]` can span every block while facts and the plan window stay scoped to the current one. `daily_email.py` gained an optional `USERS_TABLE` read.
+- `app/train/src/app.js`, `index.html`, `style.css` (Stage 3.16) — plan shape is derived from the block the API returns rather than hardcoded: `planShape()` computes total days, active days and start/end; the race-day countdown became a block-day counter; the progress bar computes its own denominator. 10K branding removed from the page title, headings and login copy.
+- `app/train/lambda/daily_email.py` (Stage 3.16) — `_active_day_body()`/`_rest_day_body()` take the block length, so "Day N of 105" is now "Day N of {total}".
+- `app/train/lambda/coach_prompts.py` (Stage 3.16) — the coach no longer opens by promising a 10K. A null `race_date`/`weeks_to_race` is stated plainly as "no race in this block" instead of being filled with an invented event, `[NOTES_LOG]` is described as spanning earlier blocks, and `[FACTS]` field names are never quoted back at the athlete.
+- `app/train/scripts/seed_dynamo.py` — takes `--plan-id` (required), `--days-csv` and `--weeks-csv`, so any block can be seeded from its own CSVs.
+- `app/train/docs/STAGES.md` — the daily-email schedule was recorded as `cron(0 11 * * ? *)` (11:00 UTC / 7am EDT); the live EventBridge rule fires at `cron(0 8 * * ? *)` (08:00 UTC / 4am EDT). The rule is authoritative and the doc has been corrected.
+
+### Security
+- `app/train/scripts/migrate_add_plan_id.py` (Stage 3.15) — the truncate operation refuses to delete any row carrying `completed` or `notes`, aborting with the offending dates rather than offering a `--force` override: retiring an abandoned block must never be able to destroy logged history. It is also dry-run by default, requiring an explicit `--yes` to execute, and the backfill only ever writes to rows missing `plan_id` so a re-run cannot relabel a correct row.
+- `app/train/lambda/coach_prompts.py` (Stage 3.16) — the notes-injection boundary now explicitly covers notes carried over from earlier training blocks, which `[NOTES_LOG]` began spanning in this stage; those notes are cited as history but can never be presented as the current plan or used to contradict `[FACTS]`.
+
+---
+
+## [3.1.0] - 2026-07-05
+
 ### Added
 - `app/train/docs/IDENTITY-FOUNDATION-SPEC.md`, `AI-COACH-ENDPOINT-SPEC.md`, `AI-COACH-PROMPTS-AND-EVALS-SPEC.md` — authoritative specs for the identity foundation and AI coach, superseding the prior Phase Three/Four plan in `STAGES.md`/`TODO.md`.
 - `app/train/scripts/migrate_to_v2.py` — one-time migration tool (with `--verify`) copying `training-plan` into the `user_id`-partitioned `training-plan-v2`, preserving user state.
@@ -21,13 +66,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `training-plan-overrides-v2` DynamoDB table (Stage 3.12) and `app/train/scripts/migrate_overrides_to_v2.py` — partitions the physio override layer by `user_id`, same shape as the Stage 3.9 plan-table migration.
 - `app/train/src/coach.js` (Stage 3.13) — the AI coach's chat UI: thread create/rename/delete/switch, chat bubbles distinguishing user/coach/rail-deferred messages, a dependency-free markdown-lite renderer, and a `coach_scope` toggle. Wired into `index.html`/`app.js`/`style.css` as a second SPA view toggled from the dashboard header.
 - `app/train/lambda/coach_prompts.py` / `tracker_coach.py` (Stage 3.14) — the coach now receives a whole-plan `[NOTES_LOG]` digest (`{date, notes}` for every logged day, built from the already-loaded merged view), so it can review the athlete's full journal history on request instead of only the ~2-week plan window; reciting logged notes is treated as data retrieval and no longer trips the medical backstop. New `review_logged_notes` eval case.
-- **Training blocks** (Stage 3.15) — a user now works through several sequential training blocks rather than one fixed plan. Every plan and override row carries a `plan_id`; the `training-users` record names the current one in `active_plan_id`. Because block date ranges never overlap, `{user_id, date}` stays unique and `plan_id` is a plain attribute — an in-place attribute add, not a fourth new-table migration like Stages 3.9 and 3.12.
-- `app/train/lambda/plan_merge.py` — `filter_to_plan()`, the shared block-scoping helper used by all three Lambda consumers.
-- `GET /days?plan_id=<id>` — reads a past block. Completed blocks stay readable, and stay writable via `PATCH /days/{date}`, so history can still be corrected after a block ends.
-- `app/train/scripts/migrate_add_plan_id.py` — Stage 3.15 migration with three independent operations: `--plan-id` backfill (idempotent; only ever tags rows missing the attribute), `--truncate-from` (retires the unlived tail of an abandoned block; dry-run by default, `--yes` to execute), and `--set-active-plan` (the cutover). The truncate aborts outright if any candidate row carries `completed` or `notes` — logged history is never deleted by this script.
-- `app/train/lambda/coach_prompts.py` — block-progress facts (`block_day`, `block_total_days`, `block_active_days`, `block_active_days_completed`), the meaningful scoreboard when a block has no race to count down to.
-- `dev/block-02-days.csv`, `dev/block-02-weeks.csv` (Stage 3.17) — Block 2, an 8-week consistency block (2026-09-05 → 2026-10-30, 56 days): 5 active days a week at 60 min, two run/walks (one always Saturday, never on consecutive days) and three yoga/stretching/cross-training days, with no long run and no goal race.
-- `no_race_block_invents_no_goal` eval case — guards against the coach filling a null `race_date` with a plausible-sounding event instead of saying there isn't one.
 
 ### Changed
 - `app/train/lambda/days_api.py`, `daily_email.py` — repartitioned by `user_id` (Cognito `sub`) instead of `date` alone: routes derive `user_id` from verified JWT claims (never body/path), `GET /days` uses `Query` instead of `Scan`, and cross-user access returns 404. `daily_email.py`'s per-user briefing logic is extracted into `_brief_user()` so a later multi-user fan-out is a loop, not a rewrite.
@@ -38,12 +76,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `.github/workflows/deploy.yml` — added the `tracker-auth` Lambda deploy step; trimmed the generated SPA config; bundles `plan_merge.py`/`coach_prompts.py` into the relevant Lambda zips; builds/publishes the Anthropic SDK Lambda layer and deploys `tracker-coach`; syncs the tracker SPA with `Cache-Control: no-cache` (see Fixed).
 - `app/train/lambda/plan_merge.py` — override lookups changed from a table-wide `Scan` to a `Query` scoped to the caller's `user_id` (Stage 3.12); used identically by all three consumers.
 - `app/train/lambda/coach_prompts.py` — rail and coach backstop prompts re-tuned after real usage showed both over-triggering on any body-part *mention* rather than an actual reported symptom (see Security).
-- `app/train/lambda/days_api.py`, `daily_email.py`, `tracker_coach.py` (Stage 3.15) — all three now scope plan reads to the caller's active block via `plan_merge.filter_to_plan()`. `tracker_coach.py` reads the users record once per turn for both `coach_scope` and `active_plan_id`, and splits the old `_load_merged_plan()` into `_load_plan_rows()` (all blocks, one query) and `_merge_active_block()` — so `[NOTES_LOG]` can span every block while facts and the plan window stay scoped to the current one. `daily_email.py` gained an optional `USERS_TABLE` read.
-- `app/train/src/app.js`, `index.html`, `style.css` (Stage 3.16) — plan shape is derived from the block the API returns rather than hardcoded: `planShape()` computes total days, active days and start/end; the race-day countdown became a block-day counter; the progress bar computes its own denominator. 10K branding removed from the page title, headings and login copy.
-- `app/train/lambda/daily_email.py` (Stage 3.16) — `_active_day_body()`/`_rest_day_body()` take the block length, so "Day N of 105" is now "Day N of {total}".
-- `app/train/lambda/coach_prompts.py` (Stage 3.16) — the coach no longer opens by promising a 10K. A null `race_date`/`weeks_to_race` is stated plainly as "no race in this block" instead of being filled with an invented event, `[NOTES_LOG]` is described as spanning earlier blocks, and `[FACTS]` field names are never quoted back at the athlete.
-- `app/train/scripts/seed_dynamo.py` — takes `--plan-id` (required), `--days-csv` and `--weeks-csv`, so any block can be seeded from its own CSVs.
-- `app/train/docs/STAGES.md` — the daily-email schedule was recorded as `cron(0 11 * * ? *)` (11:00 UTC / 7am EDT); the live EventBridge rule fires at `cron(0 8 * * ? *)` (08:00 UTC / 4am EDT). The rule is authoritative and the doc has been corrected.
 
 ### Fixed
 - `deploy.yml` / tracker SPA — the S3 sync set no `Cache-Control` header on any file, so browsers applied heuristic caching and kept serving a stale SPA after a deploy even though the CloudFront cache had been invalidated (worked fine in Incognito, which starts with no cache). Fixed by syncing with `Cache-Control: no-cache` so browsers always revalidate with the origin.
@@ -55,9 +87,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `app/train/lambda/coach_prompts.py` — the coach's medical backstop was tightened after the eval harness caught it giving a training recommendation ("hold off on the session") alongside a correct referral to the physiotherapist; the instruction now explicitly forbids any training opinion in that path, not just a clean redirect.
 - `training-plan-overrides` (Stage 3.12) — this table was global, un-partitioned reference data, so any caller's plan read could pick up another user's physio overrides regardless of whose account they belonged to. Migrated to a `user_id`-partitioned table and scoped every lookup to the caller; proven with a fixture identity that no longer sees another user's override fields.
 - `app/train/lambda/coach_prompts.py` — the rail classifier and the coach's own medical backstop were both judging by *topic* (any body-part word) instead of *intent* (an actual reported symptom, pain, or injury), causing real over-triggering on messages like a bare "leg" or a positive status update. Both prompts re-tuned with explicit examples distinguishing the two; regression cases added to the eval harness.
-- `app/train/scripts/migrate_add_plan_id.py` (Stage 3.15) — the truncate operation refuses to delete any row carrying `completed` or `notes`, aborting with the offending dates rather than offering a `--force` override: retiring an abandoned block must never be able to destroy logged history. It is also dry-run by default, requiring an explicit `--yes` to execute, and the backfill only ever writes to rows missing `plan_id` so a re-run cannot relabel a correct row.
-- `app/train/lambda/coach_prompts.py` (Stage 3.16) — the notes-injection boundary now explicitly covers notes carried over from earlier training blocks, which `[NOTES_LOG]` began spanning in this stage; those notes are cited as history but can never be presented as the current plan or used to contradict `[FACTS]`.
 - Security hardening tracked privately (see `TACE.Website-private`).
+
+---
 
 ## [0.20.0] - 2026-04-06
 

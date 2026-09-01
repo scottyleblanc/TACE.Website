@@ -1,8 +1,14 @@
 """
 daily_email.py -- EventBridge-triggered Lambda for daily training briefing emails.
 
-Fires daily at 11:00 UTC (7am EDT) via EventBridge rule tracker-daily-email.
+Fires daily at 08:00 UTC (4am EDT) via EventBridge rule tracker-daily-email.
 Sends one of two email formats depending on whether today is an active day or rest day.
+
+Invocation event (both keys optional):
+  test_date  -- ISO date to brief instead of today
+  dry_run    -- compose and return the briefing without calling SES. Use this
+                when testing: a bare test_date invoke sends real mail to the
+                real recipient.
 
 Active day:  session type, detail, coaching focus, minutes, run:walk ratio, streak, link
 Rest day:    recovery note, tomorrow's session preview, streak, link
@@ -17,7 +23,7 @@ remain in the same partition.
 Environment variables:
   DYNAMODB_TABLE  -- DynamoDB table name (training-plan-v2)
   SES_SENDER      -- From address (noreply@tacedata.ca)
-  RECIPIENT       -- To address (scott.leblanc@tacedata.ca)
+  RECIPIENT       -- To address (<OWNER_EMAIL>)
   OWNER_USER_ID   -- Cognito sub of the single active user
   USERS_TABLE     -- Optional. Users table, read for active_plan_id (training-users)
   OVERRIDES_TABLE -- Optional. DynamoDB overrides table name (training-plan-overrides-v2)
@@ -204,9 +210,15 @@ def _send(recipient: str, subject: str, body: str) -> None:
         raise
 
 
-def _brief_user(user_id: str, recipient: str, today_str: str) -> str | None:
-    """Compose and send one user's briefing for today, scoped to their partition.
-    Returns the subject sent, or None if today is outside that user's plan window."""
+def _brief_user(user_id: str, recipient: str, today_str: str, dry_run: bool = False) -> dict | None:
+    """Compose one user's briefing for today, scoped to their partition, and send
+    it unless dry_run is set. Returns {subject, body, sent}, or None if today is
+    outside that user's plan window.
+
+    dry_run exists because the only way to exercise this Lambda is to invoke it
+    with a test_date, and without it that puts a real briefing in a real inbox --
+    which is exactly what happened while validating the Block 2 cutover.
+    """
     plan_id = _active_plan_id(user_id)
     days = plan_merge.filter_to_plan(_query_user(user_id), plan_id)
 
@@ -233,18 +245,23 @@ def _brief_user(user_id: str, recipient: str, today_str: str) -> str | None:
         tomorrow_day = _day_for(days, (date.fromisoformat(today_str) + timedelta(days=1)).isoformat())
         subject, body = _rest_day_body(today_day, tomorrow_day, streak, total_days)
 
+    if dry_run:
+        logger.info("[DRY RUN] composed briefing for %s, not sent: %s", today_str, subject)
+        return {"subject": subject, "body": body, "sent": False}
+
     _send(recipient, subject, body)
-    return subject
+    return {"subject": subject, "body": body, "sent": True}
 
 
 def handler(event: dict, context) -> dict:
     today_str = event.get("test_date") or date.today().isoformat()
-    logger.info("daily_email invoked for %s", today_str)
+    dry_run = bool(event.get("dry_run"))
+    logger.info("daily_email invoked for %s%s", today_str, " [DRY RUN]" if dry_run else "")
 
     # Single-recipient today. Multi-user fan-out (deferred) loops the users table
     # here -- resolving (user_id, email) pairs and calling _brief_user for each.
-    subject = _brief_user(_OWNER_USER_ID, _RECIPIENT, today_str)
+    result = _brief_user(_OWNER_USER_ID, _RECIPIENT, today_str, dry_run)
 
-    if subject is None:
+    if result is None:
         return {"statusCode": 200, "body": "outside plan window"}
-    return {"statusCode": 200, "body": json.dumps({"subject": subject})}
+    return {"statusCode": 200, "body": json.dumps(result)}
