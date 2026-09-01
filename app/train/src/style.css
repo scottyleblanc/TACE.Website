@@ -52,16 +52,11 @@ body {
   margin-bottom: 8px;
 }
 
+/* Carries the 28px gap before the login button that .login-countdown used to
+   provide, now that the race-day countdown element is gone. */
 .login-sub {
   color: #71717a;
   font-size: 0.9rem;
-  margin-bottom: 6px;
-}
-
-.login-countdown {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #2563eb;
   margin-bottom: 28px;
 }
 

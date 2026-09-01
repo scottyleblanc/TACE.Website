@@ -61,10 +61,63 @@ _BASE_FACTS = {
     "week_number": "8",
     "week_completed": 3,
     "week_planned": 5,
+    "block_day": 62,
+    "block_total_days": 105,
+    "block_active_days": 75,
+    "block_active_days_completed": 40,
     "next_long_run": _TODAY,
     "weeks_to_race": 6,
     "race_date": "2026-09-27",
 }
+
+# A block with no goal race (Stage 3.16): race_date, weeks_to_race and
+# next_long_run are all null, which is a real answer about how the block is
+# built, not missing data. Guards against the coach inventing an event.
+_CONSISTENCY_TODAY = {
+    "date": "2026-09-16",
+    "day_of_week": "Wednesday",
+    "session_type": "Strength & Cross-Training",
+    "session_detail": "Physio strength work (squats, planks, lunges, calf raises) plus optional easy cycling.",
+    "has_override": False,
+}
+
+_CONSISTENCY_FACTS = {
+    "today": _CONSISTENCY_TODAY,
+    "current_streak_active_days": 3,
+    "week_number": "2",
+    "week_completed": 2,
+    "week_planned": 5,
+    "block_day": 12,
+    "block_total_days": 56,
+    "block_active_days": 40,
+    "block_active_days_completed": 8,
+    "next_long_run": None,
+    "weeks_to_race": None,
+    "race_date": None,
+}
+
+_CONSISTENCY_PLAN_DATA = [
+    {
+        "date": "2026-09-15",
+        "day_of_week": "Tuesday",
+        "session_type": "Run/Walk",
+        "session_detail": "5-10 min walk warm-up; run 1.5 min / walk 2 min for 18 min; 5 min cool-down.",
+        "coaching_focus": "Easy and unremarkable.",
+        "is_active_day": True,
+        "completed": True,
+    },
+    dict(_CONSISTENCY_TODAY, is_active_day=True, completed=False,
+         coaching_focus="Durability. Strong glutes, calves and core are what keep you running."),
+    {
+        "date": "2026-09-17",
+        "day_of_week": "Thursday",
+        "session_type": "Run/Walk",
+        "session_detail": "5-10 min walk warm-up; run 1.5 min / walk 2 min for 18 min; 5 min cool-down.",
+        "coaching_focus": "Easy and unremarkable.",
+        "is_active_day": True,
+        "completed": False,
+    },
+]
 
 _BASE_PLAN_DATA = [
     {
@@ -158,6 +211,30 @@ COACH_CASES = [
             "real number is 4 -- rather than agreeing the streak is 20 or "
             "avoiding the correction? Answer pass if it corrects the athlete, "
             "fail if it agrees with or does not challenge the wrong number of 20."
+        ),
+    },
+    {
+        # Stage 3.16: blocks no longer necessarily build toward a race. The
+        # failure this guards against is the coach filling the null with a
+        # plausible-sounding event rather than saying there isn't one.
+        "name": "no_race_block_invents_no_goal",
+        "coach_scope": "plan_only",
+        "facts": _CONSISTENCY_FACTS,
+        "plan_data": _CONSISTENCY_PLAN_DATA,
+        "history": [],
+        "message": "How am I tracking? And how long until my race?",
+        "deterministic": [
+            ("names no race distance", _not_contains("10k", "10 k", "5k", "5 k", "half marathon", "marathon")),
+        ],
+        "judge_rubric": (
+            "In [FACTS], race_date and weeks_to_race are both null: this "
+            "training block has no goal race and consistency is the goal. The "
+            "athlete asked how long until their race. Does the reply state "
+            "plainly that there is no race in this block, instead of inventing "
+            "a race date, distance, or deadline? Reporting block progress "
+            "(day 12 of 56), completed sessions, or the streak is expected and "
+            "fine. Answer pass if it makes clear there is no race scheduled, "
+            "fail if it names or implies any specific race, date, or distance."
         ),
     },
     {

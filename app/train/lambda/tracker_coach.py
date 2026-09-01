@@ -22,6 +22,12 @@ Data model -- conversations table, PK user_id, SK sk:
   CONV#{conversation_id}       -- thread metadata (title, created_at, updated_at, message_count)
   MSG#{conversation_id}#{ts}   -- one message (role, content, created_at)
 
+Training blocks (Stage 3.15): facts and the plan window are scoped to the
+user's active block, so the coach never coaches off a plan the athlete has
+moved on from. [NOTES_LOG] is the deliberate exception -- it spans every block,
+so resetting the plan doesn't erase the athlete's logged history from the
+coach's view.
+
 Prompt assembly, facts computation, and rail classification live in
 coach_prompts.py (zero AWS/env dependencies, imported by both this Lambda and
 app/train/evals/run_coach_evals.py) so the eval harness tests the literal
@@ -318,10 +324,10 @@ def _rail_check(message_content: str) -> bool:
         return True
 
 
-def _load_merged_plan(user_id: str) -> list[dict]:
-    """The user's full plan, seed + active overrides merged -- same view days_api.py
-    and daily_email.py show, via the shared plan_merge module. The coach must never
-    read the raw seed alone or it will contradict the physio-adjusted plan."""
+def _load_plan_rows(user_id: str) -> list[dict]:
+    """Every plan row in the caller's partition, across all training blocks,
+    date-sorted. One query serves both consumers below -- the active block (for
+    facts and the plan window) and the whole-plan journal (for [NOTES_LOG])."""
     items = []
     query_kwargs: dict = {"KeyConditionExpression": Key("user_id").eq(user_id)}
     while True:
@@ -332,28 +338,46 @@ def _load_merged_plan(user_id: str) -> list[dict]:
             break
         query_kwargs["ExclusiveStartKey"] = last
     items.sort(key=lambda d: d["date"])
-
-    if _overrides_table:
-        overrides = plan_merge.query_overrides(_overrides_table, user_id)
-        items = plan_merge.apply_overrides_to_items(items, overrides)
-
     return items
 
 
-def _get_coach_scope(user_id: str) -> str:
-    result = _users_table.get_item(Key={"user_id": user_id})
-    return (result.get("Item") or {}).get("coach_scope", "plan_only")
+def _merge_active_block(rows: list[dict], user_id: str, plan_id: str | None) -> list[dict]:
+    """The active block's days with overrides merged -- the same view days_api.py
+    and daily_email.py show, via the shared plan_merge module. The coach must never
+    read the raw seed alone or it will contradict the physio-adjusted plan."""
+    days = plan_merge.filter_to_plan(rows, plan_id)
+
+    if _overrides_table:
+        overrides = plan_merge.query_overrides(_overrides_table, user_id, plan_id)
+        days = plan_merge.apply_overrides_to_items(days, overrides)
+
+    return days
+
+
+def _user_record(user_id: str) -> dict:
+    """The caller's users/profile row. Read once per coach turn -- it carries
+    both coach_scope and active_plan_id, so this avoids two GetItems for one item."""
+    return _users_table.get_item(Key={"user_id": user_id}).get("Item") or {}
 
 
 def _run_coach_turn(user_id: str, content: str, history: list[dict]) -> str:
-    days = _load_merged_plan(user_id)
+    profile = _user_record(user_id)
+    plan_id = profile.get("active_plan_id")
+
+    all_rows = _load_plan_rows(user_id)
+    days = _merge_active_block(all_rows, user_id, plan_id)
+
     today_str = date.today().isoformat()
     facts = coach_prompts.compute_facts(days, today_str)
     plan_data = coach_prompts.plan_window(days, today_str)
-    notes = coach_prompts.notes_log(days)
-    coach_scope = _get_coach_scope(user_id)
+    # The journal deliberately spans every block, not just the active one, so a
+    # reset doesn't erase the athlete's history from the coach's view. Safe to
+    # build from raw rows: notes are user state, untouched by the override merge.
+    notes = coach_prompts.notes_log(all_rows)
 
-    system_prompt = coach_prompts.build_coach_system_prompt(coach_scope, facts, plan_data, notes)
+    system_prompt = coach_prompts.build_coach_system_prompt(
+        profile.get("coach_scope", "plan_only"), facts, plan_data, notes,
+    )
 
     client = _get_anthropic_client()
     response = client.messages.create(

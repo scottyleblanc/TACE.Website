@@ -1,15 +1,20 @@
 """
-seed_dynamo.py -- One-time DynamoDB seeder for the training-plan table.
+seed_dynamo.py -- DynamoDB seeder for a training block.
 
-Reads training_plan_days.csv and training_plan_weeks.csv from dev/ and
-loads all 105 days into DynamoDB. Safe to re-run -- re-seeds unchanged
-items unless --preserve-state is passed (which skips completed days).
+Reads a days CSV and a weeks CSV from dev/ and loads the block into DynamoDB,
+tagging every row with its plan_id (Stage 3.15). Safe to re-run -- re-seeds
+unchanged items unless --preserve-state is passed (which skips completed days).
+
+A user holds several sequential blocks in one partition, so --plan-id is
+required: an untagged seed would be invisible to the plan-scoped readers in
+days_api.py, daily_email.py and tracker_coach.py once a block is active.
 
 Usage:
-    python app/train/scripts/seed_dynamo.py
-    python app/train/scripts/seed_dynamo.py --dry-run
-    python app/train/scripts/seed_dynamo.py --preserve-state
-    python app/train/scripts/seed_dynamo.py --profile tace-aws-admin --region ca-central-1
+    python app/train/scripts/seed_dynamo.py --user-id <SUB> --plan-id block-02 \
+        --days-csv dev/block-02-days.csv --weeks-csv dev/block-02-weeks.csv --dry-run
+    python app/train/scripts/seed_dynamo.py --user-id <SUB> --plan-id block-02 \
+        --days-csv dev/block-02-days.csv --weeks-csv dev/block-02-weeks.csv
+    python app/train/scripts/seed_dynamo.py --user-id <SUB> --plan-id block-02 --preserve-state
 """
 
 import argparse
@@ -59,9 +64,10 @@ def load_weeks(path: Path) -> dict[int, dict]:
     return weeks
 
 
-def build_item(row: dict, week: dict, user_id: str) -> dict:
+def build_item(row: dict, week: dict, user_id: str, plan_id: str) -> dict:
     item: dict = {
         "user_id": user_id,
+        "plan_id": plan_id,
         "date": row["date"].strip(),
         "day_of_week": row["day_of_week"].strip(),
         "week_number": int(row["week_number"]),
@@ -156,6 +162,9 @@ def main() -> None:
         description="Seed the training-plan DynamoDB table from the plan CSVs."
     )
     parser.add_argument("--user-id", required=True, help="Owner's Cognito sub (the user_id partition key)")
+    parser.add_argument("--plan-id", required=True, help="Training block this seed belongs to (e.g. block-02)")
+    parser.add_argument("--days-csv", type=Path, default=DAYS_CSV, help="Days CSV to seed from")
+    parser.add_argument("--weeks-csv", type=Path, default=WEEKS_CSV, help="Weeks CSV to seed from")
     parser.add_argument("--profile", default="tace-aws-admin", help="AWS CLI profile name")
     parser.add_argument("--region", default="ca-central-1", help="AWS region")
     parser.add_argument("--table", default=TABLE_NAME, help="DynamoDB table name")
@@ -171,22 +180,22 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    for path in (DAYS_CSV, WEEKS_CSV):
+    for path in (args.days_csv, args.weeks_csv):
         if not path.exists():
             print(f"[ERROR] CSV not found: {path}", file=sys.stderr)
             sys.exit(1)
 
-    print(f"[INFO]  Loading weeks from {WEEKS_CSV.name}")
-    weeks = load_weeks(WEEKS_CSV)
+    print(f"[INFO]  Loading weeks from {args.weeks_csv.name}")
+    weeks = load_weeks(args.weeks_csv)
 
-    print(f"[INFO]  Loading days from {DAYS_CSV.name}")
+    print(f"[INFO]  Loading days from {args.days_csv.name}")
     items: list[dict] = []
-    with open(DAYS_CSV, encoding="utf-8", newline="") as f:
+    with open(args.days_csv, encoding="utf-8", newline="") as f:
         for row in csv.DictReader(f):
             wn = int(row["week_number"])
-            items.append(build_item(row, weeks[wn], args.user_id))
+            items.append(build_item(row, weeks[wn], args.user_id, args.plan_id))
 
-    print(f"[INFO]  {len(items)} days loaded from CSV")
+    print(f"[INFO]  {len(items)} days loaded, tagged plan_id={args.plan_id}")
 
     if args.dry_run:
         print("[INFO]  Dry run -- no writes to DynamoDB\n")

@@ -12,6 +12,11 @@ same as training-plan-v2 -- every query here is scoped to the caller, never a
 table-wide scan, so one user's physio overrides can never apply to (or leak
 into) another user's plan.
 
+Stage 3.15 added plan_id: one user now holds several sequential training
+blocks, and both plan rows and override rows carry the block they belong to.
+Because block date ranges never overlap, plan_id is a plain attribute rather
+than part of the key -- {user_id, date} is still unique across every block.
+
 Deployed by being zipped alongside each caller's own file (zip -j junks paths,
 so this module lands at the same flat level and imports as a top-level module).
 """
@@ -58,23 +63,46 @@ def merge_override(seed_item: dict, override_item: dict) -> dict:
     return merged
 
 
-def query_overrides(overrides_table, user_id: str) -> dict:
+def query_overrides(overrides_table, user_id: str, plan_id: str | None = None) -> dict:
     """Query the caller's overrides only; returns {date: override_item} for
     active overrides. Never a table-wide scan -- overrides are partitioned by
     user_id exactly like the plan table, so this can't read another user's
-    physio adjustments."""
+    physio adjustments.
+
+    plan_id (Stage 3.15) narrows the result to one training block, so the merge
+    dict stays small as blocks accumulate. The filter is deliberately lenient:
+    a row with no plan_id at all is kept rather than dropped. Two reasons --
+    it makes the code safe to deploy before the backfill has run, and it can't
+    cause a wrong merge either way, because plan date ranges never overlap
+    (that non-overlap is exactly why plan_id is a plain attribute here and not
+    part of the key)."""
     overrides: dict = {}
     kwargs: dict = {"KeyConditionExpression": Key("user_id").eq(user_id)}
     while True:
         result = overrides_table.query(**kwargs)
         for item in result.get("Items", []):
-            if item.get("override_active"):
-                overrides[item["date"]] = item
+            if not item.get("override_active"):
+                continue
+            if plan_id and item.get("plan_id") not in (None, plan_id):
+                continue
+            overrides[item["date"]] = item
         last = result.get("LastEvaluatedKey")
         if not last:
             break
         kwargs["ExclusiveStartKey"] = last
     return overrides
+
+
+def filter_to_plan(items: list[dict], plan_id: str | None) -> list[dict]:
+    """Narrow plan rows to one training block.
+
+    plan_id=None means "no active block configured" and returns everything --
+    the pre-Stage-3.15 behaviour, so an unset active_plan_id degrades to the
+    old full-partition view rather than an empty dashboard. Rows with no
+    plan_id are kept for the same deploy-ordering reason as query_overrides."""
+    if not plan_id:
+        return items
+    return [i for i in items if i.get("plan_id") in (None, plan_id)]
 
 
 def apply_override_to_item(seed_item: dict, overrides: dict) -> dict:
