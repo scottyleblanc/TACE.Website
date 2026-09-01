@@ -27,17 +27,23 @@ decide to add them (see [Deferred] at the end).
 
 ---
 
-## Current Focus: Phase Four complete, coach live end-to-end in the browser
+## Current Focus: Phase Five complete, Block 2 live from 2026-09-05
 
-Stages 3.9–3.13 are all live — see Completed Stages below. The AI coach has a
-working chat UI in the SPA (Stage 3.13) on top of the backend from
-3.10–3.11, `training-plan-overrides` is now partitioned by `user_id` (Stage
-3.12, closing a real gap left open at Stage 3.9), and the rail/coach prompts
-were re-tuned once against real usage after launch (folded into Stage 3.11's
-write-up below). Loose ends carried forward: the old `training-plan` and
-`training-plan-overrides` (v1) tables are retained pending a soak period
-(Steps 50 and 71 in the private runbook), and the Stage 3.9 cutover was
-validated via direct Lambda invocation rather than a live browser session.
+Stages 3.9–3.14 (Phases Three and Four) are all live. Phase Five (Stages
+3.15–3.17) added training blocks, removed every hardcoded assumption about
+plan shape, and reset the athlete onto a new goal.
+
+The 15-week 10K plan is now **Block 1** — truncated at 2026-08-31 with its 78
+lived days, 17 completed sessions and 10 journal entries intact. **Block 2** is
+an 8-week consistency block (2026-09-05 → 2026-10-30) with no race: two
+run/walks a week, three yoga/stretching/cross-training days, and no long run.
+
+Loose ends carried forward: the old v1 `training-plan` and
+`training-plan-overrides` tables are still retained pending a soak period
+(Steps 50 and 71 in the private runbook); the coach eval-harness gates have not
+been re-run against the Stage 3.16 prompt rewrite; and no cutover since Stage
+3.9 has been validated through a live browser session rather than direct Lambda
+invocation.
 
 Stages 3.1–3.6 (Phase One — MVP) are complete and live. Phase Two (security audit,
 Stage 3.8) is tracked in the private repo. Stage 3.7 (Public View) remains parked.
@@ -123,7 +129,7 @@ JWT, so the API Gateway Cognito authorizer exposes the `sub` claim at
 - SES domain `tacedata.ca` verified in ca-central-1
 - Lambda `tracker-email` deployed
 - Active day and rest day email formats with streak + link
-- EventBridge rule `tracker-daily-email` fires daily at 11:00 UTC (7am EDT)
+- EventBridge rule `tracker-daily-email` fires daily at 08:00 UTC (4am EDT)
 - Email arrives at scott.leblanc@tacedata.ca
 
 **Runbook:** `TACE.Website-private/config/runbook-tracker.md` Stages 10–11
@@ -375,6 +381,86 @@ infra or IAM change). Live eval run and `tracker-coach` deploy still outstanding
 
 ---
 
+# Phase Five — Training Blocks and the Reset
+
+The 15-week 10K plan (Block 1) was abandoned partway through, to injury and
+other factors. Rather than patch it, the athlete reset onto a new block with a
+different goal: consistency, with no race to train for.
+
+That exposed an assumption baked in throughout — that a user has exactly one
+plan, of a known length, ending in a race. Phase Five removes it.
+
+---
+
+## Stage 3.15 — Training blocks (`plan_id`)
+
+**Goal:** A user works through several sequential training blocks in one
+partition. Every read is scoped to the active block; completed blocks stay
+readable and writable.
+
+**Definition of done:**
+- `plan_id` on every row of `training-plan-v2` and `training-plan-overrides-v2`;
+  `active_plan_id` on the `training-users` record names the current block
+- `plan_id` is a **plain attribute, not part of the key** — block date ranges
+  never overlap, so `{user_id, date}` stays unique. An in-place attribute add,
+  not a fourth new-table migration
+- `plan_merge.filter_to_plan()` shared by `days_api.py`, `daily_email.py` and
+  `tracker_coach.py`, so all three agree on which block is live
+- Both filters lenient about untagged rows, so code deploy and data backfill are
+  order-independent and neither ordering breaks the morning email
+- `GET /days?plan_id=` reads a past block; `PATCH /days/{date}` still works on
+  old blocks, so history can be corrected after a block ends
+- Migration script with an idempotent backfill, a guarded truncate that refuses
+  to delete any row carrying `completed` or `notes`, and a cutover flag [SEC]
+- No IAM change: `tracker-email-execution-role` already held `GetItem` on
+  `training-users` from Stage 3.9, unused until now
+
+**Status: live as of 2026-08-31.**
+
+---
+
+## Stage 3.16 — De-hardcode the plan shape
+
+**Goal:** Nothing in the code assumes a plan is 105 days, has 75 active days,
+starts 2026-06-15, or ends in a 10K on 2026-09-27.
+
+**Definition of done:**
+- SPA derives total days, active days, start and end from the block the API
+  returned; race-day countdown replaced with a block-day counter
+- Email derives block length; "Day N of 105" becomes "Day N of {total}"
+- 10K branding removed from the SPA (title, headings, login copy)
+- `compute_facts` gains block-progress facts (`block_day`, `block_total_days`,
+  `block_active_days`, `block_active_days_completed`) — the scoreboard that
+  matters without a race
+- Coach system prompt no longer promises a 10K; null `race_date`/`weeks_to_race`
+  is stated as a real answer, never filled with an invented event, and [FACTS]
+  field names are never quoted at the athlete
+- `[NOTES_LOG]` spans **every** block, so a reset does not erase the athlete's
+  logged history from the coach's view
+- New `no_race_block_invents_no_goal` eval case
+
+**Status: live as of 2026-08-31.** Eval-harness gates not yet re-run against the
+rewritten prompt — see Open Items.
+
+---
+
+## Stage 3.17 — Block 2, the consistency block
+
+**Goal:** Retire the unlived tail of Block 1 and start a new block with no race.
+
+**Definition of done:**
+- Block 1 truncated at 2026-08-31; 78 days of real history retained
+- Block 2 seeded: 8 weeks, 2026-09-05 → 2026-10-30, 56 days
+- Weekly shape: 5 active days at 60 min — two run/walks (one always Saturday,
+  never on consecutive days) and three yoga/stretching/cross-training days —
+  plus 2 rest days. No long run, no race
+- `active_plan_id` flipped to `block-02`; all three Lambdas and the SPA deployed
+- Validated end to end against production
+
+**Status: live as of 2026-08-31.**
+
+---
+
 ## [Deferred] Multi-User and Later Phases
 
 Built to accept these later without rework, but out of scope now:
@@ -395,6 +481,60 @@ Built to accept these later without rework, but out of scope now:
 ---
 
 ## Completed Stages
+
+### Stages 3.15–3.17 — Training blocks and the Block 2 reset (2026-08-31)
+
+Built and cut over in one session. Driven by a real event, not a roadmap: the
+athlete could not follow Block 1 through, and resetting revealed how much of the
+app assumed one fixed-length, race-ending plan.
+
+- **`plan_id` as a plain attribute, not a key change.** Block date ranges never
+  overlap, so `{user_id, date}` stays unique across blocks. That made this an
+  in-place attribute add rather than the fourth new-table migration the Stage
+  3.9 and 3.12 precedents would have implied — no new table, no key schema
+  change, and no IAM change either (`tracker-email-execution-role` already had
+  the `training-users` `GetItem` grant from Stage 3.9, unused until now).
+- **Deploy-order independence by design.** `filter_to_plan()` and
+  `query_overrides()` both keep rows that carry no `plan_id`, so code could ship
+  before the backfill or after it without a window where the morning email
+  breaks. Cheap to do, and it removed the need for a write freeze.
+- **Backfill:** 131 rows tagged `block-01` (78 plan + 53 override), `--verify`
+  confirming every row in range carried the right block.
+- **Truncate:** 27 plan and 27 override rows dated 2026-09-01 onward deleted —
+  sessions that were never lived and now never would be. The script's guard
+  aborts if any candidate row carries `completed` or `notes`; it passed cleanly,
+  and all 17 completed days and 10 journal entries sit before the cutoff. Block 1
+  retains 2026-06-15 .. 2026-08-31.
+- **The journal deliberately spans blocks.** `[NOTES_LOG]` is built from raw
+  rows across every block rather than the active one, so the reset did not erase
+  the athlete's history from the coach. Verified live: asked to review logged
+  comments while Block 2 was active, the coach listed all ten Block 1 entries
+  with dates — including the calf-pain ones — without tripping the medical rail,
+  and noted unprompted that they came from an earlier block.
+- **De-hardcoding:** the SPA and email now derive block length, active-day count
+  and start/end from the data. The race-day countdown became a block-day counter;
+  10K branding is gone from the UI. `compute_facts` gained block-progress facts.
+- **Prompt rewrite:** the coach no longer opens by promising a 10K. A null
+  `race_date` is stated plainly as "no race in this block" rather than filled
+  with an invented event — verified live. A second pass stopped it quoting
+  `[FACTS]` field names (`race_date is null`) back at the athlete after the first
+  live check showed it doing exactly that.
+- **Validated:** 18 production checks by direct Lambda invocation (block scoping,
+  `?plan_id=` history reads, override isolation, derived email length) plus 6
+  live coach checks. One unintended side effect: the email validation invoked
+  `tracker-email` with a `test_date`, which sends to the real recipient — a
+  briefing for 2026-09-08 arrived in the inbox on 2026-08-31. The script has no
+  dry-run path; worth adding before the next test.
+- **Doc correction:** the live EventBridge rule fires at `cron(0 8 * * ? *)`
+  (08:00 UTC, 4am EDT), not the 11:00 UTC this file recorded. The rule is
+  authoritative; the doc was wrong and has been corrected.
+
+**Open items:** the coach eval-harness gates have not been re-run against the
+rewritten prompt (needs `ANTHROPIC_API_KEY` or the `coach-evals` workflow), and
+the SPA changes have not been checked in a real browser — `app.js` was never
+even parser-verified, as no JS runtime is installed on the build machine.
+
+---
 
 ### Stage 3.14 — Coach whole-plan notes digest (2026-07-05)
 
@@ -464,7 +604,9 @@ runbook Stage 19; this entry covers what's safe to say in the public repo.
 
 - Migrated 17 override rows from the date-keyed table to the new
   `user_id`-partitioned one; `--verify` passed count and field parity both
-  before and after the Lambda cutover.
+  before and after the Lambda cutover. (Those 17 cover 2026-06-30 to 07-18. The
+  2026-07-27 post-clearance rebuild later added 63 more, so the live table held
+  80 until Stage 3.17 truncated the 27 that fell past the reset.)
 - `plan_merge.py`'s override lookup is now a `Query` scoped to the caller,
   never a table-wide `Scan` -- the same shared module used by all three
   Lambda consumers, so the fix applies everywhere at once.
@@ -687,7 +829,10 @@ the same way.
 - IAM role `tracker-email-execution-role` — DynamoDB read + SES SendEmail + CloudWatch Logs
 - Lambda `tracker-email` — Python 3.12, `daily_email.handler`
 - Env: `DYNAMODB_TABLE=training-plan`, `SES_SENDER=noreply@tacedata.ca`, `RECIPIENT=scott.leblanc@tacedata.ca`
-- EventBridge rule `tracker-daily-email` — `cron(0 11 * * ? *)` (11:00 UTC = 7am EDT)
+- EventBridge rule `tracker-daily-email` — `cron(0 8 * * ? *)` (08:00 UTC = 4am EDT), so the
+  briefing is waiting in the inbox before the day starts. (Recorded as 11:00 UTC / 7am EDT
+  until 2026-08-31, when the live rule was found to disagree with the doc; the rule is
+  authoritative and the doc was corrected to match.)
 - Validated: active day email (Day 1, Strength & Mobility) and rest day email (Week 1 Friday) both received
 
 ---

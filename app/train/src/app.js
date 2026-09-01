@@ -36,23 +36,46 @@ function todayISO() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function computeCountdown() {
-  const race = new Date('2026-09-27T00:00:00');
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return Math.max(0, Math.floor((race - today) / 86400000));
+// Parsed field-by-field rather than via new Date(iso): the string form is
+// treated as UTC and would render as the previous day in a negative offset.
+function formatPlanDate(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('en-CA', {
+    month: 'long', day: 'numeric', year: 'numeric',
+  });
 }
 
-function renderCountdown() {
-  const days = computeCountdown();
-  const loginEl = document.getElementById('login-countdown');
-  if (loginEl) {
-    loginEl.textContent = days === 0 ? 'Race day!' : `${days} days to race day`;
+// The training block's shape, derived from whatever the API returned rather
+// than hardcoded. A block has no fixed length and no end event, so swapping in
+// a new one is a data change and never a code change.
+function planShape(days) {
+  return {
+    totalDays:  days.length,
+    activeDays: days.filter(d => d.is_active_day).length,
+    startDate:  days.length ? days[0].date : null,
+    endDate:    days.length ? days[days.length - 1].date : null,
+  };
+}
+
+// Replaces the old race-day countdown: a consistency block has nothing to count
+// down to, so this counts up through the block instead.
+function renderBlockDay(days, shape) {
+  const todayStr = todayISO();
+  const todayDay = days.find(d => d.date === todayStr);
+  const valueEl  = document.getElementById('blockday-value');
+  const unitEl   = document.getElementById('blockday-unit');
+  if (!valueEl || !unitEl) return;
+
+  if (todayDay) {
+    valueEl.textContent = todayDay.day_of_plan;
+    unitEl.textContent  = `of ${shape.totalDays}`;
+  } else if (shape.startDate && todayStr < shape.startDate) {
+    valueEl.textContent = '--';
+    unitEl.textContent  = 'not started';
+  } else {
+    valueEl.textContent = 'Done';
+    unitEl.textContent  = `${shape.totalDays} days`;
   }
-  const valueEl = document.getElementById('countdown-days');
-  const unitEl  = document.getElementById('countdown-unit');
-  if (valueEl) valueEl.textContent = days === 0 ? 'Today!' : days;
-  if (unitEl)  unitEl.textContent  = days === 0 ? '' : days === 1 ? 'day to go' : 'days to go';
 }
 
 function computeStreak(days) {
@@ -81,16 +104,15 @@ function currentWeekNumber(days) {
   return days[days.length - 1].week_number;
 }
 
-function renderTodayCard(day) {
+function renderTodayCard(day, shape) {
   const el = document.getElementById('today-card');
   const todayStr = todayISO();
 
   if (!day) {
-    const planStart = '2026-06-15';
-    if (todayStr < planStart) {
-      el.innerHTML = `<p class="pre-plan">Training begins June 15, 2026. You are ready.</p>`;
+    if (shape.startDate && todayStr < shape.startDate) {
+      el.innerHTML = `<p class="pre-plan">Training begins ${esc(formatPlanDate(shape.startDate))}. You are ready.</p>`;
     } else {
-      el.innerHTML = `<p class="pre-plan">Training plan complete.</p>`;
+      el.innerHTML = `<p class="pre-plan">Training block complete.</p>`;
     }
     return;
   }
@@ -119,7 +141,7 @@ function renderTodayCard(day) {
         <p class="card-detail">${esc(day.session_detail)}</p>
         ${restFocus}
         ${overrideAlternate}
-        <p class="card-meta">Day ${esc(day.day_of_plan)} of 105 &mdash; Week ${esc(day.week_number)}</p>
+        <p class="card-meta">Day ${esc(day.day_of_plan)} of ${esc(shape.totalDays)} &mdash; Week ${esc(day.week_number)}</p>
       </div>`;
     return;
   }
@@ -133,7 +155,7 @@ function renderTodayCard(day) {
       <p class="card-focus">${esc(day.coaching_focus)}</p>
       ${overrideAlternate}
       ${overrideProvisional}
-      <p class="card-meta">Day ${esc(day.day_of_plan)} of 105 &mdash; Week ${esc(day.week_number)} &mdash; ${esc(day.phase)}</p>
+      <p class="card-meta">Day ${esc(day.day_of_plan)} of ${esc(shape.totalDays)} &mdash; Week ${esc(day.week_number)} &mdash; ${esc(day.phase)}</p>
       <label class="check-row">
         <input type="checkbox" id="today-check" ${day.completed ? 'checked' : ''}>
         <span>Mark complete</span>
@@ -161,13 +183,13 @@ function renderTodayCard(day) {
   });
 }
 
-function renderStats(days) {
+function renderStats(days, shape) {
   const streak  = computeStreak(days);
   const done    = days.filter(d => d.is_active_day && d.completed).length;
-  const pct     = Math.round(done / 75 * 100);
+  const pct     = shape.activeDays ? Math.round(done / shape.activeDays * 100) : 0;
 
   document.getElementById('streak-count').textContent = streak;
-  document.getElementById('progress-fraction').textContent = `${done} / 75`;
+  document.getElementById('progress-fraction').textContent = `${done} / ${shape.activeDays}`;
   document.getElementById('progress-pct').textContent = `${pct}%`;
   document.getElementById('progress-bar-fill').style.width = `${pct}%`;
 }
@@ -290,9 +312,11 @@ async function showDashboard(days) {
 
   const todayStr = todayISO();
   const todayDay = days.find(d => d.date === todayStr) ?? null;
+  const shape    = planShape(days);
 
-  renderTodayCard(todayDay);
-  renderStats(days);
+  renderTodayCard(todayDay, shape);
+  renderStats(days, shape);
+  renderBlockDay(days, shape);
   renderWeeklyRow(days);
   renderWeekSchedule(days);
 }
@@ -304,7 +328,6 @@ function showLogin() {
 }
 
 async function init() {
-  renderCountdown();
   const params = new URLSearchParams(window.location.search);
 
   if (params.has('auth_error')) {

@@ -2,11 +2,18 @@
 days_api.py -- Lambda handler for the tracker API.
 
 Routes (API Gateway HTTP API, payload format 2.0):
-  GET  /days           -- all 105 training days, sorted by date, with overrides merged
+  GET  /days           -- the active block's days, sorted by date, overrides merged.
+                          ?plan_id=<id> reads a past block instead.
   GET  /days/{date}    -- single day by ISO date string (e.g. 2026-06-15)
   PATCH /days/{date}   -- update user-state fields: completed (bool), notes (str)
   GET  /settings       -- read coach_scope from the caller's users record
   PATCH /settings      -- update coach_scope (plan_only | plan_plus_general)
+
+Training blocks (Stage 3.15):
+  A user works through sequential blocks, each a dated span of days carrying a
+  plan_id. GET /days serves the block named by active_plan_id on the users
+  record. Past blocks stay readable via ?plan_id= and stay writable through
+  PATCH /days/{date}, so history can still be corrected after a block ends.
 
 Override layer:
   If OVERRIDES_TABLE env var is set, GET routes merge active overrides on top of
@@ -123,7 +130,22 @@ def _ensure_profile(user_id: str, claims: dict) -> None:
         # Profile already exists -- idempotent no-op, nothing to do.
 
 
-def _get_days(user_id: str) -> dict:
+def _active_plan_id(user_id: str) -> str | None:
+    """The training block the caller is currently working through.
+
+    Single source of truth is active_plan_id on the users record -- the same
+    record that already owns coach_scope. None means no block is configured,
+    which callers treat as "show everything" (the pre-Stage-3.15 behaviour).
+    """
+    result = _users_table.get_item(Key={"user_id": user_id})
+    return (result.get("Item") or {}).get("active_plan_id")
+
+
+def _get_days(user_id: str, requested_plan_id: str | None = None) -> dict:
+    # An explicit ?plan_id= reads a past block (the plan-history case); with no
+    # parameter the caller gets whichever block is currently active.
+    plan_id = requested_plan_id or _active_plan_id(user_id)
+
     items = []
     query_kwargs: dict = {"KeyConditionExpression": Key("user_id").eq(user_id)}
     while True:
@@ -134,9 +156,10 @@ def _get_days(user_id: str) -> dict:
             break
         query_kwargs["ExclusiveStartKey"] = last
     items.sort(key=lambda x: x["date"])
+    items = plan_merge.filter_to_plan(items, plan_id)
 
     if _overrides_table:
-        overrides = plan_merge.query_overrides(_overrides_table, user_id)
+        overrides = plan_merge.query_overrides(_overrides_table, user_id, plan_id)
         items = plan_merge.apply_overrides_to_items(items, overrides)
 
     return _ok(items)
@@ -270,6 +293,7 @@ def _patch_settings(user_id: str, raw_body: str | None) -> dict:
 def handler(event: dict, context) -> dict:
     route_key = event.get("routeKey", "")
     path_params = event.get("pathParameters") or {}
+    query_params = event.get("queryStringParameters") or {}
     body = event.get("body")
 
     claims = _claims(event)
@@ -282,7 +306,7 @@ def handler(event: dict, context) -> dict:
     logger.info("route=%s params=%s user=%s", route_key, path_params, user_id[:8])
 
     if route_key == "GET /days":
-        return _get_days(user_id)
+        return _get_days(user_id, query_params.get("plan_id"))
     if route_key == "GET /days/{date}":
         return _get_day(user_id, path_params.get("date", ""))
     if route_key == "PATCH /days/{date}":

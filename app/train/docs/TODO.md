@@ -134,7 +134,7 @@ correctly but then also gave training advice) and how it was fixed.
 
 **Status: live as of 2026-07-05.** Security finding, not a planned feature — see `STAGES.md` for the goal and the private runbook (Stage 19) for full mechanics.
 
-- [x] New table `training-plan-overrides-v2` (PK `user_id`, SK `date`); 17 rows migrated with `--verify` parity
+- [x] New table `training-plan-overrides-v2` (PK `user_id`, SK `date`); 17 rows migrated with `--verify` parity — those 17 span 2026-06-30 to 07-18; the 2026-07-27 post-clearance rebuild later added 63 more
 - [x] `plan_merge.py`'s override lookup changed from a table-wide `Scan` to a `Query` scoped to the caller [SEC]
 - [x] All three consumers (`days_api.py`, `daily_email.py`, `tracker_coach.py`) updated via the shared module
 - [x] IAM updated on all three execution roles: `Query` on the new table, old `Scan` grants removed [SEC]
@@ -165,6 +165,58 @@ correctly but then also gave training advice) and how it was fixed.
 - [x] Coach grounds on `[NOTES_LOG]`; the notes-injection boundary is extended to it; reciting logged notes is data-retrieval, so a note mentioning past pain no longer trips the medical backstop [SEC]
 - [x] `review_logged_notes` eval case added; harness passes `notes_log` through
 - [ ] Live eval run (100% medical recall + retrieval/notes cases) + deploy `tracker-coach` + browser validation
+
+---
+
+# Phase Five — Training Blocks and the Reset
+
+Block 1 (the 15-week 10K plan) was abandoned partway through. Rather than patch
+it, the athlete reset onto a consistency block with no race — which required
+removing the assumption that a user has one fixed-length, race-ending plan.
+
+## Stage 3.15 — Training blocks (`plan_id`)
+
+**Status: live as of 2026-08-31.**
+
+- [x] `plan_id` on `training-plan-v2` and `training-plan-overrides-v2`; `active_plan_id` on `training-users`
+- [x] Keep `plan_id` out of the key — block date ranges never overlap, so `{user_id, date}` stays unique; in-place attribute add, no new table
+- [x] `plan_merge.filter_to_plan()` shared by all three Lambda consumers
+- [x] Both filters lenient about untagged rows, so code deploy and backfill are order-independent (no write freeze needed)
+- [x] `GET /days?plan_id=` reads a past block; old blocks stay writable via `PATCH /days/{date}`
+- [x] `migrate_add_plan_id.py`: idempotent backfill, guarded truncate, cutover flag
+- [x] Truncate aborts if any candidate row carries `completed` or `notes` [SEC] — logged history is never deleted by the script
+- [x] Backfill run: 131 rows tagged `block-01` (78 plan + 53 override), `--verify` passed
+- [x] Confirm no IAM change needed — `tracker-email-execution-role` already held `GetItem` on `training-users` from Stage 3.9
+- [x] `USERS_TABLE` env var added to `tracker-email`
+
+## Stage 3.16 — De-hardcode the plan shape
+
+**Status: live as of 2026-08-31.**
+
+- [x] SPA derives total/active days and start/end from the returned block; race countdown replaced with a block-day counter
+- [x] Email derives block length ("Day N of {total}", no more "of 105")
+- [x] 10K branding removed from title, headings and login copy
+- [x] `compute_facts` gains `block_day` / `block_total_days` / `block_active_days` / `block_active_days_completed`
+- [x] Coach prompt: no 10K promise; null `race_date` stated plainly, never filled with an invented event
+- [x] Coach prompt: never quote `[FACTS]` field names at the athlete (found in live validation)
+- [x] `[NOTES_LOG]` spans every block, so a reset doesn't erase logged history [SEC — injection boundary extended with it]
+- [x] `no_race_block_invents_no_goal` eval case added
+- [ ] Re-run the eval-harness gates against the rewritten prompt (needs `ANTHROPIC_API_KEY` or the `coach-evals` workflow)
+
+## Stage 3.17 — Block 2, the consistency block
+
+**Status: live as of 2026-08-31.**
+
+- [x] Truncate Block 1 at 2026-08-31 (27 plan + 27 override rows removed; 78 days of history retained)
+- [x] Generate Block 2: 8 weeks, 2026-09-05 → 2026-10-30, 56 days
+- [x] Weekly shape: 5 active days at 60 min (2 run/walk + 3 yoga/stretch/cross), 2 rest
+- [x] Run placement: one run always Saturday, never two runs on consecutive days — asserted in the generator, not eyeballed
+- [x] `seed_dynamo.py` takes `--plan-id` / `--days-csv` / `--weeks-csv`; 56 rows seeded as `block-02`
+- [x] Flip `active_plan_id` to `block-02`; deploy `tracker-api`, `tracker-email`, `tracker-coach`, SPA
+- [x] Validate: 18 production checks (block scoping, `?plan_id=` history, override isolation, derived email length)
+- [x] Validate the coach live: no invented race; Block 1 notes still recalled while Block 2 is active
+- [ ] Browser validation of the SPA — `app.js` has never been parser-checked (no JS runtime on the build machine)
+- [ ] Add a dry-run path to the email validation so testing it can't send to the real recipient
 
 ---
 

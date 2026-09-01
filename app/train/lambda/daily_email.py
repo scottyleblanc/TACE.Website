@@ -10,11 +10,17 @@ Rest day:    recovery note, tomorrow's session preview, streak, link
 If OVERRIDES_TABLE env var is set, override rows are merged into the day data
 before the email is composed, so the email always reflects the adjusted plan.
 
+The briefing covers the user's active training block only (Stage 3.15) -- days
+belonging to an earlier, completed block are never briefed, even though they
+remain in the same partition.
+
 Environment variables:
-  DYNAMODB_TABLE  -- DynamoDB table name (training-plan)
+  DYNAMODB_TABLE  -- DynamoDB table name (training-plan-v2)
   SES_SENDER      -- From address (noreply@tacedata.ca)
   RECIPIENT       -- To address (scott.leblanc@tacedata.ca)
-  OVERRIDES_TABLE -- Optional. DynamoDB overrides table name (training-plan-overrides)
+  OWNER_USER_ID   -- Cognito sub of the single active user
+  USERS_TABLE     -- Optional. Users table, read for active_plan_id (training-users)
+  OVERRIDES_TABLE -- Optional. DynamoDB overrides table name (training-plan-overrides-v2)
   SITE_URL        -- Optional override for the tracker link (default: https://train.tacedata.ca/)
 """
 
@@ -41,10 +47,26 @@ _SITE_URL   = os.environ.get("SITE_URL", "https://train.tacedata.ca/")
 
 _OVERRIDES_TABLE_NAME = os.environ.get("OVERRIDES_TABLE")
 
+# Optional by design (Stage 3.15): unset means "no block configured", which
+# briefs from the whole partition exactly as this Lambda did before blocks
+# existed. That keeps code deploy and env-var/IAM changes independent of each
+# other -- neither ordering breaks the morning email.
+_USERS_TABLE_NAME = os.environ.get("USERS_TABLE")
+
 _dynamodb        = boto3.resource("dynamodb")
 _table           = _dynamodb.Table(_TABLE_NAME)
 _overrides_table = _dynamodb.Table(_OVERRIDES_TABLE_NAME) if _OVERRIDES_TABLE_NAME else None
+_users_table     = _dynamodb.Table(_USERS_TABLE_NAME) if _USERS_TABLE_NAME else None
 _ses             = boto3.client("sesv2", region_name="ca-central-1")
+
+
+def _active_plan_id(user_id: str) -> str | None:
+    """The training block this user is currently working through, read from the
+    users record -- the same single source of truth days_api.py uses."""
+    if _users_table is None:
+        return None
+    result = _users_table.get_item(Key={"user_id": user_id})
+    return (result.get("Item") or {}).get("active_plan_id")
 
 
 def _query_user(user_id: str) -> list[dict]:
@@ -84,13 +106,13 @@ def _int(val) -> int:
     return int(val) if isinstance(val, Decimal) else (val or 0)
 
 
-def _active_day_body(day: dict, streak: int) -> tuple[str, str]:
+def _active_day_body(day: dict, streak: int, total_days: int) -> tuple[str, str]:
     session_type = day["session_type"]
     prov_prefix  = "[PROVISIONAL] " if day.get("provisional") else ""
-    subject = f"[Training] {prov_prefix}{session_type} -- Day {_int(day['day_of_plan'])} of 105"
+    subject = f"[Training] {prov_prefix}{session_type} -- Day {_int(day['day_of_plan'])} of {total_days}"
 
     lines = [
-        f"Day {_int(day['day_of_plan'])} of 105  |  Week {_int(day['week_number'])}  |  {day['phase']}",
+        f"Day {_int(day['day_of_plan'])} of {total_days}  |  Week {_int(day['week_number'])}  |  {day['phase']}",
         "",
         f"Session: {session_type}",
         f"Detail:  {day['session_detail']}",
@@ -126,7 +148,7 @@ def _active_day_body(day: dict, streak: int) -> tuple[str, str]:
     return subject, "\n".join(lines)
 
 
-def _rest_day_body(day: dict, tomorrow: dict | None, streak: int) -> tuple[str, str]:
+def _rest_day_body(day: dict, tomorrow: dict | None, streak: int, total_days: int) -> tuple[str, str]:
     subject = f"[Training] Rest day -- Week {_int(day['week_number'])}"
 
     if day.get("has_override") and day.get("session_detail"):
@@ -135,7 +157,7 @@ def _rest_day_body(day: dict, tomorrow: dict | None, streak: int) -> tuple[str, 
         rest_line = "Rest day. Recovery is part of the plan."
 
     lines = [
-        f"Day {_int(day['day_of_plan'])} of 105  |  Week {_int(day['week_number'])}  |  {day['phase']}",
+        f"Day {_int(day['day_of_plan'])} of {total_days}  |  Week {_int(day['week_number'])}  |  {day['phase']}",
         "",
         rest_line,
     ]
@@ -185,10 +207,11 @@ def _send(recipient: str, subject: str, body: str) -> None:
 def _brief_user(user_id: str, recipient: str, today_str: str) -> str | None:
     """Compose and send one user's briefing for today, scoped to their partition.
     Returns the subject sent, or None if today is outside that user's plan window."""
-    days = _query_user(user_id)
+    plan_id = _active_plan_id(user_id)
+    days = plan_merge.filter_to_plan(_query_user(user_id), plan_id)
 
     if _overrides_table:
-        overrides = plan_merge.query_overrides(_overrides_table, user_id)
+        overrides = plan_merge.query_overrides(_overrides_table, user_id, plan_id)
         days = plan_merge.apply_overrides_to_items(days, overrides)
         logger.info("Applied %d active overrides", len(overrides))
 
@@ -200,11 +223,15 @@ def _brief_user(user_id: str, recipient: str, today_str: str) -> str | None:
 
     streak = _compute_streak(days, today_str)
 
+    # Block length comes from the block itself, not a constant -- a new block of
+    # a different length needs no code change here.
+    total_days = len(days)
+
     if today_day["is_active_day"]:
-        subject, body = _active_day_body(today_day, streak)
+        subject, body = _active_day_body(today_day, streak, total_days)
     else:
         tomorrow_day = _day_for(days, (date.fromisoformat(today_str) + timedelta(days=1)).isoformat())
-        subject, body = _rest_day_body(today_day, tomorrow_day, streak)
+        subject, body = _rest_day_body(today_day, tomorrow_day, streak, total_days)
 
     _send(recipient, subject, body)
     return subject
