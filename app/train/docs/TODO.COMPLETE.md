@@ -12,7 +12,7 @@ Data dictionary and build brief: `dev/README.md`
 - [x] Request ACM wildcard cert `*.tacedata.ca` in us-east-1 (runbook Step 1)
 - [x] Add ACM DNS validation CNAME to Route 53 (runbook Step 3) — reused existing CNAME, auto-ISSUED
 - [x] Wait for cert ISSUED status (runbook Step 4)
-- [x] Create S3 bucket `tacedata-train` (runbook Step 5)
+- [x] Create S3 bucket `<TRACKER_S3_BUCKET>` (runbook Step 5)
 - [x] Block all public access on bucket (runbook Step 6)
 - [x] Create CloudFront OAC (runbook Step 7) — OAC ID: <TRACKER_OAC_ID>
 - [x] Create CloudFront distribution — `train.tacedata.ca`, S3 origin, error page → index.html (runbook Steps 8–9) — ID: <TRACKER_DISTRIBUTION_ID>
@@ -29,10 +29,10 @@ Data dictionary and build brief: `dev/README.md`
 
 - [x] Set up Google OAuth2 app in Google Cloud Console (runbook Prerequisites)
 - [x] Store Google Client ID + Secret in 1Password as "Google OAuth — train.tacedata.ca"
-- [x] Create Cognito User Pool `tacedata-train-pool` (runbook Step 14)
+- [x] Create Cognito User Pool `<COGNITO_USER_POOL_NAME>` (runbook Step 14)
 - [x] Create Google IdP in Cognito (runbook Step 15)
-- [x] Create Cognito App Client `tacedata-train-client` (runbook Step 16)
-- [x] Create Cognito Hosted UI domain `tacedata-train` (runbook Step 17)
+- [x] Create Cognito App Client `<COGNITO_CLIENT_NAME>` (runbook Step 16)
+- [x] Create Cognito Hosted UI domain `<TRACKER_S3_BUCKET>` (runbook Step 17)
 - [x] Validate end-to-end login: browser → Cognito Hosted UI → Google → redirect back to train.tacedata.ca
 - [x] Write `app/train/lambda/auth_guard.py` — PreSignUp + PreTokenGeneration trigger, rejects non-allowed Google accounts
 - [x] Create IAM role `tracker-auth-guard-role` (AWSLambdaBasicExecutionRole only) (runbook Step 18)
@@ -46,7 +46,7 @@ Data dictionary and build brief: `dev/README.md`
 ## Stage 3.3 — Backend API
 
 - [x] Write `app/train/lambda/days_api.py` — GET /days, GET /days/{date}, PATCH /days/{date}
-- [x] Create IAM execution role `tracker-api-execution-role` (runbook Step 18)
+- [x] Create IAM execution role `<TRACKER_API_ROLE>` (runbook Step 18)
 - [x] Deploy `tracker-api` Lambda (runbook Step 20)
 - [x] Set Lambda environment variables (runbook Step 21)
 - [x] Create API Gateway HTTP API `tracker-api` (runbook Step 24)
@@ -80,13 +80,13 @@ Data dictionary and build brief: `dev/README.md`
 - [x] Write `app/train/lambda/daily_email.py` — active day + rest day email logic
 - [x] Check SES verification status for tacedata.ca (runbook Step 30 — already verified)
 - [x] Verify tacedata.ca in SES if needed; add DKIM CNAMEs to Route 53
-- [x] Create IAM execution role `tracker-email-execution-role` (runbook Step 19)
+- [x] Create IAM execution role `<TRACKER_EMAIL_ROLE>` (runbook Step 19)
 - [x] Deploy `tracker-email` Lambda (runbook Step 22)
 - [x] Set Lambda environment variables (runbook Step 23)
 - [x] Create EventBridge rule `tracker-daily-email` — cron(0 11 * * ? *) (runbook Step 31)
 - [x] Grant EventBridge permission to invoke Lambda (runbook Step 32)
 - [x] Add Lambda as EventBridge target (runbook Step 33)
-- [x] Invoke Lambda manually — confirm email arrives at scott.leblanc@tacedata.ca
+- [x] Invoke Lambda manually — confirm email arrives at <OWNER_EMAIL>
 - [x] Validate rest day email format (test_date=2026-06-19, Week 1 Friday)
 - [x] Validate active day email format (test_date=2026-06-15, Day 1 Strength & Mobility)
 
@@ -94,7 +94,7 @@ Data dictionary and build brief: `dev/README.md`
 
 ## Stage 3.6 — CI/CD Integration
 
-- [x] Update `tracker-api-execution-role` to allow Lambda deploy from GitHub Actions role
+- [x] Update `<TRACKER_API_ROLE>` to allow Lambda deploy from GitHub Actions role
 - [x] Update GitHub Actions deploy role policy (runbook Stage 12)
 - [x] Add tracker SPA sync step to `.github/workflows/deploy.yml`
 - [x] Add Lambda update steps for `tracker-api` and `tracker-email` to `deploy.yml`

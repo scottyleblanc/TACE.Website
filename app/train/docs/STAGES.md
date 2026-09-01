@@ -65,7 +65,7 @@ wildcard ACM cert, and Route 53 record in place. DynamoDB table seeded with all 
 **Definition of done:**
 - `https://train.tacedata.ca/` loads (serving placeholder index.html)
 - SSL cert valid — `*.tacedata.ca` wildcard (us-east-1)
-- S3 bucket `tacedata-train` — private, CloudFront OAC access only
+- S3 bucket `<TRACKER_S3_BUCKET>` — private, CloudFront OAC access only
 - DynamoDB table `training-plan` — 105 items seeded, PK = `date`
 - Route 53 A alias record for `train.tacedata.ca` → CloudFront
 
@@ -78,7 +78,7 @@ wildcard ACM cert, and Route 53 record in place. DynamoDB table seeded with all 
 **Goal:** Login with Google. Only authenticated users can access the app.
 
 **Definition of done:**
-- Cognito User Pool `tacedata-train-pool` with Google IdP
+- Cognito User Pool `<COGNITO_USER_POOL_NAME>` with Google IdP
 - Cognito Hosted UI at `<COGNITO_HOSTED_UI_DOMAIN>`
 - App client configured — code flow, callback to `https://train.tacedata.ca/`
 - Login and post-login redirect works end-to-end
@@ -130,7 +130,7 @@ JWT, so the API Gateway Cognito authorizer exposes the `sub` claim at
 - Lambda `tracker-email` deployed
 - Active day and rest day email formats with streak + link
 - EventBridge rule `tracker-daily-email` fires daily at 08:00 UTC (4am EDT)
-- Email arrives at scott.leblanc@tacedata.ca
+- Email arrives at <OWNER_EMAIL>
 
 **Runbook:** `TACE.Website-private/config/runbook-tracker.md` Stages 10–11
 
@@ -183,7 +183,7 @@ idempotently on first login. One active user today; the schema supports many.
 - New table `training-plan-v2`: PK = `user_id` (Cognito `sub`), SK = `date`,
   mirroring the existing item shape plus `user_id`
 - One-time migration script rewrites every existing `date`-keyed item under
-  `{user_id: <owner sub>, date}`; owner `sub` retrieved from `tacedata-train-pool`
+  `{user_id: <owner sub>, date}`; owner `sub` retrieved from `<COGNITO_USER_POOL_NAME>`
 - `DYNAMODB_TABLE` repointed on **both** `tracker-api` and `tracker-email`
 - `days_api.py` derives `user_id` from the JWT claims (`...jwt.claims.sub`) on
   every route — never from body or path [SEC]; `GET /days` uses `Query` on the
@@ -412,7 +412,7 @@ readable and writable.
   old blocks, so history can be corrected after a block ends
 - Migration script with an idempotent backfill, a guarded truncate that refuses
   to delete any row carrying `completed` or `notes`, and a cutover flag [SEC]
-- No IAM change: `tracker-email-execution-role` already held `GetItem` on
+- No IAM change: `<TRACKER_EMAIL_ROLE>` already held `GetItem` on
   `training-users` from Stage 3.9, unused until now
 
 **Status: live as of 2026-08-31.**
@@ -492,7 +492,7 @@ app assumed one fixed-length, race-ending plan.
   overlap, so `{user_id, date}` stays unique across blocks. That made this an
   in-place attribute add rather than the fourth new-table migration the Stage
   3.9 and 3.12 precedents would have implied — no new table, no key schema
-  change, and no IAM change either (`tracker-email-execution-role` already had
+  change, and no IAM change either (`<TRACKER_EMAIL_ROLE>` already had
   the `training-users` `GetItem` grant from Stage 3.9, unused until now).
 - **Deploy-order independence by design.** `filter_to_plan()` and
   `query_overrides()` both keep rows that carry no `plan_id`, so code could ship
@@ -529,10 +529,28 @@ app assumed one fixed-length, race-ending plan.
   (08:00 UTC, 4am EDT), not the 11:00 UTC this file recorded. The rule is
   authoritative; the doc was wrong and has been corrected.
 
-**Open items:** the coach eval-harness gates have not been re-run against the
-rewritten prompt (needs `ANTHROPIC_API_KEY` or the `coach-evals` workflow), and
-the SPA changes have not been checked in a real browser — `app.js` was never
-even parser-verified, as no JS runtime is installed on the build machine.
+**Follow-up, same day (v3.2.1).** The eval gates were re-run via the
+`coach-evals` workflow and all pass — 100% medical recall (7/7) and all 10
+coach behavioural cases, including the new no-race case. `daily_email.py`
+gained a `dry_run` invocation key, closing the gap that put a real briefing in
+a real inbox during validation. A static SPA check
+(`scripts/check_spa_ids.py`) now verifies every element id the JS looks up
+exists in the HTML — not a substitute for a browser, but it catches the
+renamed-id failure mode this stage risked, and needs no JS runtime.
+
+The same pass found a real exposure. The July 2026 history scrub corrected
+`main` but never updated the git **tags**: `v0.10.0` and `v0.11.0` on the
+remote still pointed at pre-scrub commits carrying the raw AWS account ID, a
+CloudFront distribution ID and the deploy role ARN in `config/` — the last
+publicly reachable pointers to that content. Both were force-updated to the
+scrubbed commits after confirming no pull-request ref reaches the old ones.
+The remaining live resource *names* (buckets, Cognito pool/client, the three
+execution roles) were then swept into placeholders across seven tracked files,
+including a published blog post.
+
+**Open item:** the SPA still has not been checked in a real browser — `app.js`
+has never been parsed by a JS engine, as none is installed on the build
+machine.
 
 ---
 
@@ -701,7 +719,7 @@ the same way.
   behavior change (105 items, 17 active overrides, same merged output).
 - **`conversations` table + thread CRUD:** new Lambda `tracker-coach`
   (`POST`/`GET /conversations`, `GET`/`PATCH`/`DELETE /conversations/{id}`),
-  `tracker-coach-execution-role` (RW on `conversations`, read-only on
+  `<TRACKER_COACH_ROLE>` (RW on `conversations`, read-only on
   `training-plan-v2` + `training-plan-overrides`), routes on the existing HTTP
   API behind the existing Cognito authorizer. Validated: full CRUD lifecycle
   for the owner; the Stage 3.9 fixture identity gets 404 on every verb with no
@@ -710,7 +728,7 @@ the same way.
   Lambda — `coach_scope` lives on the `training-users` record tracker-api
   already owns via `_ensure_profile`, so the coach role never needs
   `training-users` write access. Required adding `dynamodb:UpdateItem` on
-  `training-users` to `tracker-api-execution-role` (previously `GetItem`/
+  `training-users` to `<TRACKER_API_ROLE>` (previously `GetItem`/
   `PutItem` only). Validated: default `plan_only`, update to
   `plan_plus_general`, persists, invalid value rejected with 400.
 - **Anthropic setup:** API key in Secrets Manager
@@ -718,7 +736,7 @@ the same way.
   never entered the session); Anthropic Python SDK built as a Lambda layer
   (`tracker-coach-anthropic-sdk`, `pip install --platform
   manylinux2014_x86_64 --python-version 3.12` to get `jiter`'s compiled wheel
-  rather than a source build); `tracker-coach-execution-role` scoped to
+  rather than a source build); `<TRACKER_COACH_ROLE>` scoped to
   `secretsmanager:GetSecretValue` on that one ARN plus a read-only
   `training-users` grant for `coach_scope` — the endpoint spec's IAM section
   didn't list `training-users` even though the pipeline needs it; closed as a
@@ -763,10 +781,11 @@ the same way.
   identity gets 404 posting to the owner's thread, no message persisted.
 - **`deploy.yml`:** wired `plan_merge.py` into the `tracker-api`/`tracker-email`
   zips, added the Anthropic-layer build/publish/attach step and the
-  `tracker-coach` code-update step; `tacedata-github-deploy` granted the
+  `tracker-coach` code-update step; `<GITHUB_DEPLOY_ROLE>` granted the
   matching Lambda/layer permissions; new repo variable
-  `TRACKER_LAMBDA_COACH=tracker-coach`. Not yet exercised through a real CI
-  run — branch not merged/pushed.
+  `TRACKER_LAMBDA_COACH=tracker-coach`. Not exercised through a real CI run
+  at the time (branch not merged/pushed) — first exercised successfully on
+  2026-08-31 with the Stage 3.15–3.17 merge.
 - **Known gap, not part of this stage's checklist:** the coach system prompt
   and rail classifier prompt are functional placeholders (clearly marked
   `[DEFERRED]` in the code) — final wording, the label boundary, and an eval
@@ -815,7 +834,7 @@ the same way.
 
 ### Stage 3.6 — CI/CD Integration (2026-06-13)
 
-- IAM deploy role `tacedata-github-deploy` updated — S3 tacedata-train, CloudFront <TRACKER_DISTRIBUTION_ID>, Lambda tracker-api + tracker-email
+- IAM deploy role `<GITHUB_DEPLOY_ROLE>` updated — S3 `<TRACKER_S3_BUCKET>`, CloudFront <TRACKER_DISTRIBUTION_ID>, Lambda tracker-api + tracker-email
 - deploy.yml: tracker SPA sync, CloudFront invalidation, Lambda updates for both functions
 - GitHub Actions variables: `TRACKER_DISTRIBUTION_ID`, `TRACKER_LAMBDA_API`, `TRACKER_LAMBDA_EMAIL`
 - Validated: full run green in 19s (run <GHA_RUN_ID>)
@@ -826,9 +845,9 @@ the same way.
 ### Stage 3.5 — Email Notifications (2026-06-13)
 
 - SES domain `tacedata.ca` verified in ca-central-1 (DKIM CNAMEs added to Route 53)
-- IAM role `tracker-email-execution-role` — DynamoDB read + SES SendEmail + CloudWatch Logs
+- IAM role `<TRACKER_EMAIL_ROLE>` — DynamoDB read + SES SendEmail + CloudWatch Logs
 - Lambda `tracker-email` — Python 3.12, `daily_email.handler`
-- Env: `DYNAMODB_TABLE=training-plan`, `SES_SENDER=noreply@tacedata.ca`, `RECIPIENT=scott.leblanc@tacedata.ca`
+- Env: `DYNAMODB_TABLE=training-plan`, `SES_SENDER=noreply@tacedata.ca`, `RECIPIENT=<OWNER_EMAIL>`
 - EventBridge rule `tracker-daily-email` — `cron(0 8 * * ? *)` (08:00 UTC = 4am EDT), so the
   briefing is waiting in the inbox before the day starts. (Recorded as 11:00 UTC / 7am EDT
   until 2026-08-31, when the live rule was found to disagree with the doc; the rule is
@@ -849,7 +868,7 @@ the same way.
 
 ### Stage 3.3 — Backend API (2026-06-13)
 
-- IAM role `tracker-api-execution-role` — DynamoDB (GetItem, UpdateItem, Scan) + CloudWatch Logs
+- IAM role `<TRACKER_API_ROLE>` — DynamoDB (GetItem, UpdateItem, Scan) + CloudWatch Logs
 - Lambda `tracker-api` — Python 3.12, `days_api.handler`, env `DYNAMODB_TABLE=training-plan`
 - API Gateway HTTP API `tracker-api` — ID `<TRACKER_API_ID>`, endpoint `https://<TRACKER_API_ID>.execute-api.ca-central-1.amazonaws.com`
 - Cognito JWT authorizer `<COGNITO_AUTHORIZER_ID>`, Lambda integration `<LAMBDA_INTEGRATION_ID>`
@@ -860,9 +879,9 @@ the same way.
 
 ### Stage 3.2 — Auth (2026-06-13)
 
-- Cognito User Pool `tacedata-train-pool` — `<COGNITO_USER_POOL_ID>`
+- Cognito User Pool `<COGNITO_USER_POOL_NAME>` — `<COGNITO_USER_POOL_ID>`
 - Google IdP configured — Client ID `<GOOGLE_OAUTH_CLIENT_ID>`
-- App Client `tacedata-train-client` — `<COGNITO_CLIENT_ID>` (code flow, no secret, PKCE)
+- App Client `<COGNITO_CLIENT_NAME>` — `<COGNITO_CLIENT_ID>` (code flow, no secret, PKCE)
 - Hosted UI domain — `<COGNITO_HOSTED_UI_DOMAIN>`
 - Auth guard Lambda `tracker-auth-guard` — PreSignUp + PreTokenGeneration triggers
 - Allowed emails: `<ALLOWED_EMAIL_1>`, `<ALLOWED_EMAIL_2>`
@@ -874,7 +893,7 @@ the same way.
 ### Stage 3.1 — Infrastructure (2026-06-13)
 
 - ACM wildcard cert `*.tacedata.ca` — ISSUED (`arn:aws:acm:us-east-1:<AWS_ACCOUNT_ID>:certificate/<ACM_CERT_UUID>`)
-- S3 bucket `tacedata-train` — private, CloudFront OAC only
+- S3 bucket `<TRACKER_S3_BUCKET>` — private, CloudFront OAC only
 - CloudFront distribution `<TRACKER_DISTRIBUTION_ID>` — `<TRACKER_CF_DOMAIN>` (deploying)
 - Route 53 A alias `train.tacedata.ca` → CloudFront
 - DynamoDB `training-plan` — 105 items seeded, `completed: false`
