@@ -27,23 +27,28 @@ decide to add them (see [Deferred] at the end).
 
 ---
 
-## Current Focus: Phase Five complete, Block 2 live from 2026-09-05
+## Current Focus: Phase Six complete, Block 2 rotation revised from 2026-09-14
 
-Stages 3.9–3.14 (Phases Three and Four) are all live. Phase Five (Stages
-3.15–3.17) added training blocks, removed every hardcoded assumption about
-plan shape, and reset the athlete onto a new goal.
+Stages 3.9–3.17 (Phases Three through Five) are all live. Phase Six (Stage
+3.18) revised Block 2's day-of-week rotation and moved the display week from
+Saturday-start to Monday-start, both effective 2026-09-14.
 
 The 15-week 10K plan is now **Block 1** — truncated at 2026-08-31 with its 78
 lived days, 17 completed sessions and 10 journal entries intact. **Block 2** is
-an 8-week consistency block (2026-09-05 → 2026-10-30) with no race: two
-run/walks a week, three yoga/stretching/cross-training days, and no long run.
+an 8-week consistency block (2026-09-05 → 2026-10-30). From 2026-09-14 on, its
+weekly shape is: Tuesday and Saturday active (Saturday now a Parkrun 5K event
+rather than a timed interval), Wednesday and Thursday active (strength/yoga,
+unchanged), Sunday active (new — Gentle Yoga), Monday and Friday rest.
 
 Loose ends carried forward: the old v1 `training-plan` and
 `training-plan-overrides` tables are still retained pending a soak period
-(Steps 50 and 71 in the private runbook); the coach eval-harness gates have not
-been re-run against the Stage 3.16 prompt rewrite; and no cutover since Stage
-3.9 has been validated through a live browser session rather than direct Lambda
-invocation.
+(Steps 50 and 71 in the private runbook); no cutover since Stage 3.9 has been
+validated through a live browser session rather than direct Lambda invocation;
+and Point-in-Time Recovery on `training-plan-v2` is confirmed disabled with no
+on-demand backups, left that way deliberately (see Stage 3.18). The coach
+eval-harness gates *were* re-run against the Stage 3.16 prompt rewrite, on
+2026-08-31 (see the v3.2.1 follow-up below) — this line previously said
+otherwise; that was stale and has been corrected.
 
 Stages 3.1–3.6 (Phase One — MVP) are complete and live. Phase Two (security audit,
 Stage 3.8) is tracked in the private repo. Stage 3.7 (Public View) remains parked.
@@ -461,6 +466,38 @@ rewritten prompt — see Open Items.
 
 ---
 
+# Phase Six — Block 2 Rotation Revision
+
+Block 2 had been live nine days when its rotation was revised in one session:
+Monday and Sunday swap roles, Saturday's run/walk becomes a parkrun, Tuesday's
+progression steepens, and the display week moves from Saturday-start to
+Monday-start. Driven by the athlete's own read on how the week was going, not
+a roadmap — see Completed Stages below for the full session write-up.
+
+## Stage 3.18 — Rotation and week-boundary revision
+
+**Goal:** Revise Block 2's day-of-week content and switch the displayed week
+to start on Monday, without rewriting any already-lived day or introducing a
+schema change.
+
+**Definition of done:**
+- Monday, Tuesday, Saturday, Sunday content updated per the athlete's
+  direction; Wednesday/Thursday/Friday unchanged
+- Week boundaries pivot from Saturday-start to Monday-start, confirmed as a
+  `week_number` data change (not a display-only toggle) before implementation
+- Cutover lands on a date that requires no rewrite of historical rows
+- `seed_dynamo.py` protects `notes` as well as `completed` before any live
+  re-seed of an in-progress block [SEC]
+- Live state verified clean (no `completed`/`notes` in the affected range)
+  before writing, and verified correct after
+
+**Status: live as of 2026-09-14.** See Completed Stages below for the full
+write-up, including the one genuine modeling question raised and dropped
+(a Monday choice-day) and the Saturday/Tuesday week-label side effect that
+has no workaround.
+
+---
+
 ## [Deferred] Multi-User and Later Phases
 
 Built to accept these later without rework, but out of scope now:
@@ -481,6 +518,118 @@ Built to accept these later without rework, but out of scope now:
 ---
 
 ## Completed Stages
+
+### Stage 3.18 — Rotation and week-boundary revision (2026-09-14)
+
+Conducted as a structured walkthrough — one day of the week at a time, current
+content shown, changed or confirmed, nothing written until every day was
+covered and confirmed together.
+
+- **A Monday "choice day" was proposed and dropped.** The first idea was
+  Monday offering two options (the existing yoga session, or a run/walk
+  matching Tuesday's). Before implementing anything, `is_run_day` and
+  `session_type` usage were traced across `app.js`, `daily_email.py`, and
+  `coach_prompts.py` — both are read everywhere as a single fixed value per
+  day (SPA rendering, email subject lines, the coach's "next run day" facts,
+  eval case shapes). A real choice day would have meant a schema change
+  (alternate-session fields) and matching updates in at least three consumers
+  for one weekly occurrence. Flagged before building it; the athlete chose to
+  drop it rather than accept that scope. Monday ultimately became a plain
+  rest day instead, for unrelated reasons (see below).
+- **Tuesday's progression was steepened, then Saturday split off into its own
+  shape entirely.** Tuesday's run/walk interval moved from the original
+  18 → 24 min (over the remaining weeks) to 30 → 36 min, ratio 1:2 → 3:2 — the
+  same *style* of step-up as the original plan (same delta pattern, same
+  plateau shape), just re-based to a higher floor. Saturday initially mirrored
+  this, then was reframed entirely: **Parkrun (5K)**, a real fixed-distance
+  timed community event rather than a designed interval block. That changes
+  what the stored numbers *mean* — `run_interval_minutes`/
+  `session_minutes_target` now hold an **estimated finish time**, not a
+  session length, and the athlete's own logic was that a better run:walk ratio
+  should produce a *faster* 5K, so estimated time actually **declines** week
+  over week (40 → 38 min) while the ratio climbs (1.5:2 → 3:2) — the inverse
+  shape of Tuesday's numbers, and internally consistent once you see the
+  reasoning. This also resolved a real inconsistency for free: a flat 60-min
+  session budget no longer made sense once Saturday's interval alone
+  approached 46 min under the pre-parkrun numbers — reframing it as "estimated
+  finish, not a hard duration" removed the "stretch to fill the hour" framing
+  entirely rather than requiring a wording patch.
+- **Sunday became active, Monday became rest — a deliberate swap, not two
+  independent changes.** Sunday moving from Rest to a real "Gentle Yoga"
+  active day was a genuine fork raised explicitly: stay in the same
+  uncounted bucket as Friday (no ripple), or become a real 6th active day
+  (changes `week_active_days` everywhere it's read). The athlete chose the
+  latter. Minutes later, Monday flipped from Yoga & Mobility to Rest — which,
+  combined with Sunday's flip, **cancels out**: every full week still nets 5
+  active / 2 rest, just with rest on Monday instead of Sunday. The one
+  transitional week (2026-09-12 → 2026-09-20) doesn't fully net out, though —
+  Monday's flip starts *today* (2026-09-14) but Sunday's flip couldn't start
+  until 2026-09-20 (2026-09-13 had already happened as Rest and can't be
+  rewritten), so that single week runs 6 active / 3 rest across its 9 days
+  before settling back to the normal 5/2 pattern.
+- **Week-start day is a `week_number` change, not a display toggle — confirmed
+  before touching anything.** `app.js`'s `weekDaysFor()`/`renderWeeklyRow()`/
+  `renderWeekSchedule()`, `daily_email.py`'s subject lines, and
+  `coach_prompts.py`'s "days active this week" fact all filter or group by the
+  stored `week_number` attribute directly; none compute a calendar-week
+  boundary independently. So "start the week on Monday" meant re-drawing
+  `week_number`/`week_start_date`/`week_end_date`, not reordering a render.
+  The cutover landed on 2026-09-14 specifically *because* it's a Monday —
+  every day before it keeps its original Saturday-start numbering untouched,
+  so the pivot needed zero historical rewrites. **Real, unavoidable side
+  effect:** Saturday sits at the front of its old (Saturday-start) week but
+  the tail of its new (Monday-start) one, so every Saturday/Sunday now
+  displays one week-number lower than before, while Monday–Friday are
+  unaffected (verified algebraically for all 8 weeks, not assumed). The
+  Saturday/Tuesday pairs this stage's progression numbers were built around
+  (e.g. "2026-09-19 matches that week's Tuesday") no longer share a displayed
+  week-number label as a result — the prescribed content per date is
+  unaffected, only the label next to it. No numbering scheme satisfies both
+  "start weeks on Monday" and "keep that pairing's label matching"
+  simultaneously; flagged and accepted rather than worked around.
+- **Generated, not hand-transcribed.** The 47 affected rows (2026-09-14
+  onward) were produced by a small throwaway Python script, not typed by hand
+  — the rule set (which day-of-week gets which content, the two explicit
+  date→value progression tables, the week-number shift for Saturday/Sunday
+  only) was compact enough to encode directly, and a generator avoids
+  transcription drift across that many rows and fields. Days before the
+  cutover were passed through byte-for-byte, never regenerated.
+- **`seed_dynamo.py` hardened before use, not after.** `--preserve-state`
+  previously skipped a day only if `completed=true` — a day carrying `notes`
+  but not checked off (plausible for a rest day) would have been silently
+  overwritten, since `put_item` replaces the whole item and the seed template
+  never carries `notes`. Extended the same flag to also skip noted days, and
+  added `--from-date` so historical days are excluded from the run entirely
+  rather than relying solely on a per-row check.
+- **Live state verified clean before writing.** Queried `training-plan-v2` for
+  the full affected range (2026-09-14 → 2026-10-30, 47 rows) and confirmed
+  `completed=false` and no `notes` on every one before running the real seed.
+  `--dry-run` output was reviewed against the intended per-date table first;
+  the real write followed only after that matched. Post-write, spot-checked
+  2026-09-14 (Rest), 2026-09-19 (Parkrun, 40 min, 1.5:2, `week_number=2`), and
+  2026-09-20 (Gentle Yoga, `week_active_days=6`) directly against the live
+  table.
+- **Backup taken, PITR deliberately left off.** `training-plan-v2` had Point-
+  in-Time Recovery disabled and no on-demand backups — confirmed, not
+  assumed, via `describe-continuous-backups`/`list-backups` before writing.
+  A full-fidelity export of the 47 affected rows was taken immediately before
+  the write as a scoped rollback point (kept outside the repo — live athlete
+  data, not source). Enabling PITR going forward was offered and declined:
+  writes to this table only happen during deliberate sessions like this one,
+  not continuously, so the athlete judged it unnecessary.
+- **Identity resolution required a real check, not an assumption.** The
+  Cognito pool holds two accounts — the athlete's, and a second one likely
+  the Stage 3.9 isolation-test fixture, though that was never confirmed
+  either way from the pool record alone. Both show `Enabled: true` with
+  identical `UserStatus`, so they were not distinguishable by status; matched
+  against the athlete's own name instead, and confirmed explicitly before
+  running anything against a real `user_id` — writing 47 days against the
+  wrong account was a realistic failure mode here, not a theoretical one.
+
+**Known gap carried forward:** the SPA still hasn't been checked in a real
+browser after this change — same standing gap as Stage 3.17.
+
+---
 
 ### Stages 3.15–3.17 — Training blocks and the Block 2 reset (2026-08-31)
 

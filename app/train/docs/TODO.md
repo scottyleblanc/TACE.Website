@@ -221,6 +221,57 @@ removing the assumption that a user has one fixed-length, race-ending plan.
 
 ---
 
+# Phase Six — Block 2 Rotation Revision
+
+Spec: none — a direct rotation edit against the live block, not a new
+architectural phase. See `STAGES.md` for the full write-up.
+
+## Stage 3.18 — Rotation and week-boundary revision
+
+**Status: live as of 2026-09-14.**
+
+- [x] Monday: Yoga & Mobility -> Rest, effective 2026-09-14 (confirmed the day's
+  original session had not been completed or logged before writing over it)
+- [x] Tuesday: run/walk interval progression steepened -- 30 -> 36 min (was
+  18 -> 24), ratio 1:2 -> 3:2 across the remaining weeks
+- [x] Saturday: reframed from a timed run/walk interval to **Parkrun (5K)**, a
+  fixed-distance event; `session_minutes_target`/`run_interval_minutes` now
+  hold an estimated finish time (40 -> 38 min, declining as the ratio climbs
+  1.5:2 -> 3:2), not a designed interval length
+- [x] Sunday: Rest -> **Gentle Yoga**, becomes a counted active day (not an
+  optional/uncounted rest-day activity like Friday)
+- [x] Week boundaries: Saturday-start -> Monday-start, effective 2026-09-14 --
+  confirmed first that `week_number` is the sole grouping mechanism the SPA,
+  the daily email, and the coach's weekly facts all read, so this is a data
+  change (`week_number`/`week_start_date`/`week_end_date`), not a display-only
+  toggle [SEC]
+- [x] `dev/block-02-days.csv`, `dev/block-02-weeks.csv` regenerated for
+  2026-09-14 onward via a throwaway generator script; days before the cutover
+  untouched byte-for-byte
+- [x] `seed_dynamo.py` [SEC] -- `--preserve-state` now also skips days
+  carrying `notes`, not just `completed`; added `--from-date` to exclude
+  historical days from consideration outright
+- [x] Live state check before writing: queried `training-plan-v2` for every
+  affected date (2026-09-14 through block end); confirmed `completed=false`
+  and no `notes` on all 47 rows [SEC]
+- [x] Full-fidelity backup of the 47 affected rows exported before the write
+  (outside the repo -- live athlete data, not source)
+- [x] `--dry-run` reviewed against the intended per-date table before the real
+  write
+- [x] Live write: 47/47 seeded, 0 skipped; post-write spot-check on
+  2026-09-14, 2026-09-19, 2026-09-20 confirmed against the live table
+- [ ] Point-in-Time Recovery on `training-plan-v2` -- confirmed disabled, no
+  on-demand backups exist; left disabled per the athlete's own call (writes to
+  this table only happen during sessions like this one, not continuously)
+- [ ] `app/train/docs/IDENTITY-FOUNDATION-SPEC.md`/other specs -- not reviewed
+  for any assumption about week-start-day; none identified, but not
+  exhaustively audited
+- [ ] Browser validation of the new rotation/week display -- carries forward
+  the same pre-existing gap as Stage 3.17 (SPA still not checked in a real
+  browser)
+
+---
+
 ## Deferred — Multi-User and Later Phases
 
 Schema is built to accept these without rework; out of scope now.

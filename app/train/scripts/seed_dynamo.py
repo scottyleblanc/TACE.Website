@@ -15,6 +15,12 @@ Usage:
     python app/train/scripts/seed_dynamo.py --user-id <SUB> --plan-id block-02 \
         --days-csv dev/block-02-days.csv --weeks-csv dev/block-02-weeks.csv
     python app/train/scripts/seed_dynamo.py --user-id <SUB> --plan-id block-02 --preserve-state
+
+    # Re-seeding a live, in-progress block after editing the CSVs: exclude
+    # everything before today outright, and belt-and-suspenders skip any
+    # included day that already carries completed or notes.
+    python app/train/scripts/seed_dynamo.py --user-id <SUB> --plan-id block-02 \
+        --from-date 2026-09-14 --preserve-state --dry-run
 """
 
 import argparse
@@ -145,6 +151,10 @@ def seed_table(
                 print(f"[SKIP]  {date} -- completed, user state preserved")
                 skipped += 1
                 continue
+            if existing and existing.get("notes"):
+                print(f"[SKIP]  {date} -- has logged notes, user state preserved")
+                skipped += 1
+                continue
 
         try:
             table.put_item(Item=item)
@@ -171,7 +181,13 @@ def main() -> None:
     parser.add_argument(
         "--preserve-state",
         action="store_true",
-        help="Skip days where completed=True (preserves user progress on re-seed)",
+        help="Skip days where completed=True or notes is set (preserves user progress on re-seed)",
+    )
+    parser.add_argument(
+        "--from-date",
+        type=str,
+        default=None,
+        help="Only seed days on or after this ISO date; earlier days are excluded entirely, not just state-checked",
     )
     parser.add_argument(
         "--dry-run",
@@ -196,6 +212,12 @@ def main() -> None:
             items.append(build_item(row, weeks[wn], args.user_id, args.plan_id))
 
     print(f"[INFO]  {len(items)} days loaded, tagged plan_id={args.plan_id}")
+
+    if args.from_date:
+        before = len(items)
+        items = [i for i in items if i["date"] >= args.from_date]
+        excluded = before - len(items)
+        print(f"[INFO]  --from-date {args.from_date}: excluding {excluded} earlier day(s), {len(items)} remain")
 
     if args.dry_run:
         print("[INFO]  Dry run -- no writes to DynamoDB\n")

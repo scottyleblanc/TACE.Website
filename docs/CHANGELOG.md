@@ -8,6 +8,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [3.3.0] - 2026-09-14
+
+### Added
+- `app/train/scripts/seed_dynamo.py` — `--from-date` excludes earlier days from a seed run entirely, rather than relying only on a per-row state check to protect them.
+
+### Changed
+- Block 2 rotation revised (Stage 3.18), effective 2026-09-14 onward. Monday and Sunday swap roles — Monday becomes a rest day, Sunday becomes an active "Gentle Yoga" day (nets back to the usual 5 active / 2 rest per full week, with one irregular 6-active/9-day transitional week where the two changes don't land on the same date). Saturday's session type changes from a timed run/walk interval to **Parkrun (5K)**, a fixed-distance event; `run_interval_minutes`/`session_minutes_target` now hold an estimated finish time (40 → 38 min, declining as the run:walk ratio climbs 1.5:2 → 3:2) rather than a designed session length. Tuesday's interval/ratio progression steepens (30 → 36 min, 1:2 → 3:2). `dev/block-02-days.csv`/`block-02-weeks.csv` updated for 2026-09-14 onward via a throwaway generator script; days before the cutover are untouched.
+- Week boundaries pivot from Saturday-start to Monday-start (Stage 3.18), effective 2026-09-14. `week_number` is the sole mechanism `app.js`, `daily_email.py`, and `coach_prompts.py` use to group "this week" — confirmed before implementing, since there is no independent display sort to change instead. The cutover lands on a Monday specifically so no historical row needs its `week_number` rewritten. One unavoidable side effect: Saturday/Sunday now display one week-number lower than before (they sit at the tail of their new week instead of the front of their old one), while Monday–Friday are unaffected.
+
+### Security
+- `app/train/scripts/seed_dynamo.py` — `--preserve-state` now also skips any day carrying `notes`, not just `completed=true`. Previously a noted-but-unchecked day (plausible for a rest day) would have been silently overwritten on re-seed, since `put_item` replaces the whole item and the seed template never carries `notes`.
+- Live `training-plan-v2` state (the full 2026-09-14 → 2026-10-30 range) was queried and confirmed `completed=false` with no `notes` on all 47 affected rows before writing; a full-fidelity backup of those rows was taken immediately beforehand. Point-in-Time Recovery on the table was confirmed disabled with no on-demand backups existing — left disabled, per the athlete's own call, since writes to this table only happen during deliberate sessions, not continuously.
+
+---
+
 ## [3.2.1] - 2026-08-31
 
 ### Added
