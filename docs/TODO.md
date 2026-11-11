@@ -191,7 +191,7 @@ Goal: Lambda detects threshold crossings and publishes to SNS → email.
 
 ---
 
-## Fix — Econ Dashboard: BoC Rate Ordering (In Progress — 2026-11-11)
+## Fix — Econ Dashboard: BoC Rate Ordering (Complete — 2026-11-11)
 
 Goal: correct the reversed BoC overnight rate (false "cut" alert, wrong dashboard rate) and its history.
 
@@ -200,11 +200,11 @@ Goal: correct the reversed BoC overnight rate (false "cut" alert, wrong dashboar
 - [x] BoC alert compares against the ~1-day-old snapshot, not `payload.boc.prev`
 - [x] Regression tests — `app/econ/tests/test_boc_rate.py`
 - [x] History correction script — `scripts/fix_boc_history.py` (dry run by default, backs up before writing)
-- [ ] Deploy Lambda (merge to main)
-- [ ] Dry run, then `--apply`, `fix_boc_history.py` against DynamoDB
-- [ ] Invoke Lambda with `{"force_history": true}` to regenerate history-90d / history-180d
-- [ ] Verify live `indicators.json` and history files show 2.50% from 2026-10-29
-- [ ] Tag
+- [x] Deploy Lambda (merge to main)
+- [x] Dry run, then `--apply`, `fix_boc_history.py` against DynamoDB — 658 of 10,669 snapshots corrected (2.25 -> 2.50, 2026-10-29 .. 2026-11-11); re-check shows 0 wrong
+- [x] Invoke Lambda with `{"force_history": true}` to regenerate history-90d / history-180d
+- [x] Verify live `indicators.json` and history files show 2.50% from 2026-10-29
+- [x] Tag: v3.3.1 (and v3.3.0 retro-tagged on 6ed0826)
 
 ---
 
