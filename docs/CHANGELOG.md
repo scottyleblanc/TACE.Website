@@ -8,6 +8,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [3.3.1] - 2026-11-11
+
+### Added
+- `app/econ/tests/test_boc_rate.py` — first test suite for the econ Lambda (pytest). Covers newest-first and oldest-first Valet responses, cut vs. hike direction, alert re-fire suppression, and the history correction logic.
+- `scripts/fix_boc_history.py` — recomputes the `boc` attribute on every DynamoDB snapshot from the Valet date-range series. Dry run by default; `--apply` writes a backup of the original values before rewriting.
+
+### Fixed
+- `app/econ/lambda/indicators.py` — `fetch_boc_rate()` read the Valet `recent=10` response as oldest-first, but Valet returns `recent=N` newest-first (date-range queries are oldest-first). `cur` was therefore the rate from ~9 business days earlier, so the dashboard lagged every rate decision by about two weeks, and on 2026-11-11 the window edge produced a false "BoC cut to 2.25%" alert for what was a hike to 2.50% effective 2026-10-29. Now uses a date-range query with an explicit sort. Same class of bug fixed for bond yields in Stage 2.4.
+- `fetch_boc_rate()` — `prev` is now the rate before the most recent change and `date` the day the current rate took effect, matching how the dashboard reads them ("Rate RISING/FALLING", "Last decision").
+- BoC rate-change alert compares against the ~1-day-old DynamoDB snapshot instead of `payload.boc.prev`, so it fires once per decision rather than every time the 24-hour dedup window expires.
+
+---
+
 ## [3.3.0] - 2026-09-14
 
 ### Added

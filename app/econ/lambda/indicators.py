@@ -78,13 +78,34 @@ def http_post(url, body, timeout=15):
 
 # ── Data fetchers ─────────────────────────────────────────────────────────────
 
+BOC_RATE_LOOKBACK_DAYS = 730  # long enough to span the longest recent hold period
+
+
 def fetch_boc_rate():
-    """Bank of Canada overnight rate — series V39079."""
-    d   = http_get(f"{BOC_BASE}/observations/V39079/json?recent=10")
-    obs = [o for o in d["observations"] if o.get("V39079", {}).get("v")]
-    cur  = float(obs[-1]["V39079"]["v"])
-    prev = float(obs[-2]["V39079"]["v"])
-    date = obs[-1]["d"]
+    """Bank of Canada overnight rate — series V39079.
+    Returns {cur, prev, date}:
+      cur  — current rate
+      prev — rate in effect before the most recent change (== cur if no change in window)
+      date — first day the current rate took effect
+
+    Valet returns `recent=N` results newest-first but date-range results oldest-first,
+    so we use a date range and sort explicitly rather than trust either order."""
+    today = datetime.now(timezone.utc).date()
+    start = today - timedelta(days=BOC_RATE_LOOKBACK_DAYS)
+    d   = http_get(f"{BOC_BASE}/observations/V39079/json?start_date={start}&end_date={today}")
+    obs = sorted(
+        ((o["d"], float(o["V39079"]["v"])) for o in d["observations"] if o.get("V39079", {}).get("v")),
+        key=lambda t: t[0],
+    )
+    cur  = obs[-1][1]
+    prev = cur
+    date = obs[0][0]
+    # Walk back to the most recent change point
+    for i in range(len(obs) - 1, 0, -1):
+        if obs[i - 1][1] != cur:
+            prev = obs[i - 1][1]
+            date = obs[i][0]
+            break
     return {"cur": cur, "prev": prev, "date": date}
 
 
@@ -388,10 +409,12 @@ def check_thresholds(payload, ts_now):
                 f"Dashboard: {DASHBOARD_URL}\n\n---\nNot financial advice.",
             ))
 
-    # BoC rate changed
-    if payload.get("boc"):
-        cur_boc  = payload["boc"]["cur"]
-        prev_boc = payload["boc"]["prev"]
+    # BoC rate changed — compare against the stored snapshot from ~1 day ago, not
+    # payload["boc"]["prev"], which holds the pre-decision rate indefinitely and
+    # would re-fire every time the dedup window expires.
+    if payload.get("boc") and prior_1d and prior_1d.get("boc"):
+        cur_boc  = round(payload["boc"]["cur"], 4)
+        prev_boc = round(float(prior_1d["boc"]), 4)
         if cur_boc != prev_boc:
             direction = "raised" if cur_boc > prev_boc else "cut"
             diff      = abs(cur_boc - prev_boc)
