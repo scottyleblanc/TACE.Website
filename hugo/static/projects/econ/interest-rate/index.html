@@ -347,28 +347,19 @@
 
   const PERIOD_FILES = { '3M': '/data/history-90d.json', '6M': '/data/history-180d.json' };
 
-  // ── BoC 2026 announcement dates (fixed schedule, published annually by BoC)
-  // Source: bankofcanada.ca/press/upcoming-events/
-  const BOC_DATES_2026 = [
-    '2026-01-28', '2026-03-18', '2026-04-29',
-    '2026-06-10', '2026-07-15', '2026-09-09',
-    '2026-10-28', '2026-12-09'
-  ];
+  // ── BoC decision schedule lives in the Lambda (BOC_DECISION_DATES); the feed carries
+  // boc.next_decision and boc.last_decision so there is one schedule to maintain.
+  const fmtDay = d => new Date(d + 'T12:00:00Z').toLocaleDateString('en-CA', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 
-  function bocNextDate() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    for (const d of BOC_DATES_2026) {
-      const dt = new Date(d + 'T09:45:00-05:00'); // 9:45 ET
-      if (dt >= today) {
-        const diff = Math.ceil((dt - today) / 86400000);
-        const fmt  = new Date(d + 'T12:00:00Z').toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
-        if (diff === 0) return `Decision today (${fmt}) at 9:45 ET`;
-        if (diff === 1) return `Decision tomorrow (${fmt}) at 9:45 ET`;
-        return `Next decision: ${fmt} \u00b7 ${diff} days away`;
-      }
-    }
-    return 'Next date: see bankofcanada.ca for 2027 schedule';
+  function bocNextText(next) {
+    if (!next) return 'Next decision: schedule not yet published \u2014 see bankofcanada.ca';
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const diff  = Math.round((new Date(next + 'T00:00:00') - today) / 86400000);
+    const fmt   = fmtDay(next);
+    if (diff < 0)   return `Decision announced ${fmt} \u2014 rate data pending`;
+    if (diff === 0) return `Decision today (${fmt}) at 9:45 ET`;
+    if (diff === 1) return `Decision tomorrow (${fmt}) at 9:45 ET`;
+    return `Next decision: ${fmt} \u00b7 ${diff} days away`;
   }
 
   // ── Sparkline
@@ -412,14 +403,27 @@
 
   // ── Card renderers — read from indicators.json payload
 
+  // Signal reflects the outcome of the most recent scheduled decision (hike / cut / hold),
+  // not the last rate change \u2014 a hold after a hike must read HELD, not RISING.
   function renderBoC(boc) {
-    st('boc-next', bocNextDate());
+    st('boc-next', bocNextText(boc.next_decision));
     sv('val-boc', `${ff(boc.cur)}<span class="unit">%</span>`);
-    sv('chg-boc', fmtChg(boc.cur, boc.prev, '%'));
-    setDot('boc', boc.cur > boc.prev ? 'up' : boc.cur < boc.prev ? 'down' : 'flat');
-    st('meta-boc', `Last decision: ${boc.date} \u00b7 Source: Bank of Canada`);
-    if      (boc.cur > boc.prev) { setSig('boc', 'Rate RISING \u2014 variable payments increasing. Strong case to lock in fixed.', 'sig-lock');    return 'lock'; }
-    else if (boc.cur < boc.prev) { setSig('boc', 'Rate FALLING \u2014 variable payments dropping. Consider staying variable.',    'sig-wait');    return 'wait'; }
+    const ld = boc.last_decision;
+    let outcome;
+    if (ld) {
+      outcome = ld.outcome;
+      sv('chg-boc', fmtChg(ld.after, ld.before, '%'));
+      const word = { hike: 'raised', cut: 'cut', hold: 'held' }[outcome];
+      st('meta-boc', `Last decision: ${fmtDay(ld.date)} (${word}) \u00b7 effective ${fmtDay(ld.effective)} \u00b7 Source: Bank of Canada`);
+    } else {
+      // Feed written before v3.4.0, or no scheduled decision inside the fetched window
+      outcome = boc.cur > boc.prev ? 'hike' : boc.cur < boc.prev ? 'cut' : 'hold';
+      sv('chg-boc', fmtChg(boc.cur, boc.prev, '%'));
+      st('meta-boc', `Current rate since ${fmtDay(boc.date)} \u00b7 Source: Bank of Canada`);
+    }
+    setDot('boc', outcome === 'hike' ? 'up' : outcome === 'cut' ? 'down' : 'flat');
+    if      (outcome === 'hike') { setSig('boc', 'Rate RISING \u2014 variable payments increasing. Strong case to lock in fixed.', 'sig-lock');    return 'lock'; }
+    else if (outcome === 'cut')  { setSig('boc', 'Rate FALLING \u2014 variable payments dropping. Consider staying variable.',    'sig-wait');    return 'wait'; }
     else                         { setSig('boc', 'Rate HELD \u2014 no immediate change to variable payments.',                    'sig-neutral'); return 'neutral'; }
   }
 
@@ -634,11 +638,17 @@
     localStorage.setItem('econ-notes', JSON.stringify(log.slice(0, 24)));
     inp.value = ''; renderNotes();
   }
+  // Notes are user-entered text — build nodes with textContent, never innerHTML
   function renderNotes() {
-    const log = JSON.parse(localStorage.getItem('econ-notes') || '[]');
-    $('notes-list').innerHTML = log.slice(0, 6).map(e =>
-      `<div class="nentry"><div class="ndate">${e.date}</div><div class="ntext">${e.txt}</div></div>`
-    ).join('');
+    const log  = JSON.parse(localStorage.getItem('econ-notes') || '[]');
+    const list = $('notes-list');
+    list.replaceChildren(...log.slice(0, 6).map(e => {
+      const entry = document.createElement('div'); entry.className = 'nentry';
+      const date  = document.createElement('div'); date.className  = 'ndate'; date.textContent = e.date;
+      const text  = document.createElement('div'); text.className  = 'ntext'; text.textContent = e.txt;
+      entry.append(date, text);
+      return entry;
+    }));
   }
   $('note-save-btn').addEventListener('click', saveNote);
 
