@@ -208,7 +208,7 @@ Goal: correct the reversed BoC overnight rate (false "cut" alert, wrong dashboar
 
 ---
 
-## Fix — Econ Dashboard: Adversarial Review Hardening (v3.4.0, In Progress — 2026-11-11 — all issues resolved, release pending)
+## Fix — Econ Dashboard: Adversarial Review Hardening (v3.4.0, Complete — 2026-11-11)
 
 Goal: resolve every finding from the 2026-11-11 adversarial review of the econ Lambda and dashboard,
 and add test coverage that prevents the BoC ordering class of bug from recurring.
@@ -239,8 +239,8 @@ and add test coverage that prevents the BoC ordering class of bug from recurring
 
 ### Release
 
-- [ ] Deploy, verify live feed and dashboard
-- [ ] Tag: v3.4.0
+- [x] Deploy, verify live feed and dashboard — CI test gate passed on first run; feed carries `last_decision` (2026-10-28 hike) and `next_decision` (2026-12-09); served dashboard renders "Last decision: Oct 28 (raised) · effective Oct 29"; no alerts fired on the verification invoke
+- [x] Tag: v3.4.0
 
 ---
 
