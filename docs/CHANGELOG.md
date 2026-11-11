@@ -8,6 +8,44 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [3.4.0] - 2026-11-11
+
+Resolves every finding (R1–R12) from the 2026-11-11 adversarial review of the econ Lambda and dashboard.
+
+### Added
+- `boc_decision_summary()` + `BOC_DECISION_DATES` (2026 and 2027 schedules) in the econ Lambda. The feed now carries `boc.last_decision` (`date`, `effective`, `outcome` hike/cut/hold, `before`, `after`) and `boc.next_decision`. A decision is resolved once the rate series has an observation dated after it, so "announced, rate data pending" is handled explicitly. (R2)
+- `boc_schedule_low` latched ops alert — emails once when `BOC_DECISION_DATES` is within 45 days of running out, so the schedule cannot silently lapse again. (R2)
+- Test suite expanded from 14 to 83 offline tests plus 6 opt-in live tests (`app/econ/pytest.ini`, `-m live`):
+  - `test_fetcher_ordering.py` — every fetcher returns identical output for oldest-first, newest-first and shuffled upstream rows; history series ascend in time.
+  - `test_alerts.py` — all 7 triggers across consecutive runs: crossings send once per event, latched conditions send once and re-arm, state-write and publish failures.
+  - `test_boc_rate.py` — decision outcomes (hike, cut, hold-after-hike, pending, weekend effective date, year boundary, schedule exhausted) and schedule validity (sorted, Wednesdays, known 2026 dates).
+  - `test_payload_contract.py` — full `handler()` run: every field the dashboard reads is present, the dashboard still reads every listed field, no hardcoded schedule, no secrets in the public payload.
+  - `test_helpers.py` — business-day staleness including the Christmas/New Year closure.
+  - `test_live_contract.py` — pins Valet `recent=N` newest-first / date-range oldest-first, Yahoo ascending timestamps, and sanity-checks real BoC and bond fetches.
+- `deploy.yml` — pytest gate before any deploy step; a failing econ test now blocks the release. (R5)
+
+### Changed
+- BoC dashboard signal is driven by the outcome of the most recent scheduled decision, not by `cur` vs `prev`. "Last decision" shows the announcement date and outcome plus the effective date. Falls back to the old comparison when reading a pre-v3.4.0 feed. (R1, R9)
+- Dashboard no longer carries its own schedule — `BOC_DATES_2026` removed; next-decision text comes from the feed. (R2)
+- Alerting split into crossing alerts (`boc_changed`, `cpi_above_3`, `cpi_below_2` — 24 h dedup) and latched alerts (`b10_invert`, `b5_up_7d`, `sp_down_7d`, `boc_schedule_low` — send once, re-arm only after the condition is observed false). Evaluation is a pure function, `_evaluate_alerts()`. (R3)
+- Bond `stale` flag counts missed business days (>3, today excluded) instead of >5 calendar days. (R8)
+- CPI alert text shows two decimals. (R11)
+
+### Fixed
+- BoC "Rate HELD" signal was unreachable since v3.3.1 — the dashboard would have kept reading "Rate RISING — strong case to lock in fixed" after a hold. (R1)
+- Yield-curve inversion, 5yr-up-7d and S&P-down-7d alerts re-sent every 24 h for as long as the condition held. Latent — not observed in the last 90 days of logs. (R3)
+- `fetch_bonds`, `fetch_td_equity`, `fetch_tsx` and `fetch_wti` relied on upstream row order; all now sort by date. Same bug class as v3.3.1. (R4)
+- Alert state was recorded after publishing, so a failed DynamoDB write re-sent the alert every 30 min. State is now recorded first and restored if the publish fails, so the next run retries. (R7)
+- Dashboard 2026 schedule listed 2026-09-09; the actual decision was 2026-09-02. (R12)
+
+### Security
+- `SECURITY.md` rewritten to the required structure: status block, one section per mechanism (Status / Why / How / Contract) across all nine mechanisms actually built — public-repo hygiene, CI/CD identity, site edge, econ pipeline, tracker sessions, tracker API isolation, AI coach, maintenance-script guards, dashboard rendering — plus open items, audit record and code-signing guidance. Corrects the previous claim that the repository had "no user accounts, no database, and no server-side code". Live headers, WAF behaviour and the OIDC trust condition were verified on 2026-11-11, not taken from runbooks; one runbook's "WAF: disabled" is stale.
+- `README.md` — added the required dated "Current Security State" block, summarising `SECURITY.md`.
+- Public `indicators.json` `errors` values are now a fixed `"source unavailable"` per source; upstream exception text (URLs, API error bodies) is logged to CloudWatch only. (R6)
+- Dashboard notes panel builds entries with `textContent` instead of `innerHTML`. (R10)
+
+---
+
 ## [3.3.1] - 2026-11-11
 
 ### Added

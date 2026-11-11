@@ -35,7 +35,7 @@ This is not a consulting brochure. It is a working journal with proof of work.
 tacedata-site/
 ├── README.md                       ← this file
 ├── LICENSE                         ← All Rights Reserved
-├── SECURITY.md                     ← vulnerability reporting
+├── SECURITY.md                     ← security mechanisms, open items, audit record, reporting
 ├── .github/
 │   └── workflows/
 │       ├── deploy.yml              ← GitHub Actions deploy pipeline (on push)
@@ -152,3 +152,22 @@ See `config/runbook-stage3-aws.md` for site infrastructure setup and `config/run
 ## Current State
 
 See `docs/STAGES.md` for the current phase and what is complete.
+
+---
+
+## Current Security State
+
+| | |
+|---|---|
+| **As of** | 2026-11-11 — v3.4.0 |
+| **Last review** | 2026-11-11 — full-repository review + adversarial review of the econ Lambda and dashboard |
+| **Findings** | 12 of 12 econ review findings resolved (2 `[SEC]`) |
+| **Open items** | 10 (5 LOW, 5 ADV) — none believed actively exploited |
+| **Tests** | Econ Lambda: 83 offline (CI deploy gate) + 6 opt-in live · AI coach: 37 eval cases (CI on prompt changes) · Tracker Lambdas: none yet (open item O3) |
+
+Headline controls: no stored cloud credentials (GitHub OIDC pinned to `main`), private S3 origin
+behind CloudFront + WAF, Cognito allowlist with server-side PKCE and HttpOnly refresh cookie,
+per-user data isolation keyed on the verified JWT `sub`, AI coach key in Secrets Manager with a
+fail-closed medical rail. Full detail, open items and audit record: [`SECURITY.md`](SECURITY.md).
+
+Updated at the end of every implementation stage.

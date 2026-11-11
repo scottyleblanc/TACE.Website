@@ -21,6 +21,18 @@ jobs:
         with:
           submodules: recursive
 
+      # Gate: econ Lambda + dashboard-contract tests must pass before anything deploys.
+      # Offline only — live upstream contract tests (-m live) are excluded by pytest.ini.
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Test econ Lambda
+        run: |
+          pip install --quiet pytest boto3
+          python -m pytest app/econ -q
+
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v3
         with:

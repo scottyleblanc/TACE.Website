@@ -80,13 +80,47 @@ def http_post(url, body, timeout=15):
 
 BOC_RATE_LOOKBACK_DAYS = 730  # long enough to span the longest recent hold period
 
+# Fixed announcement schedule (9:45 ET), published by the BoC each July for the next year.
+# Source: bankofcanada.ca — "Bank of Canada publishes its 2027 schedule..." (2026-07).
+# A latched ops alert (boc_schedule_low) fires SCHEDULE_WARN_DAYS before this runs out.
+BOC_DECISION_DATES = (
+    "2026-01-28", "2026-03-18", "2026-04-29", "2026-06-10",
+    "2026-07-15", "2026-09-02", "2026-10-28", "2026-12-09",
+    "2027-01-27", "2027-03-03", "2027-04-28", "2027-06-02",
+    "2027-07-21", "2027-09-08", "2027-10-27", "2027-12-08",
+)
+
+
+def boc_decision_summary(obs, schedule=BOC_DECISION_DATES):
+    """Classify the most recent BoC decision from the rate series.
+    obs: [(YYYY-MM-DD, rate)] sorted oldest->newest. A decision on day D takes effect
+    the next business day, so it is resolved once an observation dated after D exists.
+    Returns {"last_decision": {date, effective, outcome, before, after} | None,
+             "next_decision": YYYY-MM-DD | None}
+    next_decision is the first scheduled date not yet reflected in the data — it can be
+    today or slightly in the past while the effective-day observation is pending."""
+    last, nxt = None, None
+    for day in schedule:
+        after = next(((d, r) for d, r in obs if d > day), None)
+        if after is None:
+            nxt = day
+            break
+        before = next(((d, r) for d, r in reversed(obs) if d <= day), None)
+        if before is None:
+            continue  # decision predates the fetched window
+        outcome = "hike" if after[1] > before[1] else "cut" if after[1] < before[1] else "hold"
+        last = {"date": day, "effective": after[0], "outcome": outcome,
+                "before": before[1], "after": after[1]}
+    return {"last_decision": last, "next_decision": nxt}
+
 
 def fetch_boc_rate():
     """Bank of Canada overnight rate — series V39079.
-    Returns {cur, prev, date}:
+    Returns {cur, prev, date, last_decision, next_decision}:
       cur  — current rate
       prev — rate in effect before the most recent change (== cur if no change in window)
       date — first day the current rate took effect
+      last_decision / next_decision — see boc_decision_summary()
 
     Valet returns `recent=N` results newest-first but date-range results oldest-first,
     so we use a date range and sort explicitly rather than trust either order."""
@@ -106,7 +140,7 @@ def fetch_boc_rate():
             prev = obs[i - 1][1]
             date = obs[i][0]
             break
-    return {"cur": cur, "prev": prev, "date": date}
+    return {"cur": cur, "prev": prev, "date": date, **boc_decision_summary(obs)}
 
 
 def fetch_bonds():
@@ -125,16 +159,19 @@ def fetch_bonds():
         f"{BOC_BASE}/observations/group/bond_yields_benchmark/json"
         f"?start_date={start_date}&end_date={today}"
     )
-    obs = [
-        o for o in d["observations"]
-        if o.get("BD.CDN.5YR.DQ.YLD", {}).get("v") and o.get("BD.CDN.10YR.DQ.YLD", {}).get("v")
-    ]
+    obs = sorted(
+        (
+            o for o in d["observations"]
+            if o.get("BD.CDN.5YR.DQ.YLD", {}).get("v") and o.get("BD.CDN.10YR.DQ.YLD", {}).get("v")
+        ),
+        key=lambda o: o["d"],
+    )
     h5  = [float(o["BD.CDN.5YR.DQ.YLD"]["v"])  for o in obs]
     h10 = [float(o["BD.CDN.10YR.DQ.YLD"]["v"]) for o in obs]
     date = obs[-1]["d"]
 
-    # Stale flag: more than 5 business days without an update signals a benchmark transition gap.
-    stale = _is_stale(date, days=5)
+    # Stale flag: missed business days signal a benchmark transition gap, not a holiday.
+    stale = _is_stale(date, business_days=BOND_STALE_BUSINESS_DAYS)
 
     return {
         "b5":  {"cur": h5[-1],  "prev": h5[-2],  "history": h5[-30:],  "date": date, "stale": stale},
@@ -190,8 +227,8 @@ def fetch_tsx():
     timestamps = result["timestamp"]
     closes     = result["indicators"]["quote"][0]["close"]
 
-    # Filter nulls (trading halts, missing data points)
-    pairs = [(ts, c) for ts, c in zip(timestamps, closes) if c is not None]
+    # Filter nulls (trading halts, missing data points); sort — never trust API order
+    pairs = sorted(((ts, c) for ts, c in zip(timestamps, closes) if c is not None), key=lambda p: p[0])
     if len(pairs) < 2:
         raise RuntimeError(f"Yahoo Finance returned insufficient TSX data: {len(pairs)} points")
 
@@ -221,7 +258,10 @@ def fetch_wti():
         f"&sort_order=asc"
     )
     d   = http_get(url)
-    obs = [(o["date"], float(o["value"])) for o in d["observations"] if o["value"] != "."]
+    obs = sorted(
+        ((o["date"], float(o["value"])) for o in d["observations"] if o["value"] != "."),
+        key=lambda t: t[0],
+    )
     if len(obs) < 2:
         raise RuntimeError(f"FRED returned insufficient WTI data: {len(obs)} observations")
     history = [v for _, v in obs]
@@ -250,7 +290,8 @@ def fetch_td_equity(symbol):
         f"&interval=1day&outputsize=30&apikey={TD_API_KEY}"
     )
     _td_check(series, symbol)
-    history = [float(v["close"]) for v in reversed(series["values"])]
+    # Sort oldest->newest by datetime — Twelve Data defaults to newest-first, but never trust API order
+    history = [float(v["close"]) for v in sorted(series["values"], key=lambda v: v["datetime"])]
 
     return {"cur": cur, "prev": prev, "history": history}
 
@@ -267,34 +308,49 @@ def _td_check(d, symbol):
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def _is_stale(date_str, days):
-    """True if date_str (YYYY-MM-DD) is more than `days` days in the past."""
-    dt  = datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
-    age = (datetime.now(timezone.utc) - dt).total_seconds() / 86400
-    return age > days
+BOND_STALE_BUSINESS_DAYS = 3
+
+
+def _is_stale(date_str, business_days, today=None):
+    """True if more than `business_days` weekdays have passed since date_str (YYYY-MM-DD)
+    without a newer observation. Today is excluded — its data posts end of day — so a
+    normal weekend, a long weekend, or the Christmas/New Year closure stays fresh."""
+    today = today or datetime.now(timezone.utc).date()
+    day   = datetime.strptime(date_str, "%Y-%m-%d").date() + timedelta(days=1)
+    missed = 0
+    while day < today:
+        if day.weekday() < 5:
+            missed += 1
+        day += timedelta(days=1)
+    return missed > business_days
 
 
 # ── Threshold alerting ────────────────────────────────────────────────────────
+#
+# Two alert kinds:
+#   Crossing — an event detected by comparing against the ~1-day-old snapshot
+#              (BoC rate change, CPI crossing a band). Detected for ~24 h after the
+#              event; the 24 h dedup record makes it send once.
+#   Latched  — a condition that can persist for weeks (curve inversion, rolling
+#              7-day moves, schedule running out). Sends once when the condition
+#              becomes true, re-arms only after it has been observed false.
+#
+# Dedup/latch state lives in DynamoDB as pk=ALERT, ts=<trigger_id>. The record is
+# written BEFORE publishing so a failed state write can never cause a send loop;
+# if the publish fails the prior record is restored so the next run retries.
 
-# Alert dedup window — suppress repeat alerts for the same trigger within this period.
 ALERT_DEDUP_HOURS = 24
+SCHEDULE_WARN_DAYS = 45  # warn this many days before BOC_DECISION_DATES runs out
 
-# Threshold definitions — each entry is (trigger_id, label, threshold, direction, window_days)
-# direction: 'cross_above', 'cross_below', 'change_up', 'invert'
-THRESHOLDS = [
-    ("b5_up_7d",       "GoC 5yr yield up >+0.30% over 7 days",   0.30,  "change_up",    7),
-    ("b10_invert",     "Yield curve inverted (10yr < 5yr)",        0,     "invert",       1),
-    ("cpi_above_3",    "CPI YoY crossed above 3.0%",               3.0,   "cross_above",  1),
-    ("cpi_below_2",    "CPI YoY crossed below 2.0%",               2.0,   "cross_below",  1),
-    ("boc_changed",    "BoC overnight rate changed",               0,     "boc_change",   1),
-    ("sp_down_7d",     "S&P 500 down >10% over 7 days",           -10.0,  "change_pct",   7),
-]
+CROSSING_TRIGGERS = ("boc_changed", "cpi_above_3", "cpi_below_2")
+LATCHED_TRIGGERS  = ("b5_up_7d", "b10_invert", "sp_down_7d", "boc_schedule_low")
 
 DASHBOARD_URL = "https://tacedata.ca/projects/econ/interest-rate/"
+_FOOTER       = f"Dashboard: {DASHBOARD_URL}\n\n---\nNot financial advice."
 
 
 def _get_7day_snapshot(table, days=7):
-    """Fetch the closest DynamoDB snapshot to N days ago. Returns item or None."""
+    """Fetch the closest DynamoDB snapshot at or before N days ago. Returns item or None."""
     from boto3.dynamodb.conditions import Key  # noqa: PLC0415
     cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
     resp   = table.query(
@@ -306,24 +362,40 @@ def _get_7day_snapshot(table, days=7):
     return items[0] if items else None
 
 
-def _alert_sent_recently(table, trigger_id):
-    """True if this trigger fired within the dedup window."""
+def _get_alert_record(table, trigger_id):
+    """Current dedup/latch record for a trigger, or None."""
     from boto3.dynamodb.conditions import Key  # noqa: PLC0415
-    cutoff = (datetime.now(timezone.utc) - timedelta(hours=ALERT_DEDUP_HOURS)).strftime("%Y-%m-%dT%H:%M:%SZ")
-    resp   = table.query(
+    resp  = table.query(
         KeyConditionExpression=Key("pk").eq("ALERT") & Key("ts").eq(trigger_id),
         Limit=1,
     )
     items = resp.get("Items", [])
-    if not items:
+    return items[0] if items else None
+
+
+def _dedup_cutoff():
+    return (datetime.now(timezone.utc) - timedelta(hours=ALERT_DEDUP_HOURS)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _sent_recently(record):
+    return bool(record) and record.get("sent_at", "") >= _dedup_cutoff()
+
+
+def _is_latched(record):
+    """Latched triggers store active=True/False. Records written before v3.4.0 have no
+    `active` key — treat them as active only while inside the old 24 h dedup window."""
+    if not record:
         return False
-    return items[0].get("sent_at", "") >= cutoff
+    if "active" in record:
+        return bool(record["active"])
+    return _sent_recently(record)
 
 
-def _record_alert(table, trigger_id, ts_now):
-    """Record that this trigger fired so duplicates are suppressed."""
-    ttl = int((datetime.now(timezone.utc) + timedelta(hours=ALERT_DEDUP_HOURS + 1)).timestamp())
-    table.put_item(Item={"pk": "ALERT", "ts": trigger_id, "sent_at": ts_now, "ttl": ttl})
+def _put_alert_record(table, trigger_id, ts_now, active, expire_hours=None):
+    item = {"pk": "ALERT", "ts": trigger_id, "sent_at": ts_now, "active": active}
+    if expire_hours:
+        item["ttl"] = int((datetime.now(timezone.utc) + timedelta(hours=expire_hours)).timestamp())
+    table.put_item(Item=item)
 
 
 def _publish_alert(subject, message):
@@ -337,118 +409,161 @@ def _publish_alert(subject, message):
     print(f"[indicators] alert sent: {subject}")
 
 
-def check_thresholds(payload, ts_now):
-    """Compare current indicator values against thresholds and prior snapshots.
-    Sends SNS alerts for meaningful crossings. Non-fatal — errors are logged only."""
-    if not SNS_TOPIC_ARN:
-        return  # alerting not configured — skip entirely
+def _send(table, trigger_id, subject, message, ts_now, previous, expire_hours=None):
+    """Record first, then publish; restore the previous record if the publish fails."""
+    _put_alert_record(table, trigger_id, ts_now, active=True, expire_hours=expire_hours)
+    try:
+        _publish_alert(subject, message)
+    except Exception:
+        if previous:
+            table.put_item(Item=previous)
+        else:
+            _put_alert_record(table, trigger_id, "", active=False, expire_hours=1)
+        raise
 
-    import boto3  # noqa: PLC0415
-    dynamodb = boto3.resource("dynamodb")
-    table    = dynamodb.Table(DYNAMODB_TABLE)
-    prior_7d = _get_7day_snapshot(table, days=7)
-    prior_1d = _get_7day_snapshot(table, days=1)
 
-    alerts = []
+def _evaluate_alerts(payload, prior_1d, prior_7d, today=None):
+    """Pure alert evaluation — no I/O.
+    Returns (crossings, latched):
+      crossings — list of (trigger_id, subject, message) for events detected this run
+      latched   — list of (trigger_id, condition, subject, message); condition is
+                  True/False, or None when it cannot be evaluated (missing data)."""
+    today     = today or datetime.now(timezone.utc).date()
+    crossings = []
+    latched   = []
 
-    # GoC 5yr yield up >+0.30% over 7 days
-    if payload.get("bonds") and prior_7d and prior_7d.get("b5"):
-        cur_b5   = payload["bonds"]["b5"]["cur"]
-        prev_b5  = float(prior_7d["b5"])
-        diff     = cur_b5 - prev_b5
-        if diff > 0.30:
-            alerts.append((
-                "b5_up_7d",
-                f"[econ-alert] GoC 5yr yield up +{diff:.2f}% over 7 days",
-                f"GoC 5yr Bond Yield has risen +{diff:.2f}% over the past 7 days.\n"
-                f"Current: {cur_b5:.2f}%  |  7 days ago: {prev_b5:.2f}%\n\n"
-                f"Fixed mortgage rates typically follow within 2-4 weeks.\n"
-                f"This may be a good time to review your rate decision.\n\n"
-                f"Dashboard: {DASHBOARD_URL}\n\n---\nNot financial advice.",
-            ))
-
-    # Yield curve inversion (10yr < 5yr)
-    if payload.get("bonds"):
-        b5  = payload["bonds"]["b5"]["cur"]
-        b10 = payload["bonds"]["b10"]["cur"]
-        if b10 < b5:
-            alerts.append((
-                "b10_invert",
-                "[econ-alert] Yield curve inverted — 10yr < 5yr",
-                f"The yield curve has inverted: 10yr ({b10:.2f}%) is below 5yr ({b5:.2f}%).\n\n"
-                f"An inverted yield curve is a recession signal. Rate cuts are likely ahead,\n"
-                f"which would favour staying variable over locking in fixed.\n\n"
-                f"Dashboard: {DASHBOARD_URL}\n\n---\nNot financial advice.",
-            ))
-
-    # CPI crossed above 3.0%
-    if payload.get("cpi") and prior_1d and prior_1d.get("cpi_yoy"):
-        cur_cpi  = payload["cpi"]["yoy"]
-        prev_cpi = float(prior_1d["cpi_yoy"])
-        if cur_cpi > 3.0 and prev_cpi <= 3.0:
-            alerts.append((
-                "cpi_above_3",
-                f"[econ-alert] CPI YoY crossed above 3.0% — now {cur_cpi:.1f}%",
-                f"CPI YoY has crossed above 3.0% (now {cur_cpi:.1f}%, was {prev_cpi:.1f}%).\n\n"
-                f"Inflation above the BoC's upper tolerance limits room for rate cuts.\n"
-                f"This may be a signal to consider locking in fixed.\n\n"
-                f"Dashboard: {DASHBOARD_URL}\n\n---\nNot financial advice.",
-            ))
-
-    # CPI crossed below 2.0%
-    if payload.get("cpi") and prior_1d and prior_1d.get("cpi_yoy"):
-        cur_cpi  = payload["cpi"]["yoy"]
-        prev_cpi = float(prior_1d["cpi_yoy"])
-        if cur_cpi < 2.0 and prev_cpi >= 2.0:
-            alerts.append((
-                "cpi_below_2",
-                f"[econ-alert] CPI YoY crossed below 2.0% — now {cur_cpi:.1f}%",
-                f"CPI YoY has crossed below 2.0% (now {cur_cpi:.1f}%, was {prev_cpi:.1f}%).\n\n"
-                f"Inflation below target opens room for BoC rate cuts.\n"
-                f"This may favour staying variable.\n\n"
-                f"Dashboard: {DASHBOARD_URL}\n\n---\nNot financial advice.",
-            ))
+    # ── Crossings ──
 
     # BoC rate changed — compare against the stored snapshot from ~1 day ago, not
-    # payload["boc"]["prev"], which holds the pre-decision rate indefinitely and
-    # would re-fire every time the dedup window expires.
+    # payload["boc"]["prev"], which holds the pre-decision rate indefinitely.
     if payload.get("boc") and prior_1d and prior_1d.get("boc"):
         cur_boc  = round(payload["boc"]["cur"], 4)
         prev_boc = round(float(prior_1d["boc"]), 4)
         if cur_boc != prev_boc:
             direction = "raised" if cur_boc > prev_boc else "cut"
             diff      = abs(cur_boc - prev_boc)
-            alerts.append((
+            crossings.append((
                 "boc_changed",
                 f"[econ-alert] BoC {direction} overnight rate to {cur_boc:.2f}%",
                 f"The Bank of Canada has {direction} the overnight rate by {diff:.2f}%.\n"
                 f"New rate: {cur_boc:.2f}%  |  Previous: {prev_boc:.2f}%\n\n"
                 f"{'Variable rate payments will increase.' if direction == 'raised' else 'Variable rate payments will decrease.'}\n\n"
-                f"Dashboard: {DASHBOARD_URL}\n\n---\nNot financial advice.",
+                f"{_FOOTER}",
             ))
+
+    if payload.get("cpi") and prior_1d and prior_1d.get("cpi_yoy"):
+        cur_cpi  = payload["cpi"]["yoy"]
+        prev_cpi = float(prior_1d["cpi_yoy"])
+        if cur_cpi > 3.0 and prev_cpi <= 3.0:
+            crossings.append((
+                "cpi_above_3",
+                f"[econ-alert] CPI YoY crossed above 3.0% — now {cur_cpi:.2f}%",
+                f"CPI YoY has crossed above 3.0% (now {cur_cpi:.2f}%, was {prev_cpi:.2f}%).\n\n"
+                f"Inflation above the BoC's upper tolerance limits room for rate cuts.\n"
+                f"This may be a signal to consider locking in fixed.\n\n"
+                f"{_FOOTER}",
+            ))
+        if cur_cpi < 2.0 and prev_cpi >= 2.0:
+            crossings.append((
+                "cpi_below_2",
+                f"[econ-alert] CPI YoY crossed below 2.0% — now {cur_cpi:.2f}%",
+                f"CPI YoY has crossed below 2.0% (now {cur_cpi:.2f}%, was {prev_cpi:.2f}%).\n\n"
+                f"Inflation below target opens room for BoC rate cuts.\n"
+                f"This may favour staying variable.\n\n"
+                f"{_FOOTER}",
+            ))
+
+    # ── Latched conditions ──
+
+    # GoC 5yr yield up >+0.30% over 7 days
+    if payload.get("bonds") and prior_7d and prior_7d.get("b5"):
+        cur_b5  = payload["bonds"]["b5"]["cur"]
+        prev_b5 = float(prior_7d["b5"])
+        diff    = cur_b5 - prev_b5
+        latched.append((
+            "b5_up_7d", diff > 0.30,
+            f"[econ-alert] GoC 5yr yield up +{diff:.2f}% over 7 days",
+            f"GoC 5yr Bond Yield has risen +{diff:.2f}% over the past 7 days.\n"
+            f"Current: {cur_b5:.2f}%  |  7 days ago: {prev_b5:.2f}%\n\n"
+            f"Fixed mortgage rates typically follow within 2-4 weeks.\n"
+            f"This may be a good time to review your rate decision.\n\n"
+            f"{_FOOTER}",
+        ))
+
+    # Yield curve inversion (10yr < 5yr)
+    if payload.get("bonds"):
+        b5  = payload["bonds"]["b5"]["cur"]
+        b10 = payload["bonds"]["b10"]["cur"]
+        latched.append((
+            "b10_invert", b10 < b5,
+            "[econ-alert] Yield curve inverted — 10yr < 5yr",
+            f"The yield curve has inverted: 10yr ({b10:.2f}%) is below 5yr ({b5:.2f}%).\n\n"
+            f"An inverted yield curve is a recession signal. Rate cuts are likely ahead,\n"
+            f"which would favour staying variable over locking in fixed.\n\n"
+            f"{_FOOTER}",
+        ))
 
     # S&P 500 down >10% over 7 days
     if payload.get("sp") and prior_7d and prior_7d.get("sp"):
         cur_sp  = payload["sp"]["cur"]
         prev_sp = float(prior_7d["sp"])
         pct     = ((cur_sp - prev_sp) / prev_sp) * 100
-        if pct < -10.0:
-            alerts.append((
-                "sp_down_7d",
-                f"[econ-alert] S&P 500 down {pct:.1f}% over 7 days",
-                f"The S&P 500 has fallen {pct:.1f}% over the past 7 days.\n"
-                f"Current: {cur_sp:.2f}  |  7 days ago: {prev_sp:.2f}\n\n"
-                f"Sharp equity declines raise recession risk and may prompt BoC rate cuts,\n"
-                f"which would favour staying variable.\n\n"
-                f"Dashboard: {DASHBOARD_URL}\n\n---\nNot financial advice.",
-            ))
+        latched.append((
+            "sp_down_7d", pct < -10.0,
+            f"[econ-alert] S&P 500 down {pct:.1f}% over 7 days",
+            f"The S&P 500 has fallen {pct:.1f}% over the past 7 days.\n"
+            f"Current: {cur_sp:.2f}  |  7 days ago: {prev_sp:.2f}\n\n"
+            f"Sharp equity declines raise recession risk and may prompt BoC rate cuts,\n"
+            f"which would favour staying variable.\n\n"
+            f"{_FOOTER}",
+        ))
 
-    # Send non-duplicate alerts
-    for trigger_id, subject, message in alerts:
+    # BoC decision schedule running out — operational reminder to update the code
+    last_scheduled = datetime.strptime(BOC_DECISION_DATES[-1], "%Y-%m-%d").date()
+    days_left      = (last_scheduled - today).days
+    latched.append((
+        "boc_schedule_low", days_left < SCHEDULE_WARN_DAYS,
+        "[econ-ops] BoC decision schedule needs updating",
+        f"BOC_DECISION_DATES in indicators.py ends {last_scheduled} ({days_left} days away).\n"
+        f"Add next year's dates from the Bank of Canada's published schedule\n"
+        f"(released each July) so the dashboard's decision signal keeps working.",
+    ))
+
+    return crossings, latched
+
+
+def check_thresholds(payload, ts_now):
+    """Evaluate alerts and send/latch via SNS + DynamoDB. Non-fatal — errors are logged only."""
+    if not SNS_TOPIC_ARN:
+        return  # alerting not configured — skip entirely
+
+    import boto3  # noqa: PLC0415
+    table    = boto3.resource("dynamodb").Table(DYNAMODB_TABLE)
+    prior_1d = _get_7day_snapshot(table, days=1)
+    prior_7d = _get_7day_snapshot(table, days=7)
+
+    crossings, latched = _evaluate_alerts(payload, prior_1d, prior_7d)
+
+    for trigger_id, subject, message in crossings:
         try:
-            if not _alert_sent_recently(table, trigger_id):
-                _publish_alert(subject, message)
-                _record_alert(table, trigger_id, ts_now)
+            record = _get_alert_record(table, trigger_id)
+            if not _sent_recently(record):
+                _send(table, trigger_id, subject, message, ts_now, record,
+                      expire_hours=ALERT_DEDUP_HOURS + 1)
+        except Exception as e:
+            print(f"[indicators] alert failed for {trigger_id}: {e}")
+
+    for trigger_id, condition, subject, message in latched:
+        if condition is None:
+            continue
+        try:
+            record = _get_alert_record(table, trigger_id)
+            active = _is_latched(record)
+            if condition and not active:
+                _send(table, trigger_id, subject, message, ts_now, record)
+            elif not condition and active:
+                _put_alert_record(table, trigger_id, ts_now, active=False)
+                print(f"[indicators] alert re-armed: {trigger_id}")
         except Exception as e:
             print(f"[indicators] alert failed for {trigger_id}: {e}")
 
@@ -556,6 +671,16 @@ def generate_history_files(ts_now):
 
 # ── Handler ───────────────────────────────────────────────────────────────────
 
+PUBLIC_FETCH_ERROR = "source unavailable"
+
+
+def _record_fetch_error(errors, key, exc):
+    """[SEC] indicators.json is public. Upstream exception text (URLs, API error bodies)
+    goes to CloudWatch only; the payload carries a fixed generic message."""
+    print(f"[indicators] fetch failed for {key}: {type(exc).__name__}: {exc}")
+    errors[key] = PUBLIC_FETCH_ERROR
+
+
 def handler(event, context):
     """Lambda entry point. Fetches all indicators, writes indicators.json to S3,
     writes a timestamped snapshot to DynamoDB, and regenerates history files once daily."""
@@ -574,7 +699,7 @@ def handler(event, context):
         try:
             payload[key] = fn()
         except Exception as e:
-            errors[key] = str(e)
+            _record_fetch_error(errors, key, e)
             payload[key] = None
 
     # Twelve Data — SPY and CAD/USD only (4 calls, within 8/min free tier)
@@ -582,7 +707,7 @@ def handler(event, context):
         try:
             payload[key] = fetch_td_equity(symbol)
         except Exception as e:
-            errors[key] = str(e)
+            _record_fetch_error(errors, key, e)
             payload[key] = None
         if TD_PAUSE_S:
             time.sleep(TD_PAUSE_S)

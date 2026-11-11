@@ -208,6 +208,60 @@ Goal: correct the reversed BoC overnight rate (false "cut" alert, wrong dashboar
 
 ---
 
+## Fix — Econ Dashboard: Adversarial Review Hardening (v3.4.0, In Progress — 2026-11-11 — all issues resolved, release pending)
+
+Goal: resolve every finding from the 2026-11-11 adversarial review of the econ Lambda and dashboard,
+and add test coverage that prevents the BoC ordering class of bug from recurring.
+
+### Issues
+
+- [x] **R1 (High, v3.3.1 regression)** — BoC "Rate HELD" signal unreachable. `boc.prev` is now the rate before the last change, so `cur != prev` until the next change; the dashboard shows "Rate RISING — strong case to lock in fixed" and casts a `lock` verdict vote indefinitely, including after a hold decision. Must ship before the 2026-12-09 decision.
+- [x] **R2 (High)** — BoC decision schedule hardcoded for 2026 only (`BOC_DATES_2026` in the dashboard). After 2026-12-09 the "Next decision" line falls back to a placeholder, and R1's fix depends on the schedule. Move the schedule into the Lambda, add 2027 dates, emit last-decision outcome and next-decision date in the feed.
+- [x] **R3 (Medium)** — Three alerts test a persistent condition, not a crossing: `b10_invert`, `b5_up_7d`, `sp_down_7d`. While the condition holds, the same alert re-sends every 24 h (dedup window). Latent — not observed in the last 90 days of logs.
+- [x] **R4 (Medium, same class as v3.3.1)** — Fetchers rely on implicit API ordering: `fetch_bonds` (Valet, assumes oldest-first), `fetch_td_equity` (Twelve Data, assumes newest-first and reverses), `fetch_tsx` (Yahoo, assumes oldest-first). Sort explicitly by date.
+- [x] **R5 (Medium, process)** — `deploy.yml` deploys the Lambda without running tests. Add a pytest gate before the Lambda update step.
+- [x] **R6 (Low) [SEC]** — Raw upstream exception text is published in the public `indicators.json` `errors` key and rendered on the dashboard. Publish a generic per-source message; log full detail to CloudWatch only.
+- [x] **R7 (Low)** — Alert dedup record is written after publish; if the DynamoDB write fails the alert re-sends every 30 min. Record before publish.
+- [x] **R8 (Low)** — Bond `stale` flag uses >5 calendar days; false "Bond data delayed" warning over the Christmas/New Year market closure. Use business days.
+- [x] **R9 (Low)** — Dashboard "Last decision" shows the rate's effective date (e.g. 2026-10-29), not the announcement date (2026-10-28). Show the announcement date from the schedule.
+- [x] **R10 (Low) [SEC]** — Dashboard notes panel renders saved notes via `innerHTML`. Self-only (viewer's own localStorage), but use `textContent`.
+- [x] **R11 (Low)** — CPI alert text uses one decimal, so a crossing above 3.0% reads "now 3.0%" (seen 2026-08-17). Use two decimals.
+- [x] **R12 (Low)** — Dashboard 2026 schedule lists 2026-09-09; the actual decision was 2026-09-02 (BoC 2027 schedule release reconfirms 2026-09-02, 10-28, 12-09; `fad-press-release-2026-09-09` 404s). Correct when the schedule moves to the Lambda (R2).
+
+### Test coverage
+
+- [x] Order-independence — every fetcher returns identical output for oldest-first, newest-first and shuffled input
+- [x] Alert behaviour — all 7 triggers (6 + new `boc_schedule_low`): fire on crossing, silent on consecutive runs while the condition persists, correct direction and wording
+- [x] BoC decision outcome — hike, cut, hold, decision day before rate data posts, year boundary, schedule exhaustion
+- [x] Payload contract — full `handler()` run with stubbed sources and AWS; `indicators.json` carries every field the dashboard reads
+- [x] Live upstream contract tests (opt-in `-m live`) — Valet / Yahoo ordering assumptions, real BoC + bond fetch sanity (FRED and Twelve Data need API keys — covered offline only)
+- [x] CI gate (R5)
+
+### Release
+
+- [ ] Deploy, verify live feed and dashboard
+- [ ] Tag: v3.4.0
+
+---
+
+## Security — Open Items (from SECURITY.md, 2026-11-11)
+
+Each maps to an entry in `SECURITY.md` → Open items. Not scheduled into a stage yet.
+
+- [ ] **O1 [SEC]** — Tighten main-site CSP: remove `'unsafe-inline'` scripts (hash/nonce or external file for the dashboard script), pin or self-host the jsdelivr Mermaid loader, add `frame-ancestors`, `object-src`, `base-uri`, `Permissions-Policy`; consider HSTS `preload`
+- [ ] **O2 [SEC]** — Move Twelve Data and FRED keys from Lambda env vars to Secrets Manager
+- [ ] **O3 [SEC]** — Automated tests for tracker Lambdas: JWT-`sub` scoping, cross-user 404, cookie flags, `state` mismatch, Origin check
+- [ ] **O4 [SEC]** — Refresh or remove stale `app/train/config/*-execution-policy.json` snapshots (still show retired table + `Scan`)
+- [ ] **O5 [SEC]** — Configure throttling on the tracker HTTP API (coach route in particular)
+- [ ] **O6** — Drop the rejected email from `auth_guard.py`'s exception message
+- [ ] **O7** — Evaluate a WAF on the tracker distribution
+- [ ] **O8 [SEC]** — Invited-emails store replacing the static allowlist (already tracked in `app/train/docs/TODO.md`; listed here for completeness)
+- [ ] **O9** — Revisit PITR on the tracker plan table if write patterns change
+- [ ] **O10** — Decide on Lambda code signing; renew `security.txt` before 2027-04-04
+- [ ] Fix stale runbook note: `config/runbook-stage3-aws.md` says "WAF: disabled"; a WAF is attached to the main distribution
+
+---
+
 ## Parking Lot — Open
 
 - Confirm 5 domain variants in Websavers dashboard before July 14, 2026 — keep minimum 3, let remainder lapse
