@@ -191,6 +191,23 @@ Goal: Lambda detects threshold crossings and publishes to SNS → email.
 
 ---
 
+## Fix — Econ Dashboard: BoC Rate Ordering (In Progress — 2026-11-11)
+
+Goal: correct the reversed BoC overnight rate (false "cut" alert, wrong dashboard rate) and its history.
+
+- [x] Root cause — `fetch_boc_rate()` read Valet `recent=10` as oldest-first; it is newest-first
+- [x] `fetch_boc_rate()` — date-range query, explicit sort, `prev`/`date` = rate before / date of last change
+- [x] BoC alert compares against the ~1-day-old snapshot, not `payload.boc.prev`
+- [x] Regression tests — `app/econ/tests/test_boc_rate.py`
+- [x] History correction script — `scripts/fix_boc_history.py` (dry run by default, backs up before writing)
+- [ ] Deploy Lambda (merge to main)
+- [ ] Dry run, then `--apply`, `fix_boc_history.py` against DynamoDB
+- [ ] Invoke Lambda with `{"force_history": true}` to regenerate history-90d / history-180d
+- [ ] Verify live `indicators.json` and history files show 2.50% from 2026-10-29
+- [ ] Tag
+
+---
+
 ## Parking Lot — Open
 
 - Confirm 5 domain variants in Websavers dashboard before July 14, 2026 — keep minimum 3, let remainder lapse
