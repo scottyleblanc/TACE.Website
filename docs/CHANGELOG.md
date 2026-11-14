@@ -6,8 +6,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+- `app/econ/tests/test_dashboard_verdict.py` + `dashboard_harness.js` — runs the real dashboard script in Node against crafted feeds; asserts every card counts toward the Overall read and each tag names its indicators. Runs in the CI deploy gate (skipped where Node is absent).
+
 ### Changed
+- Econ dashboard Overall read tags name the indicators behind each count, e.g. `2 lock signals: BoC rate · CPI`. (V2)
 - Econ project page (`/projects/econ-indicators/`) — added an "Open the live dashboard" link at the top of the page; the existing "Launch Dashboard" button below the architecture diagram is unchanged.
+
+### Fixed
+- Econ dashboard Overall read ignored the S&P 500, TSX and crude oil signals: `renderEquity()` returned the CSS class (`'sig-wait'`) while `buildVerdict()` counted `'wait'`. Present since v0.3.0. On 2026-11-14 the read showed "1 counter-signal" when there were 2 (5yr yield and crude oil). `buildVerdict()` also normalises values now, so a card returning the class form can never drop out silently again. (V1)
 
 ---
 

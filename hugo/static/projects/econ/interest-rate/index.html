@@ -527,7 +527,7 @@
     const pct = ((data.cur - data.history[0]) / data.history[0]) * 100;
     const { sig, cls } = sigFn(pct);
     setSig(id, sig, cls);
-    return cls.replace('sig ', ''); // preserves v0.3.0 return value
+    return cls.replace('sig sig-', ''); // 'lock' | 'wait' | 'watch' | 'neutral' — same as every other card
   }
 
   // renderCAD: inline — returns verdict string directly (matches v0.3.0 loadCAD behaviour)
@@ -543,22 +543,26 @@
   }
 
   // ── Overall verdict (unchanged from v0.3.0)
+  // sigs: [{ name, v }] — v is 'lock' | 'wait' | 'watch' | 'neutral'. Normalise defensively so a
+  // card returning its CSS class ('sig-wait') can never silently drop out of the tally again.
   function buildVerdict(sigs) {
-    const locks   = sigs.filter(s => s === 'lock').length;
-    const waits   = sigs.filter(s => s === 'wait').length;
-    const watches = sigs.filter(s => s === 'watch').length;
+    const kind    = s => String(s.v).replace(/^(sig\s+)?sig-/, '');
+    const namesOf = k => sigs.filter(s => kind(s) === k).map(s => s.name);
+    const lockN   = namesOf('lock'), waitN = namesOf('wait'), watchN = namesOf('watch');
+    const locks   = lockN.length, waits = waitN.length, watches = watchN.length;
+    const label   = (n, one, many, list) => `${n} ${n > 1 ? many : one}: ${list.join(' · ')}`;
     let txt, tags = [];
     if (locks >= 2) {
       txt = `Multiple signals pointing toward locking in a fixed rate \u2014 rising rates or inflation pressure detected across ${locks} indicator${locks > 1 ? 's' : ''}. If your variable rate is creating payment stress, this environment favours locking.`;
-      tags.push({ l: `${locks} lock signal${locks > 1 ? 's' : ''}`, c: 'lock' });
-      if (waits) tags.push({ l: `${waits} counter-signal${waits > 1 ? 's' : ''}`, c: 'wait' });
+      tags.push({ l: label(locks, 'lock signal', 'lock signals', lockN), c: 'lock' });
+      if (waits) tags.push({ l: label(waits, 'counter-signal', 'counter-signals', waitN), c: 'wait' });
     } else if (waits >= 2) {
       txt = `Multiple signals suggest rates may ease \u2014 ${waits} indicator${waits > 1 ? 's' : ''} point toward possible cuts ahead. If you can absorb payment variability, staying variable may save money over the coming months.`;
-      tags.push({ l: `${waits} stay-variable signal${waits > 1 ? 's' : ''}`, c: 'wait' });
-      if (locks) tags.push({ l: `${locks} lock signal${locks > 1 ? 's' : ''}`, c: 'lock' });
+      tags.push({ l: label(waits, 'stay-variable signal', 'stay-variable signals', waitN), c: 'wait' });
+      if (locks) tags.push({ l: label(locks, 'lock signal', 'lock signals', lockN), c: 'lock' });
     } else if (watches >= 2) {
       txt = `Mixed picture \u2014 some pressure building but no clear direction yet. Watch the BoC rate, bond yields and CPI closely before making a decision.`;
-      tags.push({ l: `${watches} watch signal${watches > 1 ? 's' : ''}`, c: 'watch' });
+      tags.push({ l: label(watches, 'watch signal', 'watch signals', watchN), c: 'watch' });
     } else {
       txt = `Signals are mixed or neutral \u2014 no strong pressure in either direction. Use this time to assess your personal tolerance for variable rate risk rather than reacting to market noise.`;
       tags.push({ l: 'No dominant signal', c: '' });
@@ -676,26 +680,26 @@
 
       const sigs = [];
 
-      if (d.boc)   { sigs.push(renderBoC(d.boc)); }
-      else         { setSig('boc', `${UNAVAIL} BoC rate feed failed \u2014 see error above.`, 'sig-loading'); sigs.push('neutral'); }
+      if (d.boc)   { sigs.push({ name: 'BoC rate', v: renderBoC(d.boc) }); }
+      else         { setSig('boc', `${UNAVAIL} BoC rate feed failed \u2014 see error above.`, 'sig-loading'); sigs.push({ name: 'BoC rate', v: 'neutral' }); }
 
-      if (d.bonds) { sigs.push(...renderBonds(d.bonds)); }
-      else         { ['b5','b10'].forEach(id => setSig(id, `${UNAVAIL} Bond yield feed failed.`, 'sig-loading')); sigs.push('neutral', 'neutral'); }
+      if (d.bonds) { const [r5, r10] = renderBonds(d.bonds); sigs.push({ name: '5yr yield', v: r5 }, { name: '10yr yield', v: r10 }); }
+      else         { ['b5','b10'].forEach(id => setSig(id, `${UNAVAIL} Bond yield feed failed.`, 'sig-loading')); sigs.push({ name: '5yr yield', v: 'neutral' }, { name: '10yr yield', v: 'neutral' }); }
 
-      if (d.cpi)   { sigs.push(renderCPI(d.cpi)); }
-      else         { setSig('cpi', `${UNAVAIL} CPI feed failed.`, 'sig-loading'); sigs.push('neutral'); }
+      if (d.cpi)   { sigs.push({ name: 'CPI', v: renderCPI(d.cpi) }); }
+      else         { setSig('cpi', `${UNAVAIL} CPI feed failed.`, 'sig-loading'); sigs.push({ name: 'CPI', v: 'neutral' }); }
 
-      if (d.sp)    { sigs.push(renderEquity('sp',  d.sp,  cur => `${Math.round(cur).toLocaleString()}<span class="unit">SPY</span>`, spSignal)); }
-      else         { setSig('sp',  `${UNAVAIL} S&P 500 feed failed.`, 'sig-loading'); sigs.push('neutral'); }
+      if (d.sp)    { sigs.push({ name: 'S&P 500', v: renderEquity('sp',  d.sp,  cur => `${Math.round(cur).toLocaleString()}<span class="unit">SPY</span>`, spSignal) }); }
+      else         { setSig('sp',  `${UNAVAIL} S&P 500 feed failed.`, 'sig-loading'); sigs.push({ name: 'S&P 500', v: 'neutral' }); }
 
-      if (d.tsx)   { sigs.push(renderEquity('tsx', d.tsx, cur => `${Math.round(cur).toLocaleString()}<span class="unit">pts</span>`, tsxSignal)); }
-      else         { setSig('tsx', `${UNAVAIL} TSX feed failed.`, 'sig-loading'); sigs.push('neutral'); }
+      if (d.tsx)   { sigs.push({ name: 'TSX', v: renderEquity('tsx', d.tsx, cur => `${Math.round(cur).toLocaleString()}<span class="unit">pts</span>`, tsxSignal) }); }
+      else         { setSig('tsx', `${UNAVAIL} TSX feed failed.`, 'sig-loading'); sigs.push({ name: 'TSX', v: 'neutral' }); }
 
-      if (d.oil)   { sigs.push(renderEquity('oil', d.oil, cur => `$${ff(cur)}<span class="unit">USD</span>`, oilSignal)); }
-      else         { setSig('oil', `${UNAVAIL} Crude oil feed failed.`, 'sig-loading'); sigs.push('neutral'); }
+      if (d.oil)   { sigs.push({ name: 'Crude oil', v: renderEquity('oil', d.oil, cur => `$${ff(cur)}<span class="unit">USD</span>`, oilSignal) }); }
+      else         { setSig('oil', `${UNAVAIL} Crude oil feed failed.`, 'sig-loading'); sigs.push({ name: 'Crude oil', v: 'neutral' }); }
 
-      if (d.cad)   { sigs.push(renderCAD(d.cad)); }
-      else         { setSig('cad', `${UNAVAIL} CAD/USD feed failed.`, 'sig-loading'); sigs.push('neutral'); }
+      if (d.cad)   { sigs.push({ name: 'CAD/USD', v: renderCAD(d.cad) }); }
+      else         { setSig('cad', `${UNAVAIL} CAD/USD feed failed.`, 'sig-loading'); sigs.push({ name: 'CAD/USD', v: 'neutral' }); }
 
       buildVerdict(sigs);
 
