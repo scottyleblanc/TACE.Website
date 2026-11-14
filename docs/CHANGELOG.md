@@ -7,6 +7,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- Project page `/projects/ai-dev-stack-proj/` — "ai development stack — making ai-generated code trustworthy". States the question, the nine-layer model, the test bed and the build approach. Status: planned, not started; build series posts to follow.
+
+---
+
+## [3.5.0] - 2026-11-14
+
+### Added
 - `app/econ/tests/test_dashboard_verdict.py` + `dashboard_harness.js` — runs the real dashboard script in Node against crafted feeds; asserts every card counts toward the Overall read and each tag names its indicators. Runs in the CI deploy gate (skipped where Node is absent).
 
 ### Changed
