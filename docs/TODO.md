@@ -244,6 +244,14 @@ and add test coverage that prevents the BoC ordering class of bug from recurring
 
 ---
 
+## Fix — Econ Dashboard: Overall Read Signal Counting (Complete — 2026-11-14)
+
+- [x] **V1 (Medium)** — Overall read ignores the S&P 500, TSX and crude oil signals. `renderEquity()` returns `'sig-wait'` / `'sig-lock'` / `'sig-watch'` (class name), but `buildVerdict()` counts `'wait'` / `'lock'` / `'watch'`, so those three cards never count. Present since v0.3.0. On 2026-11-14 the read showed "1 counter-signal" when there were 2 (5yr yield and crude oil).
+- [x] **V2 (Enhancement)** — Name the indicators behind each verdict tag (e.g. `2 lock signals: BoC rate · CPI`) instead of a bare count.
+- [x] Test — run the dashboard script in Node with crafted feeds; assert every card counts toward the verdict and the tags name the right indicators — `test_dashboard_verdict.py` (6 tests; 5 fail on the pre-fix dashboard)
+
+---
+
 ## Security — Open Items (from SECURITY.md, 2026-11-11)
 
 Each maps to an entry in `SECURITY.md` → Open items. Not scheduled into a stage yet.
