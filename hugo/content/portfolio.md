@@ -10,6 +10,18 @@ A map of the work: what was built, how it was documented, and where to find it.
 
 ---
 
+## AI Development Stack — making AI-generated code trustworthy
+
+*What a senior DBA has to put around AI-generated code before it can be trusted — answered by building the practices one layer at a time, on a real PowerShell module, and proving each layer with a planted defect.*
+
+**[Project write-up →](/projects/ai-dev-stack-proj/)**
+
+| Stage | What | Post | Status |
+|---|---|---|---|
+| 0 | Setup and baseline — test bed, three working examples, starting numbers | [Stack 0 — a baseline before any layer exists](/posts/stack-stage-0-post/) | Complete |
+
+---
+
 ## Running Tracker — 15-week training plan on AWS and Claude
 
 *A personal habit tracker built around a 15-week run/walk training plan — and a vehicle to learn DynamoDB, Lambda, Cognito, and the Claude API by building something I open every day.*

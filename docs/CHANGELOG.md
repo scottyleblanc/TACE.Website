@@ -6,6 +6,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+- Post `/posts/stack-stage-0-post/` — "ai development stack: stack 0 — a baseline before any layer exists". First post in the AI development stack series.
+- Portfolio page — new "AI Development Stack" section with the stage table (Stack 0).
+
+### Changed
+- Project page `/projects/ai-dev-stack-proj/` — status updated to in progress; build series links the Stack 0 post.
+
 ---
 
 ## [3.5.1] - 2026-11-14
