@@ -7,6 +7,8 @@ tags: ["aws", "python", "hugo", "twelve-data", "boc", "statscanada", "portfolio"
 summary: "A Canadian mortgage rate decision aid — eight economic indicators translated into plain-English signals."
 ---
 
+**[Open the live dashboard →](/projects/econ/interest-rate/)** — eight indicators, refreshed every 30 minutes.
+
 ## Problem
 
 When facing a mortgage renewal, the question of whether to lock in a fixed rate or stay variable is genuinely difficult. The internet has no shortage of opinion. What it lacks is a clean, signal-based view of the indicators that actually matter — stripped of media noise, translated into plain English, and specific to the Canadian context.
