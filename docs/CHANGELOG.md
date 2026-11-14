@@ -6,6 +6,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+---
+
+## [3.5.1] - 2026-11-14
+
+Start of the AI development stack track.
+
 ### Added
 - Project page `/projects/ai-dev-stack-proj/` — "ai development stack — making ai-generated code trustworthy". States the question, the nine-layer model, the test bed and the build approach. Status: planned, not started; build series posts to follow.
 
