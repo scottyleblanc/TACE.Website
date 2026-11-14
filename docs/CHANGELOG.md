@@ -6,6 +6,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+- Econ project page (`/projects/econ-indicators/`) — added an "Open the live dashboard" link at the top of the page; the existing "Launch Dashboard" button below the architecture diagram is unchanged.
+
 ---
 
 ## [3.4.0] - 2026-11-11
