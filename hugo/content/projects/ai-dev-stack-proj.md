@@ -59,8 +59,8 @@ Once the stack is running against that small set of functions, the next phase is
 
 ## status
 
-Planned, not started.  The layer model, the test bed, and the build order are settled.  No layer has been built yet, and nothing here has been proven.  That is what the build series is for.
+In progress.  Stack 0 — setup and baseline — is done: the test bed holds three working examples, and the starting numbers are recorded.  No layer has been built yet, and nothing here has been proven.  That is what the build series is for.
 
 ## build series
 
-Posts to follow, one per stage, as each layer comes online.
+- [stack 0 — a baseline before any layer exists](/posts/stack-stage-0-post/)
