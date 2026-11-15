@@ -59,8 +59,23 @@ Once the stack is running against that small set of functions, the next phase is
 
 ## status
 
-In progress.  Stack 0 — setup and baseline — is done: the test bed holds three working examples, and the starting numbers are recorded.  No layer has been built yet, and nothing here has been proven.  That is what the build series is for.
+In progress.
+
+| Stack | Builds layer | Name | Status |
+|---|---|---|---|
+| 0 | — | Setup and baseline | Complete |
+| 1 | 1 | Intent | Complete |
+| 2 | 3 | Deterministic checks | Next |
+| 3 | 4 | Tests | Not started |
+| 4 | 6 | Enforced gate | Not started |
+| 5 | 2 | Agent instructions | Not started |
+| 6 | 5 | Independent review | Not started |
+| 7 | 7 | Containment | Not started |
+| 8 | 8 | Release | Not started |
+| 9 | 9 | Feedback loop | Not started |
+| 10 | — | Wrap-up | Not started |
 
 ## build series
 
 - [stack 0 — a baseline before any layer exists](/posts/stack-stage-0-post/)
+- [stack 1 — specify what the code must do](/posts/stack-stage-1-post/)
