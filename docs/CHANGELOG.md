@@ -16,6 +16,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Project page `/projects/ai-dev-stack-proj/` — status updated to in progress; build series links the Stack 0 post.
 - Project page `/projects/ai-dev-stack-proj/` — status updated for Stack 1; build series links the Stack 1 post.
 - Post `/posts/stack-stage-1-post/` — adds "The baseline": the Stack 0 measures, taken again at the end of Stack 1.
+- Posts renamed to match the project page: `stack-stage-0-post` → `/posts/ai-dev-stack-0-post/`, `stack-stage-1-post` → `/posts/ai-dev-stack-1-post/`. Old URLs kept as aliases; portfolio and project page links updated.
+- Post `/posts/ai-dev-stack-1-post/` — rewritten in the style of the Stack 0 post; quotes the Stack 1 goal and adds a definition of "invariant".
+- Post `/posts/ai-dev-stack-0-post/` — wording tightened; next-in-series now links the Stack 1 post.
+- Project page `/projects/ai-dev-stack-proj/` — adds "the problem — inconsistency" and "the solution — a stack" sections; wording tightened.
 
 ---
 

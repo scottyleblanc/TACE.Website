@@ -21,15 +21,19 @@ What can a senior DBA do to make sure the AI-generated code they create is as co
 
 AI has changed what I can build.  I am a database administrator, and I now routinely produce working code in areas that used to belong to other specialties.  That is the upside.  The downside is that "it works" is the only thing I can easily see, and it is the least interesting claim about a piece of code.
 
-I already have habits.  I write invariants.  I lean heavily on Pester tests.  I lint, to a degree.  I run soak tests.  I keep a written set of coding standards that the AI reads at the start of every session.  But if I am honest, most of it is applied when I remember to, and code review tends to happen after the fact rather than before the merge.  Habits are not a system.
+I already have habits.  I write invariants.  I lean heavily on Pester tests.  I lint, to a degree.  I run soak tests.  I keep a written set of coding standards that the AI reads at the start of every session.  However, most of it is applied when I remember to, and code review tends to happen after the fact rather than before the merge.
 
-## the stack
+## the problem — inconsistency
 
-The working answer is a set of layers.  Each one catches what the layer before it missed, and none of them depends on the author — human or AI — being careful on the day.
+Human habits applied inconsistently are not a system.  AI is not deterministic — without rule based guidance, AI will produce different outputs (different code), for the same request.
+
+## the solution — a stack
+
+To make the checks consistent and raise code quality, I need a set of them applied in layers, before the code ships.  Each one catches what the layer before it missed, and none of them depends on the author — human or AI — being careful on the day.
 
 | Layer | What it is |
 |---|---|
-| 1. intent | What the code must do and must never do, written down before any code is generated |
+| 1. intent | What the code must do and must never do, specified before any code is generated |
 | 2. agent instructions | The standards the AI is given, drawn from one canonical source |
 | 3. deterministic checks | Linter, formatter, and secret scanning — the same answer every time |
 | 4. tests | Unit, invariant, integration, and soak |
@@ -49,7 +53,7 @@ That gives the stack real DBA code to prove itself against, with real security c
 
 One layer at a time, each one finished before the next begins.
 
-The order is not the order of the table.  Enforcement comes before more rules — I already have plenty of standards, and the gap is that nothing makes them stick.  Deterministic checks come before anything judged by a model.  And the checks live in scripts inside the repository, so the automation that calls them stays thin and the whole thing can move to a different platform without a rewrite.
+The order is not the order of the table.  Enforcement comes before more rules — I already have plenty of standards, and the gap is that nothing applies them consistently, every time.  Deterministic checks come before anything judged by a model.  And the checks live in scripts inside the repository, so the automation that calls them stays thin and the whole thing can move to a different platform without a rewrite.
 
 Every layer has to earn its place.  Before a stage is called done, I plant a deliberate defect on a throwaway branch — the kind of mistake that layer exists to catch — and the layer has to catch it.  If it does not, the stage is not finished.
 
@@ -77,5 +81,5 @@ In progress.
 
 ## build series
 
-- [stack 0 — a baseline before any layer exists](/posts/stack-stage-0-post/)
-- [stack 1 — specify what the code must do](/posts/stack-stage-1-post/)
+- [stack 0 — a baseline before any layer exists](/posts/ai-dev-stack-0-post/)
+- [stack 1 — specify what the code must do](/posts/ai-dev-stack-1-post/)
