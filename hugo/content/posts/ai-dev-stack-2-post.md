@@ -55,11 +55,26 @@ The following checks run from one script:
 | static | The project's own checks that read the code |
 | secrets | Passwords, keys and tokens in the files |
 | commits | Passwords, keys and tokens in commits not yet published |
-| notes | Passwords, keys, tokens and account numbers in the notes of those commits |
+| messages | Passwords, keys, tokens and account numbers in the notes of those commits |
 
 The unit tests are not part of it; they run separately, before each commit.
 
-The script runs on its own each time we publish to GitHub.  If any check fails, nothing is published.
+The script runs on its own each time we publish to GitHub.  If any check fails, nothing is published.  This is the publish that released this stage:
+
+```text
+> git push origin v0.2.2-dev master refs/tags/v0.2.2
+[PASS] tools : PSScriptAnalyzer 1.25.0, gitleaks 8.30.1, Pester 5.7.1, git
+[PASS] analyzer : 0 finding(s) over 37 files
+[PASS] static : 118 passed, 0 failed, 0 skipped, 0 file(s) failed to run
+[PASS] secrets : no leaks in the working tree
+[PASS] commits : no leaks in 2 unpushed commit(s)
+[PASS] messages : 2 unpushed commit message(s), 0 problem(s)
+[PASS] gate: all 6 checks passed
+...
+ * [new tag]         v0.2.2 -> v0.2.2
+```
+
+Every check passed, so the push went ahead.
 
 ---
 
