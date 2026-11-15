@@ -111,7 +111,7 @@ Stack 2 is deterministic checks: bringing every automatic check under one comman
 
 ---
 
-*Next in the series: Stack 2 — deterministic checks.*
+*Next in the series: [Stack 2 — one command for every static check](/posts/ai-dev-stack-2-post/).*
 
 ---
 
