@@ -1,6 +1,6 @@
 ---
 title: "ai development stack: stack 1 — specify what the code must do"
-date: 2026-11-14T00:00:00
+date: 2026-11-14T06:00:00
 draft: false
 aliases: ["/posts/stack-stage-1-post/"]
 tags: ["ai", "powershell", "oracle", "pester", "testing", "security", "stack"]
