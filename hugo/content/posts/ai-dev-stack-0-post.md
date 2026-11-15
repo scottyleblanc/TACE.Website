@@ -2,19 +2,20 @@
 title: "ai development stack: stack 0 — a baseline before any layer exists"
 date: 2026-11-14T00:00:00
 draft: false
+aliases: ["/posts/stack-stage-0-post/"]
 tags: ["ai", "powershell", "oracle", "pester", "testing", "security", "stack"]
-summary: "first post in the ai development stack series: before building a single check, I set up the test bed, brought in real code that handles credentials, and wrote down where things stand."
+summary: "first post in the ai development stack series: before building a single check, I set up the test bed, brought in real code that handles credentials, and recorded where things stand."
 ---
 
-### Measure First
+### Measure first
 
-*This is the first post in a series documenting the build of an AI development stack — a set of layers placed around AI-generated code so it can be trusted.  The [project page](/projects/ai-dev-stack-proj/) covers the question and the full layer model.  This post is Stack 0: no layers yet, just the ground they will stand on.*
+*This is the first post in a series documenting the build of an AI development stack — a set of layers placed around AI-generated code so it can be trusted.  The [project page](/projects/ai-dev-stack-proj/) covers the question and the full layer model.  This post is Stack 0: no layers yet, just the starting point they will be measured against.*
 
 ---
 
 The plan is to build nine layers of checking, one at a time, and to prove each one by planting a defect it is supposed to catch.  That only means something if I know where things stood before the first layer went in.
 
-So Stack 0 builds nothing.  It sets up the test bed and writes down the starting numbers.
+So Stack 0 builds nothing.  It sets up the test bed and records the starting numbers.
 
 ---
 
@@ -51,11 +52,11 @@ Those are the numbers every later stage gets measured against.
 
 ### What I did not fix
 
-Bringing the code across showed gaps, in the code and in the documents around it.  I fixed almost none of them.
+Bringing the code across showed gaps, in the code and in the documents around it.  I corrected the documents and left the code alone.
 
-The documents were corrected, because they are supposed to describe the present.  The code was left alone, on purpose.  Every gap is something a later layer should catch by itself, and if I tidy them by hand now I throw away the evidence.
+The documents are supposed to describe the present, so they had to be right.  Leaving the code alone was deliberate.  Every gap is something a later layer should catch by itself, and if I tidy them by hand now I throw away the evidence.
 
-They are written down in a baseline file in the repository instead, next to the numbers.
+They are recorded in a baseline file in the repository instead, next to the numbers.
 
 ---
 
@@ -71,11 +72,11 @@ That is the uncomfortable part of working with AI at speed.  The code arrives fa
 
 ### What comes next
 
-Stack 1 is intent: writing down, in plain language, what each function must do and must never do, and deciding which of my standards are real rules and which are habits.  Nothing gets enforced until that exists — a gate can only hold a line that someone has drawn.
+Stack 1 is intent: specifying, in plain language, what each function must do and must never do, and deciding which of my standards are real rules and which are habits.  Nothing gets enforced until that exists — a check can only enforce a rule that has been specified.
 
 ---
 
-*Next in the series: Stack 1 — intent.*
+*Next in the series: [Stack 1 — specify what the code must do](/posts/ai-dev-stack-1-post/).*
 
 ---
 
