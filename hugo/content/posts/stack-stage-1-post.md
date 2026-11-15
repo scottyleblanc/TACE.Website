@@ -51,6 +51,21 @@ Writing them turned up places where existing code did not do what it claimed.  E
 
 ---
 
+### The baseline
+
+The measures from Stack 0, taken again at the end of this stage:
+
+| Measure | End of Stack 0 | End of Stack 1 |
+|---|--:|--:|
+| Module code, lines | 1,883 | 2,553 |
+| Unit test code, lines | 3,847 | 4,302 |
+| Unit tests passing | 291 | 317 |
+| Static analyzer findings | 74 | 79 |
+
+Most of the new module code is the promises (invariants) themselves, which sit inside the code as comments.  The analyzer findings in the module code are unchanged at four.  The five new findings are a minor style rule, in new test files.
+
+---
+
 ### What comes next
 
 Stack 2 brings every automatic check under one command that gives the same answer every time it runs.

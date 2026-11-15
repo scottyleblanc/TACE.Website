@@ -15,6 +15,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 - Project page `/projects/ai-dev-stack-proj/` — status updated to in progress; build series links the Stack 0 post.
 - Project page `/projects/ai-dev-stack-proj/` — status updated for Stack 1; build series links the Stack 1 post.
+- Post `/posts/stack-stage-1-post/` — adds "The baseline": the Stack 0 measures, taken again at the end of Stack 1.
 
 ---
 
