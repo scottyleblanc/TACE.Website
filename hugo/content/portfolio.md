@@ -18,6 +18,7 @@ A map of the work: what was built, how it was documented, and where to find it.
 
 | Stage | What | Post | Status |
 |---|---|---|---|
+| 3 | Tests — every promise proven by a test that fails when the promise breaks, and a tier against a real Oracle database | [Stack 3 — testing the tests](/posts/ai-dev-stack-3-post/) | Complete |
 | 1 | Intent — coding standards, and promises (invariants) for each function that say what proves them | [Stack 1 — specify what the code must do](/posts/ai-dev-stack-1-post/) | Complete |
 | 0 | Setup and baseline — test bed, three working examples, starting numbers | [Stack 0 — a baseline before any layer exists](/posts/ai-dev-stack-0-post/) | Complete |
 
