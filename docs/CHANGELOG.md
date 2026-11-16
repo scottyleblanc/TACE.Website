@@ -13,6 +13,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Portfolio page — Stack 1 row in the AI Development Stack stage table.
 - Post `/posts/ai-dev-stack-3-post/` — "ai development stack: stack 3 — testing the tests". Fourth post in the series.
 - Portfolio page — Stack 3 row in the AI Development Stack stage table.
+- Post `/posts/ai-dev-stack-4-post/` — "ai development stack: stack 4 — a change that fails cannot be merged". Fifth post in the series.
+- Portfolio page — Stack 4 row in the AI Development Stack stage table.
 
 ### Changed
 - Project page `/projects/ai-dev-stack-proj/` — status updated to in progress; build series links the Stack 0 post.
@@ -24,6 +26,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Project page `/projects/ai-dev-stack-proj/` — adds "the problem — inconsistency" and "the solution — a stack" sections; wording tightened.
 - Project page `/projects/ai-dev-stack-proj/` — status updated for Stack 3; build series links the Stack 3 post.
 - Post `/posts/ai-dev-stack-2-post/` — next-in-series now links the Stack 3 post.
+- Project page `/projects/ai-dev-stack-proj/` — status updated for Stack 4; build series links the Stack 4 post.
+- Post `/posts/ai-dev-stack-3-post/` — next-in-series now links the Stack 4 post.
 
 ---
 
