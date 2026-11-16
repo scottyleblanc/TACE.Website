@@ -127,7 +127,7 @@ Stack 3 is tests: proving every invariant from Stack 1 with a test, measuring ho
 
 ---
 
-*Next in the series: Stack 3 — tests.*
+*Next in the series: [Stack 3 — testing the tests](/posts/ai-dev-stack-3-post/).*
 
 ---
 

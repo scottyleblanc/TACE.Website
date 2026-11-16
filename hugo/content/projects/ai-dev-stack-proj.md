@@ -70,8 +70,8 @@ In progress.
 | 0 | — | Setup and baseline | Complete |
 | 1 | 1 | Intent | Complete |
 | 2 | 3 | Deterministic checks | Complete |
-| 3 | 4 | Tests | Next |
-| 4 | 6 | Enforced gate | Not started |
+| 3 | 4 | Tests | Complete |
+| 4 | 6 | Enforced gate | Next |
 | 5 | 2 | Agent instructions | Not started |
 | 6 | 5 | Independent review | Not started |
 | 7 | 7 | Containment | Not started |
@@ -84,3 +84,4 @@ In progress.
 - [stack 0 — a baseline before any layer exists](/posts/ai-dev-stack-0-post/)
 - [stack 1 — specify what the code must do](/posts/ai-dev-stack-1-post/)
 - [stack 2 — one command for every static check](/posts/ai-dev-stack-2-post/)
+- [stack 3 — testing the tests](/posts/ai-dev-stack-3-post/)
