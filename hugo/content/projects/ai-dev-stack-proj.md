@@ -71,8 +71,8 @@ In progress.
 | 1 | 1 | Intent | Complete |
 | 2 | 3 | Deterministic checks | Complete |
 | 3 | 4 | Tests | Complete |
-| 4 | 6 | Enforced gate | Next |
-| 5 | 2 | Agent instructions | Not started |
+| 4 | 6 | Enforced gate | Complete |
+| 5 | 2 | Agent instructions | Next |
 | 6 | 5 | Independent review | Not started |
 | 7 | 7 | Containment | Not started |
 | 8 | 8 | Release | Not started |
@@ -85,3 +85,4 @@ In progress.
 - [stack 1 — specify what the code must do](/posts/ai-dev-stack-1-post/)
 - [stack 2 — one command for every static check](/posts/ai-dev-stack-2-post/)
 - [stack 3 — testing the tests](/posts/ai-dev-stack-3-post/)
+- [stack 4 — a change that fails cannot be merged](/posts/ai-dev-stack-4-post/)

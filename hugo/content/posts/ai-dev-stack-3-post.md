@@ -134,7 +134,7 @@ Stack 4 is the enforced gate: GitHub runs every check on each proposed change, a
 
 ---
 
-*Next in the series: Stack 4 — the enforced gate.*
+*Next in the series: [Stack 4 — a change that fails cannot be merged](/posts/ai-dev-stack-4-post/).*
 
 ---
 
