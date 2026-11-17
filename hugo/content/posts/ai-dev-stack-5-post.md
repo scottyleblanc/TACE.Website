@@ -8,7 +8,7 @@ summary: "sixth post in the ai development stack series: the AI is now given my 
 
 ### Agent instructions
 
-*This is the sixth post in a series documenting the build of an AI development stack — a set of layers placed around AI-generated code so it can be trusted.  The [project page](/projects/ai-dev-stack-proj/) covers the question and the full layer model.  [Stack 4](/posts/ai-dev-stack-4-post/) made the checks a condition of merging: a change that fails them cannot reach the main branch.  This post is Stack 5: agent instructions, the layer that gives the AI the rules before it writes the code.*
+*This is the sixth post in a series documenting the build of an AI development stack — a set of layers placed around AI-generated code to make it as correct, secure, and supportable as possible.  The [project page](/projects/ai-dev-stack-proj/) covers the question and the full layer model.  [Stack 4](/posts/ai-dev-stack-4-post/) made the checks a condition of merging: a change that fails them cannot reach the main branch.  This post is Stack 5: agent instructions, the layer that gives the AI the rules before it writes the code.*
 
 *In this post, "we" means me and Claude Code, the AI coding assistant I build with.*
 
@@ -103,7 +103,10 @@ Stack 6 is independent review: no change is examined only by its author.  Every 
 
 ---
 
-*Next in the series: [Stack 6 — deciding where review stops](/posts/ai-dev-stack-6-post/).*
+| | |
+|---|---|
+| Previous | [Stack 4 — a change that fails cannot be merged](/posts/ai-dev-stack-4-post/) |
+| Next | [Stack 6 — deciding where review stops](/posts/ai-dev-stack-6-post/) |
 
 ---
 

@@ -8,7 +8,7 @@ summary: "third post in the ai development stack series: the stack 1 rules a mac
 
 ### Deterministic checks
 
-*This is the third post in a series documenting the build of an AI development stack — a set of layers placed around AI-generated code so it can be trusted.  The [project page](/projects/ai-dev-stack-proj/) covers the question and the full layer model.  [Stack 1](/posts/ai-dev-stack-1-post/) specified the rules the code must follow.  This post is Stack 2: deterministic checks, the first layer that enforces them.*
+*This is the third post in a series documenting the build of an AI development stack — a set of layers placed around AI-generated code to make it as correct, secure, and supportable as possible.  The [project page](/projects/ai-dev-stack-proj/) covers the question and the full layer model.  [Stack 1](/posts/ai-dev-stack-1-post/) specified the rules the code must follow.  This post is Stack 2: deterministic checks, the first layer that enforces them.*
 
 *In this post, "we" means me and Claude Code, the AI coding assistant I build with.*
 
@@ -127,7 +127,10 @@ Stack 3 is tests: proving every invariant from Stack 1 with a test, measuring ho
 
 ---
 
-*Next in the series: [Stack 3 — testing the tests](/posts/ai-dev-stack-3-post/).*
+| | |
+|---|---|
+| Previous | [Stack 1 — specify what the code must do](/posts/ai-dev-stack-1-post/) |
+| Next | [Stack 3 — testing the tests](/posts/ai-dev-stack-3-post/) |
 
 ---
 

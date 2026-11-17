@@ -1,5 +1,5 @@
 ---
-title: ai development stack — making ai-generated code trustworthy
+title: ai development stack — making ai-generated code correct, secure, and supportable
 date: 2026-11-14
 draft: false
 tags:
@@ -10,8 +10,10 @@ tags:
   - testing
   - security
   - github-actions
-summary: AI lets me build things well outside my specialty.  This project asks what a senior DBA has to put around that code before it can be trusted — and answers it by building the practices one layer at a time, on a real PowerShell module.
+summary: AI lets me build things well outside my specialty.  This project asks what a senior DBA has to put around that code to make it as correct, secure, and supportable as possible — and answers it by building the practices one layer at a time, on a real PowerShell module.
 ---
+
+*On this page, "we" means me and Claude Code, the AI coding assistant I build with.*
 
 ## the question
 
@@ -55,7 +57,7 @@ One layer at a time, each one finished before the next begins.
 
 The order is not the order of the table.  Enforcement comes before more rules — I already have plenty of standards, and the gap is that nothing applies them consistently, every time.  Deterministic checks come before anything judged by a model.  And the checks live in scripts inside the repository, so the automation that calls them stays thin and the whole thing can move to a different platform without a rewrite.
 
-Every layer has to earn its place.  Before a stage is called done, I plant a deliberate defect on a throwaway branch — the kind of mistake that layer exists to catch — and the layer has to catch it.  If it does not, the stage is not finished.
+Every layer has to earn its place.  Before a stage is called done, we plant a deliberate defect on a throwaway branch — the kind of mistake that layer exists to catch — and the layer has to catch it.  If it does not, the stage is not finished.
 
 ## what comes after
 
