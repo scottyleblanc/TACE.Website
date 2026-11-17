@@ -45,6 +45,7 @@ With the helpers they depend on and their existing unit tests, that came to eigh
 | Unit test code, lines | — | 3,847 |
 | Unit tests passing | 117 | 291 |
 | Static analyzer findings | 4 | 74 |
+| Change review | none | none |
 
 Seventy of the 74 findings are in test files, most of them test passwords written as plain text.  Four are in the module code itself.
 

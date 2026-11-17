@@ -124,6 +124,7 @@ The baseline measures, taken again at the end of this stage:
 | Unit test code, lines | 3,847 | 4,302 | 4,636 | 5,372 | 5,372 |
 | Unit tests passing | 291 | 317 | 352 | 405 | 405 |
 | Static analyzer findings | 74 | 79 | 82 | 110 | 110 |
+| Change review | none | none | none | none | none |
 
 Stack 4 did not change what the module does.  The only changes to the module code were its version number.  The work was in the scripts around it and in GitHub's settings.
 

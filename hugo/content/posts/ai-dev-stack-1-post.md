@@ -92,6 +92,7 @@ The Stack 0 measures, taken again at the end of this stage:
 | Unit test code, lines | 3,847 | 4,302 |
 | Unit tests passing | 291 | 317 |
 | Static analyzer findings | 74 | 79 |
+| Change review | none | none |
 
 Most of the new module code is the invariant blocks themselves, which sit inside the code as comments.  The findings in the module code are unchanged at four.  The five new ones are a minor style rule, in new test files.
 

@@ -108,6 +108,7 @@ The Stack 0 measures, taken again at the end of this stage:
 | Unit test code, lines | 4,302 | 4,636 |
 | Unit tests passing | 317 | 352 |
 | Static analyzer findings | 79 | 82 |
+| Change review | none | none |
 
 The findings are counted the same way as at Stack 1.  The module code went from four findings to none.  The rest are in test files: some are fake passwords, there on purpose to test the code that handles real ones, and most are minor style findings.  The new checks leave test files out.
 

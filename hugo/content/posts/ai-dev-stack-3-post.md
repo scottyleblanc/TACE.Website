@@ -112,6 +112,7 @@ The baseline measures, taken again at the end of this stage:
 | Unit test code, lines | 3,847 | 4,302 | 4,636 | 5,372 |
 | Unit tests passing | 291 | 317 | 352 | 405 |
 | Static analyzer findings | 74 | 79 | 82 | 110 |
+| Change review | none | none | none | none |
 
 - The last row counts static analyzer findings: problems reported by PSScriptAnalyzer, counted the same way at every stage.
 - At Stack 0, 4 of the 74 were in the module code; Stack 2 fixed them.

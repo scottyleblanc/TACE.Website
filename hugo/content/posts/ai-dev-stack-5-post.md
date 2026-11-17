@@ -84,6 +84,7 @@ The baseline measures, taken again at the end of this stage:
 | Unit test code, lines | 3,847 | 4,302 | 4,636 | 5,372 | 5,372 | 5,372 |
 | Unit tests passing | 291 | 317 | 352 | 405 | 405 | 405 |
 | Static analyzer findings | 74 | 79 | 82 | 110 | 110 | 110 |
+| Change review | none | none | none | none | none | none |
 
 Stack 5 did not change what the module does.  The only change to the module code was its version number.  The script that builds the file and the check that compares it sit outside the module.
 
