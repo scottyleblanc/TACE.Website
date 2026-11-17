@@ -143,7 +143,7 @@ Stack 5 is agent instructions: the AI is given my standards through instruction 
 
 ---
 
-*Next in the series: Stack 5 — agent instructions.*
+*Next in the series: [Stack 5 — giving the AI the rules](/posts/ai-dev-stack-5-post/).*
 
 ---
 
