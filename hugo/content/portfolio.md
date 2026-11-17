@@ -18,6 +18,7 @@ A map of the work: what was built, how it was documented, and where to find it.
 
 | Stage | What | Post | Status |
 |---|---|---|---|
+| 6 | Independent review — every pull request is reviewed once by a second AI model, and the merge is blocked until each finding is answered | [Stack 6 — deciding where review stops](/posts/ai-dev-stack-6-post/) | Complete |
 | 5 | Agent instructions — the AI is given the standards from one file built from the same source the checks enforce, and the effect is measured | [Stack 5 — giving the AI the rules](/posts/ai-dev-stack-5-post/) | Complete |
 | 4 | Enforced gate — GitHub runs every check on each pull request, and a change that fails cannot be merged, by anyone | [Stack 4 — a change that fails cannot be merged](/posts/ai-dev-stack-4-post/) | Complete |
 | 3 | Tests — every promise proven by a test that fails when the promise breaks, and a tier against a real Oracle database | [Stack 3 — testing the tests](/posts/ai-dev-stack-3-post/) | Complete |

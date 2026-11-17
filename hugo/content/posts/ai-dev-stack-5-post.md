@@ -103,7 +103,7 @@ Stack 6 is independent review: no change is examined only by its author.  Every 
 
 ---
 
-*Next in the series: Stack 6 — independent review.*
+*Next in the series: [Stack 6 — deciding where review stops](/posts/ai-dev-stack-6-post/).*
 
 ---
 

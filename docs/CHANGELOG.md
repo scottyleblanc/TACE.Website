@@ -17,6 +17,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Portfolio page — Stack 4 row in the AI Development Stack stage table.
 - Post `/posts/ai-dev-stack-5-post/` — "ai development stack: stack 5 — giving the AI the rules". Sixth post in the series.
 - Portfolio page — Stack 5 row in the AI Development Stack stage table.
+- Post `/posts/ai-dev-stack-6-post/` — "ai development stack: stack 6 — deciding where review stops". Seventh post in the series.
+- Portfolio page — Stack 6 row in the AI Development Stack stage table.
 
 ### Changed
 - Project page `/projects/ai-dev-stack-proj/` — status updated to in progress; build series links the Stack 0 post.
@@ -32,6 +34,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Post `/posts/ai-dev-stack-3-post/` — next-in-series now links the Stack 4 post.
 - Project page `/projects/ai-dev-stack-proj/` — status updated for Stack 5; build series links the Stack 5 post.
 - Post `/posts/ai-dev-stack-4-post/` — next-in-series now links the Stack 5 post.
+- Project page `/projects/ai-dev-stack-proj/` — status updated for Stack 6; build series links the Stack 6 post.
+- Post `/posts/ai-dev-stack-5-post/` — next-in-series now links the Stack 6 post.
 
 ### Fixed
 - Portfolio page — adds the missing Stack 2 row to the AI Development Stack stage table, linking the Stack 2 post.
