@@ -4,12 +4,14 @@ date: 2026-11-14T06:00:00
 draft: false
 aliases: ["/posts/stack-stage-1-post/"]
 tags: ["ai", "powershell", "oracle", "pester", "testing", "security", "stack"]
-summary: "second post in the ai development stack series: before building the later checks, I specified what the code must do, and what proves it."
+summary: "second post in the ai development stack series: before building the later checks, we specified what the code must do, and what proves it."
 ---
 
 ### Intent
 
-*This is the second post in a series documenting the build of an AI development stack — a set of layers placed around AI-generated code so it can be trusted.  The [project page](/projects/ai-dev-stack-proj/) covers the question and the full layer model.  [Stack 0](/posts/ai-dev-stack-0-post/) set up the test bed and the baseline.  This post is Stack 1: intent, the first layer.*
+*This is the second post in a series documenting the build of an AI development stack — a set of layers placed around AI-generated code to make it as correct, secure, and supportable as possible.  The [project page](/projects/ai-dev-stack-proj/) covers the question and the full layer model.  [Stack 0](/posts/ai-dev-stack-0-post/) set up the test bed and the baseline.  This post is Stack 1: intent, the first layer.*
+
+*In this post, "we" means me and Claude Code, the AI coding assistant I build with.*
 
 ---
 
@@ -76,7 +78,7 @@ Spelling out what each function claims to do showed that a few of them did not. 
 
 Like every stage, this one had to catch a planted defect before it could be called done.
 
-I added a function with no invariant block, and another whose block was badly formed.  The automatic check rejected both.
+We added a function with no invariant block, and another whose block was badly formed.  The automatic check rejected both.
 
 ---
 
@@ -111,7 +113,10 @@ Stack 2 is deterministic checks: bringing every automatic check under one comman
 
 ---
 
-*Next in the series: [Stack 2 — one command for every static check](/posts/ai-dev-stack-2-post/).*
+| | |
+|---|---|
+| Previous | [Stack 0 — a baseline before any layer exists](/posts/ai-dev-stack-0-post/) |
+| Next | [Stack 2 — one command for every static check](/posts/ai-dev-stack-2-post/) |
 
 ---
 

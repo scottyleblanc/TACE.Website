@@ -8,7 +8,7 @@ summary: "fifth post in the ai development stack series: GitHub now runs every c
 
 ### Enforced gate
 
-*This is the fifth post in a series documenting the build of an AI development stack — a set of layers placed around AI-generated code so it can be trusted.  The [project page](/projects/ai-dev-stack-proj/) covers the question and the full layer model.  [Stack 3](/posts/ai-dev-stack-3-post/) added tests that fail when a promise in the code breaks.  This post is Stack 4: the enforced gate, the layer that makes the checks a condition of merging.*
+*This is the fifth post in a series documenting the build of an AI development stack — a set of layers placed around AI-generated code to make it as correct, secure, and supportable as possible.  The [project page](/projects/ai-dev-stack-proj/) covers the question and the full layer model.  [Stack 3](/posts/ai-dev-stack-3-post/) added tests that fail when a promise in the code breaks.  This post is Stack 4: the enforced gate, the layer that makes the checks a condition of merging.*
 
 *In this post, "we" means me and Claude Code, the AI coding assistant I build with.*
 
@@ -143,7 +143,10 @@ Stack 5 is agent instructions: the AI is given my standards through instruction 
 
 ---
 
-*Next in the series: [Stack 5 — giving the AI the rules](/posts/ai-dev-stack-5-post/).*
+| | |
+|---|---|
+| Previous | [Stack 3 — testing the tests](/posts/ai-dev-stack-3-post/) |
+| Next | [Stack 5 — giving the AI the rules](/posts/ai-dev-stack-5-post/) |
 
 ---
 

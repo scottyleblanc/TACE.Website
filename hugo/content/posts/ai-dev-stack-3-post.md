@@ -8,7 +8,7 @@ summary: "fourth post in the ai development stack series: we broke each promise 
 
 ### Tests
 
-*This is the fourth post in a series documenting the build of an AI development stack — a set of layers placed around AI-generated code so it can be trusted.  The [project page](/projects/ai-dev-stack-proj/) covers the question and the full layer model.  [Stack 2](/posts/ai-dev-stack-2-post/) brought the checks that read the code under one command.  This post is Stack 3: tests, the first layer that runs the code.*
+*This is the fourth post in a series documenting the build of an AI development stack — a set of layers placed around AI-generated code to make it as correct, secure, and supportable as possible.  The [project page](/projects/ai-dev-stack-proj/) covers the question and the full layer model.  [Stack 2](/posts/ai-dev-stack-2-post/) brought the checks that read the code under one command.  This post is Stack 3: tests, the first layer that runs the code.*
 
 *In this post, "we" means me and Claude Code, the AI coding assistant I build with.*
 
@@ -134,7 +134,10 @@ Stack 4 is the enforced gate: GitHub runs every check on each proposed change, a
 
 ---
 
-*Next in the series: [Stack 4 — a change that fails cannot be merged](/posts/ai-dev-stack-4-post/).*
+| | |
+|---|---|
+| Previous | [Stack 2 — one command for every static check](/posts/ai-dev-stack-2-post/) |
+| Next | [Stack 4 — a change that fails cannot be merged](/posts/ai-dev-stack-4-post/) |
 
 ---
 

@@ -36,6 +36,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Post `/posts/ai-dev-stack-4-post/` — next-in-series now links the Stack 5 post.
 - Project page `/projects/ai-dev-stack-proj/` — status updated for Stack 6; build series links the Stack 6 post.
 - Post `/posts/ai-dev-stack-5-post/` — next-in-series now links the Stack 6 post.
+- Posts `/posts/ai-dev-stack-0-post/` to `/posts/ai-dev-stack-6-post/` — series intro now describes the stack as layers that make AI-generated code "as correct, secure, and supportable as possible" instead of "so it can be trusted".
+- Project page `/projects/ai-dev-stack-proj/` — title and summary use the same wording in place of "trustworthy" and "trusted".
+- Posts `/posts/ai-dev-stack-0-post/` and `/posts/ai-dev-stack-1-post/`, project page `/projects/ai-dev-stack-proj/` — add the note that "we" means me and Claude Code; hands-on work now reads "we", decisions stay "I".
+- Posts `/posts/ai-dev-stack-0-post/` to `/posts/ai-dev-stack-6-post/` — series navigation is now a table with a previous-post link as well as the next-post link.
 
 ### Fixed
 - Portfolio page — adds the missing Stack 2 row to the AI Development Stack stage table, linking the Stack 2 post.
