@@ -8,7 +8,7 @@ summary: "seventh post in the ai development stack series: every change is now r
 
 ### Independent review
 
-*This is the seventh post in a series documenting the build of an AI development stack — a set of layers placed around AI-generated code to make it as correct, secure, and supportable as possible.  The [project page](/projects/ai-dev-stack-proj/) covers the question and the full layer model.  [Stack 5](/posts/ai-dev-stack-5-post/) gave the AI my standards before it writes code.  This post is Stack 6: independent review, the layer that has every change examined by someone other than its author.*
+*This is the seventh post in a series documenting the build of an AI development stack — a set of layers placed around AI-generated code to make it as correct, secure, and supportable as possible.  The [project page](/projects/ai-dev-stack-proj/) covers the question and the full layer model.  [Stack 5](/posts/ai-dev-stack-5-post/) gave the AI my standards before it writes code.  This post is Stack 6: independent review, the layer that has every change examined by someone (or something) other than its author.*
 
 *In this post, "we" means me and Claude Code, the AI coding assistant I build with.*
 
