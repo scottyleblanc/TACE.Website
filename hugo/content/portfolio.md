@@ -21,6 +21,7 @@ A map of the work: what was built, how it was documented, and where to find it.
 | 5 | Agent instructions — the AI is given the standards from one file built from the same source the checks enforce, and the effect is measured | [Stack 5 — giving the AI the rules](/posts/ai-dev-stack-5-post/) | Complete |
 | 4 | Enforced gate — GitHub runs every check on each pull request, and a change that fails cannot be merged, by anyone | [Stack 4 — a change that fails cannot be merged](/posts/ai-dev-stack-4-post/) | Complete |
 | 3 | Tests — every promise proven by a test that fails when the promise breaks, and a tier against a real Oracle database | [Stack 3 — testing the tests](/posts/ai-dev-stack-3-post/) | Complete |
+| 2 | Deterministic checks — the linter, formatter and secret scanning run from one command and give the same answer every time | [Stack 2 — one command for every static check](/posts/ai-dev-stack-2-post/) | Complete |
 | 1 | Intent — coding standards, and promises (invariants) for each function that say what proves them | [Stack 1 — specify what the code must do](/posts/ai-dev-stack-1-post/) | Complete |
 | 0 | Setup and baseline — test bed, three working examples, starting numbers | [Stack 0 — a baseline before any layer exists](/posts/ai-dev-stack-0-post/) | Complete |
 

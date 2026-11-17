@@ -33,6 +33,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Project page `/projects/ai-dev-stack-proj/` — status updated for Stack 5; build series links the Stack 5 post.
 - Post `/posts/ai-dev-stack-4-post/` — next-in-series now links the Stack 5 post.
 
+### Fixed
+- Portfolio page — adds the missing Stack 2 row to the AI Development Stack stage table, linking the Stack 2 post.
+
 ---
 
 ## [3.5.1] - 2026-11-14
