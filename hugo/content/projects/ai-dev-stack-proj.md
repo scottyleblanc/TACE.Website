@@ -76,8 +76,8 @@ In progress.
 | 4 | 6 | Enforced gate | Complete |
 | 5 | 2 | Agent instructions | Complete |
 | 6 | 5 | Independent review | Complete |
-| 7 | 7 | Containment | Next |
-| 8 | 8 | Release | Not started |
+| 7 | 7 | Containment | Complete |
+| 8 | 8 | Release | Next |
 | 9 | 9 | Feedback loop | Not started |
 | 10 | — | Wrap-up | Not started |
 
@@ -90,3 +90,4 @@ In progress.
 - [stack 4 — a change that fails cannot be merged](/posts/ai-dev-stack-4-post/)
 - [stack 5 — giving the AI the rules](/posts/ai-dev-stack-5-post/)
 - [stack 6 — deciding where review stops](/posts/ai-dev-stack-6-post/)
+- [stack 7 — what the AI can reach](/posts/ai-dev-stack-7-post/)

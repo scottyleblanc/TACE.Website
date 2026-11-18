@@ -192,7 +192,7 @@ Stack 7 is containment: what the AI is allowed to touch, run and read.  It start
 | | |
 |---|---|
 | Previous | [Stack 5 — giving the AI the rules](/posts/ai-dev-stack-5-post/) |
-| Next | Stack 7 — containment |
+| Next | [Stack 7 — what the AI can reach](/posts/ai-dev-stack-7-post/) |
 
 ---
 
