@@ -78,8 +78,8 @@ In progress.
 | 6 | 5 | Independent review | Complete |
 | 7 | 7 | Containment | Complete |
 | 8 | 8 | Release | Complete |
-| 9 | 9 | Feedback loop | Next |
-| 10 | — | Wrap-up | Not started |
+| 9 | 9 | Feedback loop | Complete |
+| 10 | — | Wrap-up | Next |
 
 ## build series
 
@@ -92,3 +92,4 @@ In progress.
 - [stack 6 — deciding where review stops](/posts/ai-dev-stack-6-post/)
 - [stack 7 — what the AI can reach](/posts/ai-dev-stack-7-post/)
 - [stack 8 — checking a release before it is made](/posts/ai-dev-stack-8-post/)
+- [stack 9 — turning missed defects into checks](/posts/ai-dev-stack-9-post/)

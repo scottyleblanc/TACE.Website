@@ -19,6 +19,7 @@ A map of the work: what was built, how it was documented, and where to find it.
 | Stage | What | Post | Status |
 |---|---|---|---|
 | 8 | Release — the checks refuse a change whose version number disagrees between the files that carry it, or whose package holds a file the manifest does not list | [Stack 8 — checking a release before it is made](/posts/ai-dev-stack-8-post/) | Complete |
+| 9 | Feedback loop — every defect that got past the checks ends in a new check that catches it, and a drill showed a new AI session can find and fix a planted defect from the repository alone | [Stack 9 — turning missed defects into checks](/posts/ai-dev-stack-9-post/) | Complete |
 | 7 | Containment — committed rules for what the AI may run and read, tested against planted credential files | [Stack 7 — what the AI can reach](/posts/ai-dev-stack-7-post/) | Complete |
 | 6 | Independent review — every pull request is reviewed once by a second AI model, and the merge is blocked until each finding is answered | [Stack 6 — deciding where review stops](/posts/ai-dev-stack-6-post/) | Complete |
 | 5 | Agent instructions — the AI is given the standards from one file built from the same source the checks enforce, and the effect is measured | [Stack 5 — giving the AI the rules](/posts/ai-dev-stack-5-post/) | Complete |

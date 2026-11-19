@@ -119,7 +119,7 @@ Stack 9 is the feedback loop: every defect that gets past the stack becomes a ne
 | | |
 |---|---|
 | Previous | [Stack 7 — what the AI can reach](/posts/ai-dev-stack-7-post/) |
-| Next | Stack 9 — feedback loop |
+| Next | [Stack 9 — turning missed defects into checks](/posts/ai-dev-stack-9-post/) |
 
 ---
 
