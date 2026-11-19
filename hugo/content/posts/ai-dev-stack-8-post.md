@@ -57,6 +57,16 @@ The script now accepts only the protected form, and refuses to publish a folder 
 
 ---
 
+### A gap in the review check
+
+Before this stage's own review had run, we ran every check on its pull request.  The review check from Stack 6 passed.
+
+It had accepted the review record left by the Stack 7 pull request.  The check confirmed that the reviewed commit was in the change's history, and once a pull request is merged, its commits are in the history of every change after it.  So every pull request after the first could have merged without a review of its own.
+
+The check now also requires the reviewed commit to be one the pull request adds.
+
+---
+
 ### Proving the stage
 
 We made a copy of the repository and planted one defect at a time:
@@ -66,10 +76,11 @@ We made a copy of the repository and planted one defect at a time:
 | The newest change log entry names a different version | Fails on the version check only | As expected |
 | The version is already tagged, and the module code has changed | Fails on the version check only | As expected |
 | The build script writes an extra file into the module's folder | Fails on the package check only | As expected |
+| A pull request with no review keeps the previous pull request's record | Fails on the review check only | As expected |
 
 The first version of the stray-file case also failed an older check.  That check runs the build script against a small test copy of a repository, and the planted line copied a file that copy does not have.  The case now writes its own file.
 
-The full set of planted defects, 18 in all, takes about 25 minutes.  It runs when the checks themselves change, not on every change.  The package check adds about a second to each pull request.
+The full set of planted defects, 19 in all, takes about 25 minutes.  It runs when the checks themselves change, not on every change.  The package check adds about a second to each pull request.
 
 ---
 
@@ -93,9 +104,9 @@ Stack 8 did not change what the module does.  The six new lines of module code a
 
 ### The part worth keeping
 
-The build's version check had passed on every build, including for the two functions it never looked at.  A check that skips what it cannot find reports the same result as a check that found nothing wrong.
+The build's version check had passed on every build, including for the two functions it never looked at.  The review check had passed a pull request that had no review.  A check that accepts what it should have refused reports the same result as a check that found nothing wrong.
 
-The package tool looked as if it used the file list, and it did not.  Both were found by testing what the tool or the check actually does, not what it was expected to do.
+The package tool looked as if it used the file list, and it did not.  All three were found by testing what the tool or the check actually does, not what it was expected to do.
 
 ---
 
