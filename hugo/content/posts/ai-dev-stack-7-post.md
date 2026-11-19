@@ -140,7 +140,7 @@ Stack 8 is release: the checks refuse a release whose version number differs bet
 | | |
 |---|---|
 | Previous | [Stack 6 — deciding where review stops](/posts/ai-dev-stack-6-post/) |
-| Next | Stack 8 — release |
+| Next | [Stack 8 — checking a release before it is made](/posts/ai-dev-stack-8-post/) |
 
 ---
 

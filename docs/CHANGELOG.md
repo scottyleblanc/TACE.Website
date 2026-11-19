@@ -21,6 +21,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Portfolio page — Stack 6 row in the AI Development Stack stage table.
 - Post `/posts/ai-dev-stack-7-post/` — "ai development stack: stack 7 — what the AI can reach". Eighth post in the series.
 - Portfolio page — Stack 7 row in the AI Development Stack stage table.
+- Post `/posts/ai-dev-stack-8-post/` — "ai development stack: stack 8 — checking a release before it is made". Ninth post in the series.
+- Portfolio page — Stack 8 row in the AI Development Stack stage table.
 
 ### Changed
 - Project page `/projects/ai-dev-stack-proj/` — status updated to in progress; build series links the Stack 0 post.
