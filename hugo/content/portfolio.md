@@ -16,6 +16,8 @@ A map of the work: what was built, how it was documented, and where to find it.
 
 **[Project write-up →](/projects/ai-dev-stack-proj/)**
 
+**[powershell-gate-kit →](https://github.com/scottyleblanc/powershell-gate-kit)**
+
 | Stage | What | Post | Status |
 |---|---|---|---|
 | 10 | Wrap-up — the checks, settings and templates moved into a template another repository can take in, proven on a new, empty repository before the push and on the pull request | [Stack 10 — a gate another repository can use](/posts/ai-dev-stack-10-post/) | Complete |

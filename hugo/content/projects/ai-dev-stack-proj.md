@@ -13,6 +13,8 @@ tags:
 summary: AI lets me build things well outside my specialty.  This project asks what a senior DBA has to put around that code to make it as correct, secure, and supportable as possible — and answers it by building the practices one layer at a time, on a real PowerShell module.
 ---
 
+The reusable template from Stack 10 is public on GitHub as [powershell-gate-kit](https://github.com/scottyleblanc/powershell-gate-kit).
+
 *On this page, "we" means me and Claude Code, the AI coding assistant I build with.*
 
 ## the question
