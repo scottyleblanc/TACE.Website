@@ -18,6 +18,7 @@ A map of the work: what was built, how it was documented, and where to find it.
 
 | Stage | What | Post | Status |
 |---|---|---|---|
+| 10 | Wrap-up — the checks, settings and templates moved into a template another repository can take in, proven on a new, empty repository before the push and on the pull request | [Stack 10 — a gate another repository can use](/posts/ai-dev-stack-10-post/) | Complete |
 | 8 | Release — the checks refuse a change whose version number disagrees between the files that carry it, or whose package holds a file the manifest does not list | [Stack 8 — checking a release before it is made](/posts/ai-dev-stack-8-post/) | Complete |
 | 9 | Feedback loop — every defect that got past the checks ends in a new check that catches it, and a drill showed a new AI session can find and fix a planted defect from the repository alone | [Stack 9 — turning missed defects into checks](/posts/ai-dev-stack-9-post/) | Complete |
 | 7 | Containment — committed rules for what the AI may run and read, tested against planted credential files | [Stack 7 — what the AI can reach](/posts/ai-dev-stack-7-post/) | Complete |
