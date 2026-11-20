@@ -29,6 +29,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Portfolio page — Stack 10 row in the AI Development Stack stage table.
 
 ### Changed
+- Post `/posts/ai-dev-stack-10-post/`, project page `/projects/ai-dev-stack-proj/` and portfolio page — link the public template repository, powershell-gate-kit; the post states its MIT licence.
 - Project page `/projects/ai-dev-stack-proj/` — status updated to in progress; build series links the Stack 0 post.
 - Project page `/projects/ai-dev-stack-proj/` — status updated for Stack 1; build series links the Stack 1 post.
 - Post `/posts/stack-stage-1-post/` — adds "The baseline": the Stack 0 measures, taken again at the end of Stack 1.

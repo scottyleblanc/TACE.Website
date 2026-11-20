@@ -16,7 +16,9 @@ summary: "eleventh post in the ai development stack series: the checks, settings
 
 The first nine stages built their layers around one PowerShell module.  Much of what they built has nothing to do with that module: the code standards the checks enforce, secret scanning, the checks on commit messages and on the AI's permission settings, the review record, and the scripts that run all of it before a push and on every pull request.
 
-Stack 10 moves those parts into a template that any repository can take in, and proves the template on a new, empty repository.
+Stack 10 moves those parts into a template that any repository can take in, and proves the template on a new, empty repository.  
+
+The template is public on GitHub as [powershell-gate-kit](https://github.com/scottyleblanc/powershell-gate-kit).
 
 ---
 
@@ -39,11 +41,13 @@ Each repository sets the template up with one configuration file: which folders 
 
 ### No names in it
 
-The template is meant for repositories that are not mine, so nothing in it names me, my company or this module.  That covers the code, the documents and the commit messages, and also the rule numbers and decision numbers this repository uses.  The template numbers its own checks, rules and decisions.
+The template is meant for repositories that are not mine, so nothing in it names me, my company or this module, apart from its licence file.  That covers the code, the documents and the commit messages, and also the rule numbers and decision numbers this repository uses.  The template numbers its own checks, rules and decisions.
 
-The template's own tests include one that reads every file in it and fails on my company name, this module's name, a copyright line, or one of this repository's rule or decision numbers.  The template's checks run that test before every push, so a file that names any of them cannot be pushed.  Commit messages are not checked this way; they are kept clean by review.
+The template's own tests include one that reads every file in it except the licence file and fails on my company name, this module's name, a copyright line, or one of this repository's rule or decision numbers.  The template's checks run that test before every push, so a file that names any of them cannot be pushed.  Commit messages are not checked this way; they are kept clean by review.
 
 Even the commit author needed changing: my git settings would have put my company email address on every commit, so the template's commits use an address that GitHub provides to keep a personal address private.
+
+The template is public under the MIT licence, which lets anyone use, change and share it, and states that it comes with no warranty and no liability.  My company holds the copyright, because it owns the code the template came from, and the licence file is the one place the company is named.
 
 ---
 
@@ -120,7 +124,7 @@ The proof also showed that a check that runs is not the same as a check that blo
 
 ### What comes next
 
-The template's repository will be made public, and the template will be proven on an existing module, one with its own build and hosted somewhere other than GitHub.  After that, a summary post answers the project's question layer by layer.
+The template will be proven on an existing module, one with its own build and hosted somewhere other than GitHub.  After that, a summary post answers the project's question layer by layer.
 
 ---
 
