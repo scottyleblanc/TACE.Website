@@ -148,7 +148,7 @@ Stack 10 is the wrap-up.  The checks, settings and templates are moved into a te
 | | |
 |---|---|
 | Previous | [Stack 8 — checking a release before it is made](/posts/ai-dev-stack-8-post/) |
-| Next | Stack 10 — wrap-up |
+| Next | [Stack 10 — a gate another repository can use](/posts/ai-dev-stack-10-post/) |
 
 ---
 

@@ -79,7 +79,7 @@ In progress.
 | 7 | 7 | Containment | Complete |
 | 8 | 8 | Release | Complete |
 | 9 | 9 | Feedback loop | Complete |
-| 10 | — | Wrap-up | Next |
+| 10 | — | Wrap-up | Complete |
 
 ## build series
 
@@ -93,3 +93,4 @@ In progress.
 - [stack 7 — what the AI can reach](/posts/ai-dev-stack-7-post/)
 - [stack 8 — checking a release before it is made](/posts/ai-dev-stack-8-post/)
 - [stack 9 — turning missed defects into checks](/posts/ai-dev-stack-9-post/)
+- [stack 10 — a gate another repository can use](/posts/ai-dev-stack-10-post/)
