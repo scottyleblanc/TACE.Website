@@ -10,6 +10,8 @@ summary: "eighth post in the ai development stack series: the rules for what the
 
 *This is the eighth post in a series documenting the build of an AI development stack — a set of layers placed around AI-generated code to make it as correct, secure, and supportable as possible.  The [project page](/projects/ai-dev-stack-proj/) covers the question and the full layer model.  [Stack 6](/posts/ai-dev-stack-6-post/) had every change reviewed by a second AI model before it merges.  This post is Stack 7: containment, the layer that sets what the AI may run and read.*
 
+*For a visual reference, see the [stack map](/projects/ai-dev-stack-map/): where each layer acts on a change, and the files behind it.*
+
 *In this post, "we" means me and Claude Code, the AI coding assistant I build with.*
 
 ---

@@ -13,7 +13,9 @@ tags:
 summary: AI lets me build things well outside my specialty.  This project asks what a senior DBA has to put around that code to make it as correct, secure, and supportable as possible — and answers it by building the practices one layer at a time, on a real PowerShell module.
 ---
 
-The reusable template from Stack 10 is public on GitHub as [powershell-gate-kit](https://github.com/scottyleblanc/powershell-gate-kit).
+*The reusable template from Stack 10 is public on GitHub as [powershell-gate-kit](https://github.com/scottyleblanc/powershell-gate-kit).*
+
+*For a visual reference, see the [stack map](/projects/ai-dev-stack-map/): where each layer acts on a change, and the files behind it.*
 
 *On this page, "we" means me and Claude Code, the AI coding assistant I build with.*
 
@@ -46,6 +48,8 @@ To make the checks consistent and raise code quality, I need a set of them appli
 | 7. agent containment | What the AI is allowed to touch, run, and read |
 | 8. release and supportability | Versioning, changelog, packaging, and runbooks |
 | 9. feedback loop | Every defect that escapes becomes a new check |
+
+The [stack map](/projects/ai-dev-stack-map/) shows where each layer acts on a change, and the file, script or setting behind each one.
 
 ## the test bed
 
@@ -96,3 +100,4 @@ In progress.
 - [stack 8 — checking a release before it is made](/posts/ai-dev-stack-8-post/)
 - [stack 9 — turning missed defects into checks](/posts/ai-dev-stack-9-post/)
 - [stack 10 — a gate another repository can use](/posts/ai-dev-stack-10-post/)
+- [the stack map — where each layer acts on a change, and the files behind it](/projects/ai-dev-stack-map/)

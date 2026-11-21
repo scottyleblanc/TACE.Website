@@ -11,6 +11,8 @@ summary: "second post in the ai development stack series: before building the la
 
 *This is the second post in a series documenting the build of an AI development stack — a set of layers placed around AI-generated code to make it as correct, secure, and supportable as possible.  The [project page](/projects/ai-dev-stack-proj/) covers the question and the full layer model.  [Stack 0](/posts/ai-dev-stack-0-post/) set up the test bed and the baseline.  This post is Stack 1: intent, the first layer.*
 
+*For a visual reference, see the [stack map](/projects/ai-dev-stack-map/): where each layer acts on a change, and the files behind it.*
+
 *In this post, "we" means me and Claude Code, the AI coding assistant I build with.*
 
 ---

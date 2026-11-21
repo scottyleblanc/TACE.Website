@@ -10,6 +10,8 @@ summary: "ninth post in the ai development stack series: the checks now refuse a
 
 *This is the ninth post in a series documenting the build of an AI development stack — a set of layers placed around AI-generated code to make it as correct, secure, and supportable as possible.  The [project page](/projects/ai-dev-stack-proj/) covers the question and the full layer model.  [Stack 7](/posts/ai-dev-stack-7-post/) set what the AI may run and read.  This post is Stack 8: release, the layer that checks what goes out.*
 
+*For a visual reference, see the [stack map](/projects/ai-dev-stack-map/): where each layer acts on a change, and the files behind it.*
+
 *In this post, "we" means me and Claude Code, the AI coding assistant I build with.*
 
 ---

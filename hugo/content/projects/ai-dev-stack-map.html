@@ -1,0 +1,399 @@
+---
+title: "ai development stack — the stack map"
+date: 2026-11-20
+draft: false
+build:
+  list: never
+summary: The nine layers of the AI development stack, where each one acts on a change, and the file, script or setting behind each, in TACE.Oracle.Admin and in powershell-gate-kit.
+---
+<style>
+/* Wider than a post: the flow diagram and the layer rows need the room. */
+.main:has(.stack-map) { --main-width: 1060px; }
+
+.stack-map {
+  --sm-accent: #0f6f74;
+  --sm-accent-soft: #dcefef;
+  --sm-kit: #6a4fb3;
+  --sm-kit-soft: #ece7f8;
+  --sm-stay: #8a5a12;
+  --sm-stay-soft: #f6ecd9;
+  --sm-mono: "Cascadia Mono", Consolas, "SFMono-Regular", Menlo, ui-monospace, monospace;
+  display: grid;
+  gap: 40px;
+}
+:root[data-theme="dark"] .stack-map {
+  --sm-accent: #5cc3c6;
+  --sm-accent-soft: #173638;
+  --sm-kit: #b29cf0;
+  --sm-kit-soft: #2a2342;
+  --sm-stay: #e0b068;
+  --sm-stay-soft: #3a2c15;
+}
+.stack-map section { display: grid; gap: 14px; }
+.stack-map h2 { margin: 0; }
+.stack-map h3 { margin: 0; font-size: 17px; }
+.stack-map p { margin: 0; }
+.stack-map .intro { color: var(--secondary); }
+.stack-map .path { font-family: var(--sm-mono); font-size: 12.5px; }
+
+/* Legend */
+.stack-map .legend { display: flex; flex-wrap: wrap; gap: 10px 18px; font-size: 13px; color: var(--secondary); }
+.stack-map .legend > span { display: inline-flex; align-items: center; gap: 8px; }
+
+/* Flow diagram */
+.stack-map .diagram { overflow-x: auto; background: var(--entry); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; }
+.stack-map .diagram svg { display: block; width: 100%; min-width: 980px; height: auto; }
+.stack-map .d-col { fill: var(--code-bg); stroke: var(--tertiary); }
+.stack-map .d-title { fill: var(--primary); font-size: 16px; font-weight: 600; }
+.stack-map .d-sub { fill: var(--secondary); font-size: 11.5px; }
+.stack-map .d-chip { fill: var(--entry); stroke: var(--tertiary); }
+.stack-map .d-chip.gate { fill: var(--sm-accent-soft); stroke: var(--sm-accent); }
+.stack-map .d-num { fill: var(--sm-accent); }
+.stack-map .d-numtext { fill: var(--theme); font-family: var(--sm-mono); font-size: 11px; font-weight: 600; }
+.stack-map .d-name { fill: var(--primary); font-size: 13px; font-weight: 600; }
+.stack-map .d-file { fill: var(--secondary); font-family: var(--sm-mono); font-size: 11px; }
+.stack-map .d-arrow { stroke: var(--secondary); stroke-width: 1.6; fill: none; }
+.stack-map .d-head { fill: var(--secondary); }
+.stack-map .d-loop { stroke: var(--sm-stay); stroke-width: 1.8; fill: none; stroke-dasharray: 6 5; }
+.stack-map .d-loophead { fill: var(--sm-stay); }
+.stack-map .d-looptext { fill: var(--sm-stay); font-size: 12.5px; font-weight: 600; }
+.stack-map .d-block { fill: var(--primary); font-size: 12px; font-weight: 600; }
+
+/* Layer rows */
+.stack-map .layers { display: grid; gap: 12px; }
+.stack-map .layer {
+  background: var(--entry); border: 1px solid var(--border); border-radius: var(--radius);
+  display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.5fr) minmax(0, 0.8fr) minmax(0, 1.4fr);
+}
+.stack-map .layer > div { padding: 14px 16px; min-width: 0; display: grid; gap: 8px; align-content: start; }
+.stack-map .layer > div + div { border-left: 1px solid var(--border); }
+.stack-map .layer-head { grid-template-columns: auto 1fr; gap: 4px 12px; }
+.stack-map .num {
+  grid-row: span 3; width: 34px; height: 34px; border-radius: 50%;
+  background: var(--sm-accent); color: var(--theme);
+  font-family: var(--sm-mono); font-weight: 600; font-size: 15px;
+  display: grid; place-items: center;
+}
+.stack-map .what { color: var(--secondary); font-size: 14px; }
+.stack-map .built { font-family: var(--sm-mono); font-size: 11.5px; color: var(--secondary); }
+.stack-map .col-label { font-family: var(--sm-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--secondary); }
+.stack-map ul.files { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.stack-map ul.files li { margin: 0; font-size: 13.5px; color: var(--secondary); }
+.stack-map ul.files li .path { color: var(--primary); display: block; overflow-wrap: anywhere; }
+.stack-map .checks { display: flex; flex-wrap: wrap; gap: 6px; }
+.stack-map .check { font-family: var(--sm-mono); font-size: 12px; padding: 2px 8px; border-radius: 4px; background: var(--sm-accent-soft); color: var(--sm-accent); }
+.stack-map .check.none { background: var(--code-bg); color: var(--secondary); }
+.stack-map .pill { justify-self: start; font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 999px; }
+.stack-map .pill.in { background: var(--sm-kit-soft); color: var(--sm-kit); }
+.stack-map .pill.new { background: var(--sm-kit); color: var(--theme); }
+.stack-map .pill.stay { background: var(--sm-stay-soft); color: var(--sm-stay); }
+
+/* Connections */
+.stack-map .links { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.stack-map .link { background: var(--entry); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 6px; align-content: start; }
+.stack-map .link p { color: var(--secondary); font-size: 14px; }
+
+@media (max-width: 900px) {
+  .stack-map .layer { grid-template-columns: minmax(0, 1fr); }
+  .stack-map .layer > div + div { border-left: 0; border-top: 1px solid var(--border); }
+}
+</style>
+
+<div class="stack-map">
+  <p class="intro">The nine layers of the <a href="/projects/ai-dev-stack-proj/">ai development stack</a>, when each one acts on a change, and the file, script or setting that backs it. Each layer is shown twice: as built in TACE.Oracle.Admin, and as the reusable form in <a href="https://github.com/scottyleblanc/powershell-gate-kit">powershell-gate-kit</a>.</p>
+
+  <section>
+    <h2 id="where-each-layer-acts">where each layer acts on a change</h2>
+    <p>A change moves left to right. Layers 1, 2 and 7 shape it before and while it is written. Layers 3, 4, 5 and 8 are checks. Layer 6 runs those checks at the push and blocks the merge in CI. Layer 9 turns anything that still gets through into a new check.</p>
+    <div class="diagram">
+      <svg viewBox="0 0 1100 520" role="img" aria-labelledby="flow-title flow-desc">
+        <title id="flow-title">The life of a change through the stack</title>
+        <desc id="flow-desc">Five stages: before the code, while the agent works, before the push, on the pull request, and after the merge. Each stage lists the layers that act there and the file behind each. A dashed arrow runs from the escaped-defect log back to the gate.</desc>
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="d-head" d="M0,0 L10,5 L0,10 z"/></marker>
+          <marker id="looparrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="d-loophead" d="M0,0 L10,5 L0,10 z"/></marker>
+        </defs>
+
+        <rect class="d-col" x="10" y="10" width="196" height="420" rx="8"/>
+        <text class="d-title" x="24" y="38">Before the code</text>
+        <text class="d-sub" x="24" y="56">What it must do; what the AI is told</text>
+        <g transform="translate(22,74)">
+          <rect class="d-chip" width="172" height="58" rx="6"/>
+          <circle class="d-num" cx="18" cy="20" r="10"/><text class="d-numtext" x="18" y="24" text-anchor="middle">1</text>
+          <text class="d-name" x="36" y="24">Intent</text>
+          <text class="d-file" x="12" y="46">Docs/standards/</text>
+        </g>
+        <g transform="translate(22,142)">
+          <rect class="d-chip" width="172" height="58" rx="6"/>
+          <circle class="d-num" cx="18" cy="20" r="10"/><text class="d-numtext" x="18" y="24" text-anchor="middle">1</text>
+          <text class="d-name" x="36" y="24">Invariants</text>
+          <text class="d-file" x="12" y="46"># INVARIANTS blocks</text>
+        </g>
+        <g transform="translate(22,210)">
+          <rect class="d-chip" width="172" height="58" rx="6"/>
+          <circle class="d-num" cx="18" cy="20" r="10"/><text class="d-numtext" x="18" y="24" text-anchor="middle">2</text>
+          <text class="d-name" x="36" y="24">Agent instructions</text>
+          <text class="d-file" x="12" y="46">AGENTS.md</text>
+        </g>
+
+        <rect class="d-col" x="226" y="10" width="196" height="420" rx="8"/>
+        <text class="d-title" x="240" y="38">While the agent works</text>
+        <text class="d-sub" x="240" y="56">What it may run and read</text>
+        <g transform="translate(238,74)">
+          <rect class="d-chip" width="172" height="58" rx="6"/>
+          <circle class="d-num" cx="18" cy="20" r="10"/><text class="d-numtext" x="18" y="24" text-anchor="middle">7</text>
+          <text class="d-name" x="36" y="24">Containment</text>
+          <text class="d-file" x="12" y="46">.claude/settings.json</text>
+        </g>
+        <g transform="translate(238,142)">
+          <rect class="d-chip" width="172" height="58" rx="6"/>
+          <circle class="d-num" cx="18" cy="20" r="10"/><text class="d-numtext" x="18" y="24" text-anchor="middle">7</text>
+          <text class="d-name" x="36" y="24">Ignored material</text>
+          <text class="d-file" x="12" y="46">.gitignore</text>
+        </g>
+
+        <rect class="d-col" x="442" y="10" width="196" height="420" rx="8"/>
+        <text class="d-title" x="456" y="38">Before the push</text>
+        <text class="d-sub" x="456" y="56">Run by the author, then the hook</text>
+        <g transform="translate(454,74)">
+          <rect class="d-chip" width="172" height="58" rx="6"/>
+          <circle class="d-num" cx="18" cy="20" r="10"/><text class="d-numtext" x="18" y="24" text-anchor="middle">5</text>
+          <text class="d-name" x="36" y="24">Second-model review</text>
+          <text class="d-file" x="12" y="46">Review/LastReview.json</text>
+        </g>
+        <g transform="translate(454,142)">
+          <rect class="d-chip" width="172" height="58" rx="6"/>
+          <circle class="d-num" cx="18" cy="20" r="10"/><text class="d-numtext" x="18" y="24" text-anchor="middle">4</text>
+          <text class="d-name" x="36" y="24">Integration run</text>
+          <text class="d-file" x="12" y="46">LastRun.json</text>
+        </g>
+        <g transform="translate(454,210)">
+          <rect class="d-chip gate" width="172" height="78" rx="6"/>
+          <circle class="d-num" cx="18" cy="20" r="10"/><text class="d-numtext" x="18" y="24" text-anchor="middle">6</text>
+          <text class="d-name" x="36" y="24">Pre-push hook</text>
+          <text class="d-file" x="12" y="46">.githooks/pre-push</text>
+          <text class="d-file" x="12" y="64">runs layers 3 and 4</text>
+        </g>
+
+        <rect class="d-col" x="658" y="10" width="196" height="420" rx="8"/>
+        <text class="d-title" x="672" y="38">On the pull request</text>
+        <text class="d-sub" x="672" y="56">CI runs the same gate with -Base</text>
+        <g transform="translate(670,74)">
+          <rect class="d-chip gate" width="172" height="58" rx="6"/>
+          <circle class="d-num" cx="18" cy="20" r="10"/><text class="d-numtext" x="18" y="24" text-anchor="middle">6</text>
+          <text class="d-name" x="36" y="24">CI gate</text>
+          <text class="d-file" x="12" y="46">workflows/gate.yml</text>
+        </g>
+        <g transform="translate(670,142)">
+          <rect class="d-chip" width="172" height="58" rx="6"/>
+          <circle class="d-num" cx="18" cy="20" r="10"/><text class="d-numtext" x="18" y="24" text-anchor="middle">3</text>
+          <text class="d-name" x="36" y="24">Analyzer, secrets</text>
+          <text class="d-file" x="12" y="46">Tests/Lint/, .gitleaks</text>
+        </g>
+        <g transform="translate(670,210)">
+          <rect class="d-chip" width="172" height="58" rx="6"/>
+          <circle class="d-num" cx="18" cy="20" r="10"/><text class="d-numtext" x="18" y="24" text-anchor="middle">4</text>
+          <text class="d-name" x="36" y="24">Unit tests, evidence</text>
+          <text class="d-file" x="12" y="46">Tests/Unit/, LastRun</text>
+        </g>
+        <g transform="translate(670,278)">
+          <rect class="d-chip" width="172" height="58" rx="6"/>
+          <circle class="d-num" cx="18" cy="20" r="10"/><text class="d-numtext" x="18" y="24" text-anchor="middle">5</text>
+          <text class="d-name" x="36" y="24">Review answered</text>
+          <text class="d-file" x="12" y="46">LastReview.json</text>
+        </g>
+        <g transform="translate(670,346)">
+          <rect class="d-chip" width="172" height="58" rx="6"/>
+          <circle class="d-num" cx="18" cy="20" r="10"/><text class="d-numtext" x="18" y="24" text-anchor="middle">8</text>
+          <text class="d-name" x="36" y="24">Version, package</text>
+          <text class="d-file" x="12" y="46">manifest, FileList</text>
+        </g>
+
+        <rect class="d-col" x="874" y="10" width="216" height="420" rx="8"/>
+        <text class="d-title" x="888" y="38">After the merge</text>
+        <text class="d-sub" x="888" y="56">Release, then what escaped</text>
+        <g transform="translate(886,74)">
+          <rect class="d-chip" width="192" height="58" rx="6"/>
+          <circle class="d-num" cx="18" cy="20" r="10"/><text class="d-numtext" x="18" y="24" text-anchor="middle">8</text>
+          <text class="d-name" x="36" y="24">Tag and release</text>
+          <text class="d-file" x="12" y="46">CHANGELOG.md, v0.2.n tag</text>
+        </g>
+        <g transform="translate(886,142)">
+          <rect class="d-chip" width="192" height="58" rx="6"/>
+          <circle class="d-num" cx="18" cy="20" r="10"/><text class="d-numtext" x="18" y="24" text-anchor="middle">9</text>
+          <text class="d-name" x="36" y="24">Escaped-defect log</text>
+          <text class="d-file" x="12" y="46">audit/escaped-defects.md</text>
+        </g>
+        <g transform="translate(886,210)">
+          <rect class="d-chip" width="192" height="58" rx="6"/>
+          <circle class="d-num" cx="18" cy="20" r="10"/><text class="d-numtext" x="18" y="24" text-anchor="middle">9</text>
+          <text class="d-name" x="36" y="24">Seeded defects</text>
+          <text class="d-file" x="12" y="46">Test-SeededDefect.ps1</text>
+        </g>
+
+        <path class="d-arrow" d="M206,250 L224,250" marker-end="url(#arrow)"/>
+        <path class="d-arrow" d="M422,250 L440,250" marker-end="url(#arrow)"/>
+        <path class="d-arrow" d="M638,250 L656,250" marker-end="url(#arrow)"/>
+        <path class="d-arrow" d="M854,250 L872,250" marker-end="url(#arrow)"/>
+        <text class="d-block" x="672" y="424">A failing check blocks the merge</text>
+
+        <path class="d-loop" d="M982,200 L982,470 L548,470 L548,292" marker-end="url(#looparrow)"/>
+        <text class="d-looptext" x="590" y="496">Layer 9: each escaped defect becomes a new check in the gate</text>
+      </svg>
+    </div>
+    <div class="legend">
+      <span><svg width="22" height="14" aria-hidden="true"><rect x="1" y="1" width="20" height="12" rx="3" style="fill: var(--sm-accent-soft); stroke: var(--sm-accent)"/></svg>Where the gate runs (layer 6)</span>
+      <span><svg width="30" height="14" aria-hidden="true"><path d="M1,7 L29,7" style="stroke: var(--sm-stay); stroke-width: 2; stroke-dasharray: 5 4"/></svg>Feedback into the gate</span>
+    </div>
+  </section>
+
+  <section>
+    <h2 id="layer-by-layer">layer by layer</h2>
+    <p>For each layer: what backs it in TACE.Oracle.Admin, the gate check that enforces it, and whether the reusable kit carries it. Paths are relative to each repository's root; in a repository that uses the kit, the kit's own files sit under <code>tools/gate/</code>.</p>
+    <div class="legend">
+      <span><span class="pill in">In the kit</span>carried by powershell-gate-kit</span>
+      <span><span class="pill new">New in the kit</span>added after Stack 10; the new checks are off by default</span>
+      <span><span class="pill stay">Stays in TACE.Oracle.Admin</span>depends on that repository's own conventions</span>
+    </div>
+
+    <div class="layers">
+
+      <article class="layer">
+        <div class="layer-head"><span class="num">1</span><h3>Intent</h3><p class="what">What the code must do and must never do, recorded before it is generated.</p><p class="built">Built in Stack 1</p></div>
+        <div><span class="col-label">TACE.Oracle.Admin</span>
+          <ul class="files">
+            <li><span class="path">Docs/standards/coding.md, security.md, testing.md, documentation.md</span>the ratified standards</li>
+            <li><span class="path"># INVARIANTS</span>a block in each function under Source/</li>
+            <li><span class="path">Tests/Lint/Invoke-InvariantLint.ps1</span>checks every block; builds invariants-index.md</li>
+            <li><span class="path">Docs/standards/decisions.md</span>why each rule is what it is</li>
+          </ul></div>
+        <div><span class="col-label">Gate check</span><div class="checks"><span class="check">static</span></div></div>
+        <div><span class="col-label">Kit</span><span class="pill stay">Stays in TACE.Oracle.Admin</span>
+          <ul class="files"><li>The invariant blocks and their linter are this repository's own convention. The kit records its own rules in <span class="path">Docs/rules.md</span></li></ul></div>
+      </article>
+
+      <article class="layer">
+        <div class="layer-head"><span class="num">2</span><h3>Agent instructions</h3><p class="what">The standards the AI is given, built from the same files the gate enforces.</p><p class="built">Built in Stack 5</p></div>
+        <div><span class="col-label">TACE.Oracle.Admin</span>
+          <ul class="files">
+            <li><span class="path">Scripts/Export-AgentInstruction.ps1</span>joins Docs/standards/ into AGENTS.md</li>
+            <li><span class="path">AGENTS.md</span>read by the agent; Claude Code imports it from CLAUDE.md</li>
+            <li><span class="path">Tests/Static/AgentInstruction.Tests.ps1</span>fails when AGENTS.md is out of date</li>
+          </ul></div>
+        <div><span class="col-label">Gate check</span><div class="checks"><span class="check">static</span><span class="check">GK14</span></div></div>
+        <div><span class="col-label">Kit</span><span class="pill new">New in the kit</span>
+          <ul class="files"><li><span class="path">Scripts/Export-AgentInstruction.ps1</span>sources listed in gate.config.psd1 under Instructions</li><li><span class="path">GK14 instructions</span>fails when AGENTS.md differs from its sources</li></ul></div>
+      </article>
+
+      <article class="layer">
+        <div class="layer-head"><span class="num">3</span><h3>Deterministic checks</h3><p class="what">Linter, custom rules and secret scanning: the same answer every time.</p><p class="built">Built in Stack 2</p></div>
+        <div><span class="col-label">TACE.Oracle.Admin</span>
+          <ul class="files">
+            <li><span class="path">Tests/Lint/PSScriptAnalyzerSettings.psd1</span>analyzer settings</li>
+            <li><span class="path">Tests/Lint/PSScriptAnalyzerRules/</span>custom rules for house standards (C-05 to C-33)</li>
+            <li><span class="path">.gitleaks.toml</span>secret scanning of files, commits and messages</li>
+            <li><span class="path">Tests/Lint/PublicRepoPatterns.psd1</span>identifiers that must not reach the public repository</li>
+          </ul></div>
+        <div><span class="col-label">Gate check</span><div class="checks"><span class="check">analyzer</span><span class="check">secrets</span><span class="check">commits</span><span class="check">messages</span><span class="check">files</span><span class="check">GK03–GK07</span><span class="check">GK15</span></div></div>
+        <div><span class="col-label">Kit</span><span class="pill in">In the kit</span><span class="pill new">New in the kit</span>
+          <ul class="files"><li><span class="path">Analyzer/Rules/</span>custom rules AN-002 to AN-018; AN-010 to AN-018 are new and always on</li><li><span class="path">AN-018</span>new: no change to the Windows registry in the code</li><li><span class="path">GK15 files</span>new: the message patterns applied to every file, not only commit messages</li><li><span class="path">Config/gitleaks.toml, Config/message-patterns.psd1</span>defaults a repository can replace</li><li><span class="path">Scripts/Update-AnalyzerBaseline.ps1</span>baseline for existing findings</li></ul></div>
+      </article>
+
+      <article class="layer">
+        <div class="layer-head"><span class="num">4</span><h3>Tests</h3><p class="what">Every invariant proven by a test; unit, static and integration tiers.</p><p class="built">Built in Stack 3</p></div>
+        <div><span class="col-label">TACE.Oracle.Admin</span>
+          <ul class="files">
+            <li><span class="path">Tests/Unit/, Scripts/Invoke-UnitTest.ps1</span>unit tier with a coverage floor</li>
+            <li><span class="path">Tests/Static/</span>tests that read source text</li>
+            <li><span class="path">Scripts/Invoke-IntegrationTest.ps1</span>runs against a local database; writes Tests/Integration/LastRun.json</li>
+            <li><span class="path">Scripts/Test-InvariantMutation.ps1</span>breaks each invariant and proves its tests fail; run by hand</li>
+          </ul></div>
+        <div><span class="col-label">Gate check</span><div class="checks"><span class="check">static</span><span class="check">unit</span><span class="check">evidence</span><span class="check">GK04</span><span class="check">GK11</span><span class="check">GK12</span></div></div>
+        <div><span class="col-label">Kit</span><span class="pill in">In the kit</span><span class="pill new">New in the kit</span>
+          <ul class="files"><li><span class="path">GK04 static, GK11 unit</span>the repository's own test folder and script</li><li><span class="path">Scripts/Invoke-EvidenceRun.ps1, GK12 evidence</span>new: a recorded run of tests CI cannot run</li><li>Mutation tests stay in TACE.Oracle.Admin</li></ul></div>
+      </article>
+
+      <article class="layer">
+        <div class="layer-head"><span class="num">5</span><h3>Independent review</h3><p class="what">A second AI session that did not write the code, then a human.</p><p class="built">Built in Stack 6</p></div>
+        <div><span class="col-label">TACE.Oracle.Admin</span>
+          <ul class="files">
+            <li><span class="path">Scripts/Invoke-ModelReview.ps1</span>one confined review per pull request</li>
+            <li><span class="path">Review/reviewer-prompt.md, Review/review-output.schema.json</span>what the reviewer is asked and must return</li>
+            <li><span class="path">Review/LastReview.json</span>the record; each finding answered Fixed, Rejected, Accepted or Deferred</li>
+            <li><span class="path">.github/pull_request_template.md</span>the human checklist</li>
+          </ul></div>
+        <div><span class="col-label">Gate check</span><div class="checks"><span class="check">review</span><span class="check">GK10</span></div></div>
+        <div><span class="col-label">Kit</span><span class="pill in">In the kit</span>
+          <ul class="files"><li><span class="path">Scripts/Invoke-ModelReview.ps1, Review/</span>the same review path, on by default</li><li><span class="path">Templates/pull_request_template.md, Docs/REVIEW.md</span>checklist and guide</li></ul></div>
+      </article>
+
+      <article class="layer">
+        <div class="layer-head"><span class="num">6</span><h3>Enforced gate</h3><p class="what">One script runs every check, at the push and in CI, and blocks the merge.</p><p class="built">Built in Stack 4</p></div>
+        <div><span class="col-label">TACE.Oracle.Admin</span>
+          <ul class="files">
+            <li><span class="path">Scripts/Invoke-Gate.ps1</span>the single entry point</li>
+            <li><span class="path">.githooks/pre-push</span>runs the gate before every push</li>
+            <li><span class="path">.github/workflows/gate.yml</span>runs it with -Unit -Base on every pull request</li>
+            <li><span class="path">GitHub ruleset on master</span>makes the gate a required check</li>
+            <li><span class="path">Scripts/Install-GateTool.ps1</span>pinned, hash-checked tools</li>
+          </ul></div>
+        <div><span class="col-label">Gate check</span><div class="checks"><span class="check">all</span></div></div>
+        <div><span class="col-label">Kit</span><span class="pill in">In the kit</span><span class="pill new">New in the kit</span>
+          <ul class="files"><li><span class="path">Scripts/Invoke-Gate.ps1, gate.config.psd1</span>checks GK01 to GK15, configured by one data file at the root or in Gate/</li><li><span class="path">Templates/pre-push</span>runs the gate with -Quick, which skips the checks the Quick key lists; the secret checks always run</li><li><span class="path">.github/workflows/gate.yml</span>new: the kit runs every check on its own pull requests</li><li><span class="path">Templates/github/gate.yml, Templates/bitbucket-pipelines.yml</span>CI for both hosts</li></ul></div>
+      </article>
+
+      <article class="layer">
+        <div class="layer-head"><span class="num">7</span><h3>Agent containment</h3><p class="what">What the AI may touch, run and read.</p><p class="built">Built in Stack 7</p></div>
+        <div><span class="col-label">TACE.Oracle.Admin</span>
+          <ul class="files">
+            <li><span class="path">.claude/settings.json</span>allow and deny rules for the agent</li>
+            <li><span class="path">Tests/Lint/AgentPermissions.psd1</span>the documented rules the settings must match</li>
+            <li><span class="path">Tests/Static/AgentPermissions.Tests.ps1</span>fails a loosened rule</li>
+            <li><span class="path">.gitignore</span>keeps credential material out of the repository</li>
+          </ul></div>
+        <div><span class="col-label">Gate check</span><div class="checks"><span class="check">static</span><span class="check">GK08</span></div></div>
+        <div><span class="col-label">Kit</span><span class="pill in">In the kit</span><span class="pill new">New in the kit</span>
+          <ul class="files"><li><span class="path">Templates/claude-settings.json</span>copied to .claude/settings.json; new: denies the agent's own registry changes</li><li><span class="path">Templates/agent-permissions.psd1, GK08 permissions</span>the documented rules and their check</li></ul></div>
+      </article>
+
+      <article class="layer">
+        <div class="layer-head"><span class="num">8</span><h3>Release and supportability</h3><p class="what">Versioning, changelog and packaging that cannot go out inconsistent.</p><p class="built">Built in Stack 8</p></div>
+        <div><span class="col-label">TACE.Oracle.Admin</span>
+          <ul class="files">
+            <li><span class="path">Scripts/Build-Module.ps1 -Package</span>builds the .nupkg and compares it with FileList</li>
+            <li><span class="path">Scripts/Publish-ToGallery.ps1</span>publishing, by hand</li>
+            <li><span class="path">Docs/CHANGELOG.md, Docs/VERSIONING.md</span>one version everywhere, one tag per release</li>
+          </ul></div>
+        <div><span class="col-label">Gate check</span><div class="checks"><span class="check">version</span><span class="check">package</span><span class="check">GK09</span><span class="check">GK13</span></div></div>
+        <div><span class="col-label">Kit</span><span class="pill in">In the kit</span><span class="pill new">New in the kit</span>
+          <ul class="files"><li><span class="path">GK09 version</span>manifest, CHANGELOG and tags agree</li><li><span class="path">GK13 package</span>new: the package holds exactly its FileList</li><li><span class="path">Docs/RUNBOOK.md</span>new: numbered steps to add the gate to a repository and to update it</li><li>Publishing stays in each repository</li></ul></div>
+      </article>
+
+      <article class="layer">
+        <div class="layer-head"><span class="num">9</span><h3>Feedback loop</h3><p class="what">Every escaped defect becomes a new check.</p><p class="built">Built in Stack 9</p></div>
+        <div><span class="col-label">TACE.Oracle.Admin</span>
+          <ul class="files">
+            <li><span class="path">Docs/audit/escaped-defects.md</span>each entry ends in a new check</li>
+            <li><span class="path">Scripts/Test-SeededDefect.ps1</span>plants each layer's defect and proves the gate catches it</li>
+            <li><span class="path">Docs/audit/stack-N-*.md</span>the record of each stage</li>
+          </ul></div>
+        <div><span class="col-label">Gate check</span><div class="checks"><span class="check none">none directly</span></div></div>
+        <div><span class="col-label">Kit</span><span class="pill stay">Stays in TACE.Oracle.Admin</span>
+          <ul class="files"><li>Seeded-defect runs depend on this repository's layout. The kit's own tests hold one case per rule: <span class="path">Tests/Gate.Tests.ps1</span></li></ul></div>
+      </article>
+
+    </div>
+  </section>
+
+  <section>
+    <h2 id="how-the-pieces-connect">how the pieces connect</h2>
+    <div class="links">
+      <div class="link"><h3>One source for the rules</h3><p>The standards in <code>Docs/standards/</code> are both what the gate enforces and what <code>AGENTS.md</code> is built from, so the agent and the gate read the same rules.</p></div>
+      <div class="link"><h3>One gate, run twice</h3><p>The pre-push hook and CI both call <code>Invoke-Gate.ps1</code>. A check that fails on the laptop fails the same way on the pull request. The kit lets a repository's hook skip its slow checks with <code>-Quick</code>; CI still runs every check.</p></div>
+      <div class="link"><h3>Records the gate reads</h3><p>Some work cannot run in CI: the model review and the integration tests. Each writes a committed record, <code>LastReview.json</code> and <code>LastRun.json</code>, and the gate checks the record is current for the branch.</p></div>
+      <div class="link"><h3>Tests prove the invariants</h3><p>Each invariant cites the test that proves it. The mutation script breaks the invariant and confirms that test fails, so a passing test means something.</p></div>
+      <div class="link"><h3>The merge is the hard stop</h3><p>The GitHub ruleset makes the gate a required check. Until every check passes, the change cannot reach <code>master</code>, whoever or whatever wrote it.</p></div>
+      <div class="link"><h3>The kit is the reusable copy</h3><p>powershell-gate-kit holds layers 2 to 8 in a form any PowerShell repository takes as a subtree at <code>tools/gate/</code>, configured by one <code>gate.config.psd1</code>, at its root or in <code>Gate/</code>. Layers 1 and 9 stay with TACE.Oracle.Admin.</p></div>
+    </div>
+  </section>
+</div>
