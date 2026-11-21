@@ -7,6 +7,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- Pull request gate: powershell-gate-kit as a squashed subtree at `tools/gate/`, configured in `Gate/gate.config.psd1`. `.github/workflows/gate.yml` runs it on every pull request into `main` (job `gate`); `Gate/hooks/pre-push` runs the quick checks before each push.
+- `Gate/Invoke-UnitTest.ps1` (gate check GK11): the offline econ tests and a Hugo build of the site, so both run before a merge instead of only in `deploy.yml`.
+- `.github/pull_request_template.md` — intent, public-repo and deploy checklist.
+- `.claude/settings.json` — AI agent permissions, checked against `Gate/agent-permissions.psd1` (GK08).
 - Post `/posts/stack-stage-0-post/` — "ai development stack: stack 0 — a baseline before any layer exists". First post in the AI development stack series.
 - Portfolio page — new "AI Development Stack" section with the stage table (Stack 0).
 - Post `/posts/stack-stage-1-post/` — "ai development stack: stack 1 — specify what the code must do". Second post in the series.
@@ -30,6 +34,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Page `/projects/ai-dev-stack-map/` — "ai development stack — the stack map": where each of the nine layers acts on a change, and the files behind each in TACE.Oracle.Admin and powershell-gate-kit. Kept out of the projects list; linked from the project page and from the top of each of the 11 posts in the series.
 
 ### Changed
+- `docs/VERSIONING.md` — branches merge to `main` through a pull request with a merge commit; tags are pushed on their own.
+- `.gitignore` — `.claude/` stays ignored except `.claude/settings.json`.
 - Post `/posts/ai-dev-stack-10-post/`, project page `/projects/ai-dev-stack-proj/` and portfolio page — link the public template repository, powershell-gate-kit; the post states its MIT licence.
 - Project page `/projects/ai-dev-stack-proj/` — status updated to in progress; build series links the Stack 0 post.
 - Project page `/projects/ai-dev-stack-proj/` — status updated for Stack 1; build series links the Stack 1 post.
@@ -54,6 +60,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 - Portfolio page — adds the missing Stack 2 row to the AI Development Stack stage table, linking the Stack 2 post.
+
+### Security
+- Changes reach `main` only through a pull request whose `gate` check passes (ruleset on `main`, owner included); nothing deploys without it.
+- The gate fails on a secret (gitleaks) or on an AWS, Cognito, OAuth or email identifier format in a commit message or tracked file (`Gate/message-patterns.psd1`; formats only, no real values).
+- `gate.yml` uses `pull_request` only, a read-only token, no secrets and SHA-pinned actions.
 
 ---
 

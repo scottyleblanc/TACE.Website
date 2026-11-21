@@ -33,5 +33,7 @@ scratch.txt
 app/train/src/config.js
 config/canary.zip
 config/canary-zip/
-.claude/
+# Agent files stay local, except the shared permission settings gate check GK08 checks.
+.claude/*
+!.claude/settings.json
 linkedin.md

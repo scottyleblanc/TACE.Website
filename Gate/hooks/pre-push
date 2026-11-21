@@ -1,0 +1,12 @@
+#!/bin/sh
+# Runs the gate before every push: tools/gate/Scripts/Invoke-Gate.ps1.
+#
+# Turn it on once in each clone:
+#   git config core.hooksPath Gate/hooks
+#
+# The push is refused when any gate check fails. -Quick skips the checks the Quick key
+# in Gate/gate.config.psd1 lists; .github/workflows/gate.yml runs every check, and the
+# unit tests and site build (-Unit), on each pull request.
+
+root="$(git rev-parse --show-toplevel)" || exit 1
+exec pwsh -NoProfile -File "$root/tools/gate/Scripts/Invoke-Gate.ps1" -Quick

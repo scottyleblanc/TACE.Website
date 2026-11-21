@@ -1,0 +1,2 @@
+# The pre-push hook runs under sh, which needs LF line endings on every platform.
+Gate/hooks/pre-push text eol=lf

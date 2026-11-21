@@ -40,7 +40,8 @@ The tracker and coach are the only components holding personal data. They are si
 
 ### 1. Public repository hygiene
 
-- **Status:** Implemented Stage 1.7 (v0.15.0, 2026-04-04); extended v3.2.1 (2026-08-31).
+- **Status:** Implemented Stage 1.7 (v0.15.0, 2026-04-04); extended v3.2.1 (2026-08-31); checked by
+  the pull-request gate since 2026-11-21.
 - **Why:** The repository is public. AWS identifiers are not secrets, but they remove reconnaissance
   work for an attacker and tie configuration to a specific account.
 - **How:** All config snapshots and policies in `config/` and `app/*/config/` use placeholders
@@ -48,13 +49,21 @@ The tracker and coach are the only components holding personal data. They are si
   Git history was rewritten (46 commits, `git-filter-repo`) to remove identifiers committed before
   this rule existed; stale tags pointing at pre-scrub commits were force-updated in v3.2.1. Detailed
   security review reports are git-ignored (`*-Security-Review.md`) and kept private.
+  The gate (`tools/gate`, configured in `Gate/`) enforces this on every push and pull request:
+  gitleaks scans the files and each new commit for secrets (GK05, GK06), and the formats in
+  `Gate/message-patterns.psd1` (AWS account ID, CloudFront distribution ID and domain, API Gateway
+  ID, hosted zone ID, Secrets Manager ARN suffix, Cognito pool ID and hosted UI domain, Google OAuth
+  client ID, UUID, email address outside the site domain) fail the gate when found in a commit
+  message (GK07) or a tracked file (GK15). That file is public, so it holds formats only, never a
+  real value. Bucket and role names have no fixed format and are still checked by hand.
 - **Contract:** No commit, tag or commit message on `main` contains an account ID, distribution ID,
   bucket name, role ARN, Cognito pool/client name, or API hostname. Every infrastructure change
   writes the real-values version privately and a placeholder version here.
 
 ### 2. CI/CD identity and deploy integrity
 
-- **Status:** OIDC since Stage 1.3; branch protection v0.16.0; test gate v3.4.0.
+- **Status:** OIDC since Stage 1.3; branch protection v0.16.0; test gate v3.4.0; pull-request
+  gate 2026-11-21.
 - **Why:** Long-lived cloud keys in CI are the most common way a public repo leaks account access.
 - **How:**
   - GitHub Actions assumes an AWS role via OIDC. The role trust policy requires audience
@@ -67,11 +76,20 @@ The tracker and coach are the only components holding personal data. They are si
   - Branch protection on `main` blocks force pushes and deletion.
   - Dependabot raises weekly updates for GitHub Actions and the theme submodule.
   - Since v3.4.0 the econ test suite runs before any deploy step; a failing test blocks the release.
+  - Changes reach `main` only through a pull request whose `gate` check passes: a ruleset on `main`
+    binds every user, the owner included, with no direct push. `gate.yml` runs on `pull_request`
+    (never `pull_request_target`) with a read-only token, no secrets and SHA-pinned actions; it runs
+    every gate check, the econ tests and a Hugo build of the site. A pre-push hook
+    (`Gate/hooks/pre-push`) runs the quick checks locally.
+  - `.claude/settings.json` is committed and checked against `Gate/agent-permissions.psd1` (GK08):
+    an AI agent working in the repository is denied `git push`, `rm`, registry changes and reading
+    `~/.aws`, `~/.ssh` and its own credentials file.
   - The coach-evals workflow is the only one holding an API secret (Anthropic). It runs on
     `pull_request` (paths-filtered) and manual dispatch, has no AWS access, and GitHub does not pass
     repository secrets to pull requests from forks.
 - **Contract:** No cloud credential is stored in the repository or as a long-lived CI secret. A
-  workflow on any branch other than `main`, or in a fork, cannot obtain AWS credentials.
+  workflow on any branch other than `main`, or in a fork, cannot obtain AWS credentials. Nothing is
+  deployed that did not pass the gate on a pull request.
 
 ### 3. Static site edge (tacedata.ca)
 

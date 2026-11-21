@@ -70,21 +70,26 @@ Workflow:
    git checkout -b feat/<topic>
    ```
 
-2. Commit work on the feature branch. Push as needed.
+2. Commit work on the feature branch. Push as needed; the pre-push hook runs the quick
+   gate checks first (turn it on once per clone: `git config core.hooksPath Gate/hooks`).
 
-3. Merge to `main` with `--no-ff`:
+3. Open a pull request into `main`. The `gate` check (`.github/workflows/gate.yml`) must
+   pass before it can merge: a ruleset on `main` blocks direct pushes for everyone,
+   the owner included.
+
+4. Merge the pull request with **Create a merge commit** (the `--no-ff` equivalent),
+   titled `merge(feat/<topic>): description (vX.Y.Z)`. Merging deploys the site
+   (`deploy.yml` runs on the push to `main`).
+
+5. Tag the merge commit:
    ```
    git checkout main
-   git merge --no-ff feat/<topic> -m "merge(feat/<topic>): description (vX.Y.Z)"
-   ```
-
-4. Tag the merge commit on `main`:
-   ```
+   git pull --ff-only
    git tag vX.Y.Z
-   git push origin main --tags
+   git push origin vX.Y.Z
    ```
 
-5. Delete the feature branch after merge.
+6. Delete the feature branch after merge.
 
 ---
 
@@ -104,4 +109,4 @@ At the end of each stage:
 1. Check off completed `TODO.md` items for the stage.
 2. Write the `CHANGELOG.md` entry for the version.
 3. Commit alongside the stage work in a single commit.
-4. Merge to `main` with `--no-ff` and tag.
+4. Merge the pull request to `main` with a merge commit, and tag.
