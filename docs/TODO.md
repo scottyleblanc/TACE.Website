@@ -261,10 +261,13 @@ and add test coverage that prevents the BoC ordering class of bug from recurring
 - [x] `.claude/settings.json` + `Gate/agent-permissions.psd1` (GK08) [SEC]
 - [x] `Gate/hooks/pre-push`, `.github/workflows/gate.yml`, `.github/pull_request_template.md`
 - [x] Full gate passes locally; a seeded account ID and distribution ID fail GK15
-- [ ] `git config core.hooksPath Gate/hooks` in each clone that pushes
-- [ ] Open the pull request; the `gate` job passes in CI
-- [ ] [SEC] Ruleset on `main`: pull request required, `gate` status check required, no bypass (owner included), block force push and deletion
-- [ ] Merge, confirm `deploy.yml` deploys from the merge, tag
+- [x] `git config core.hooksPath Gate/hooks` in each clone that pushes
+- [x] Open the pull request; the `gate` job passes in CI (PR #9)
+- [x] [SEC] Ruleset on `main`: pull request required, `gate` status check required, merge commits only, no bypass (owner included), block force push and deletion
+- [x] Merge, confirm `deploy.yml` deploys from the merge, tag v3.6.0
+- [x] [SEC] Pin every workflow action to a full commit SHA (`deploy.yml`, `scheduled-rebuild.yml`, `coach-evals.yml`); supersedes Dependabot PRs #8 and #2
+- [x] Allow Dependabot's `Signed-off-by` address in `Gate/message-patterns.psd1`, so its pull requests can pass GK07
+- [x] Update the PaperMod theme submodule (supersedes Dependabot PR #7); the copied `single.html` is replaced by the theme's `extend_post_content.html` hook, so posts get the renamed `.md-content` styling
 
 ---
 
