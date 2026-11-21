@@ -68,6 +68,12 @@
     passes -Quick; CI does not, so every pull request runs every check (DEC-011,
     DEC-020).
 
+.PARAMETER Timestamp
+    Start every line the gate prints with the UTC time, as yyyy-MM-ddTHH:mm:ssZ, and
+    end each [PASS] and [FAIL] line with how long that check took, in seconds. The CI
+    templates pass it; the pre-push hook does not, so local output stays short
+    (DEC-021). Lines read from the static and unit test scripts are not changed.
+
 .EXAMPLE
     pwsh -NoProfile -File ./tools/gate/Scripts/Invoke-Gate.ps1
 
@@ -82,7 +88,13 @@
     pwsh -NoProfile -File ./tools/gate/Scripts/Invoke-Gate.ps1 -Unit -Base origin/main
 
     Runs the gate over the commits a pull request adds to main, with the tag rule and
-    the review check, then the unit tests. This is what CI runs.
+    the review check, then the unit tests.
+
+.EXAMPLE
+    pwsh -NoProfile -File ./tools/gate/Scripts/Invoke-Gate.ps1 -Unit -Base origin/main -Timestamp
+
+    The same, with the time on every line and each check's duration. This is what CI
+    runs.
 
 .NOTES
     **Invocation:** Standalone — self-contained; safe to run with `pwsh -File`. Runs from
@@ -99,11 +111,17 @@ param(
     [switch]$Unit,
 
     [Parameter()]
-    [switch]$Quick
+    [switch]$Quick,
+
+    [Parameter()]
+    [switch]$Timestamp
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+# Read by the output helpers below (DEC-021).
+$script:timestampOn = [bool]$Timestamp
 
 . (Join-Path -Path $PSScriptRoot -ChildPath 'Lib' -AdditionalChildPath 'GateLib.ps1')
 
@@ -129,8 +147,10 @@ function Add-Result {
     )
     $results.Add([PSCustomObject]@{ Id = $Id; Name = $Name; Passed = $Passed })
     $label = if ($Passed) { '[PASS]' } else { '[FAIL]' }
-    Write-Output "$label $Id $Name : $Summary"
-    if (-not $Passed) { foreach ($line in $Detail) { Write-Output "       $line" } }
+    $took  = if ($script:timestampOn) { " ($($script:checkClock.Elapsed.TotalSeconds.ToString('0.0', [System.Globalization.CultureInfo]::InvariantCulture)) s)" } else { '' }
+    Write-GateLine -Text "$label $Id $Name : $Summary$took"
+    if (-not $Passed) { foreach ($line in $Detail) { Write-GateLine -Text "       $line" } }
+    $script:checkClock.Restart()
 }
 
 # Reports a check that gate.config.psd1, or a missing switch, leaves out.
@@ -141,7 +161,16 @@ function Write-Off {
         [Parameter(Mandatory)] [string] $Name,
         [Parameter(Mandatory)] [string] $Reason
     )
-    Write-Output "[OFF]  $Id $Name : $Reason"
+    Write-GateLine -Text "[OFF]  $Id $Name : $Reason"
+    $script:checkClock.Restart()
+}
+
+# Writes one line of gate output; with -Timestamp, the UTC time comes first (DEC-021).
+function Write-GateLine {
+    [OutputType([string])]
+    param([Parameter(Mandatory)] [AllowEmptyString()] [string] $Text)
+    if ($script:timestampOn) { Write-Output "$([DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ', [System.Globalization.CultureInfo]::InvariantCulture)) $Text" }
+    else { Write-Output $Text }
 }
 
 # Shows the first characters of a value and hides the rest.
@@ -165,11 +194,14 @@ function Invoke-ChildScript {
 
 # -- GK01 config -------------------------------------------------------------
 
+# Times each check for -Timestamp: restarted after every [PASS], [FAIL] and [OFF] line.
+$script:checkClock = [System.Diagnostics.Stopwatch]::StartNew()
+
 $loaded = Import-GateConfig -RepoRoot $repoRoot
 $config = $loaded.Config
 if ($loaded.Problems.Count -gt 0) {
     Add-Result -Id 'GK01' -Name 'config' -Passed $false -Summary "$($loaded.Problems.Count) problem(s); no other check ran" -Detail $loaded.Problems
-    Write-Output '[FAIL] gate: gate.config.psd1 is not valid, so no other check ran'
+    Write-GateLine -Text '[FAIL] gate: gate.config.psd1 is not valid, so no other check ran'
     exit 1
 }
 $onList = @($config.Checks.Keys | Where-Object { $config.Checks[$PSItem] })
@@ -855,9 +887,9 @@ else {
 
 $failedChecks = @($results | Where-Object { -not $PSItem.Passed })
 if ($failedChecks.Count -gt 0) {
-    Write-Output "[FAIL] gate: $($failedChecks.Count) of $($results.Count) checks failed: $(($failedChecks | ForEach-Object { "$($PSItem.Id) $($PSItem.Name)" }) -join ', ')"
+    Write-GateLine -Text "[FAIL] gate: $($failedChecks.Count) of $($results.Count) checks failed: $(($failedChecks | ForEach-Object { "$($PSItem.Id) $($PSItem.Name)" }) -join ', ')"
     exit 1
 }
 
-Write-Output "[PASS] gate: all $($results.Count) checks passed"
+Write-GateLine -Text "[PASS] gate: all $($results.Count) checks passed"
 exit 0

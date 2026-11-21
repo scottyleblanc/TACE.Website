@@ -33,7 +33,7 @@ definitions:
           - >-
             /opt/pwsh/pwsh -NoProfile -Command
             "& ./tools/gate/Scripts/Install-GateTool.ps1 -Destination /tmp/gate-tools;
-            & ./tools/gate/Scripts/Invoke-Gate.ps1 -Unit -Base origin/${BITBUCKET_PR_DESTINATION_BRANCH};
+            & ./tools/gate/Scripts/Invoke-Gate.ps1 -Unit -Base origin/${BITBUCKET_PR_DESTINATION_BRANCH} -Timestamp;
             exit \$LASTEXITCODE"
 
 pipelines:

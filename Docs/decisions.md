@@ -326,3 +326,21 @@ the hook never runs (they need `-Base` or `-Unit`); a hook with no checks at all
 
 **Enforced by:** the gate tests "skips every check the Quick key lists, and only with
 -Quick" and "CF-003 fails a Quick entry for a check that always runs".
+
+## DEC-021 — CI output carries the time and each check's duration
+
+`Invoke-Gate.ps1 -Timestamp` starts every line the gate prints with the UTC time, as
+`yyyy-MM-ddTHH:mm:ssZ`, and ends each `[PASS]` and `[FAIL]` line with how long that
+check took, in seconds. The CI templates pass it; the pre-push hook does not.
+
+**Why:** a CI log is read after the fact, often to find which check made a run slow
+or when it stopped. Not every CI host puts a time on each line, and a time alone
+still means subtracting; the duration on the line answers it directly. UTC keeps runs
+from different machines comparable. Locally the run is watched as it happens, so the
+hook keeps the shorter lines.
+
+**Rules out:** timestamps on by default; changing the lines the gate reads from the
+static and unit test scripts, which it matches from the start of each line; local
+time.
+
+**Enforced by:** the gate tests under "Output with -Timestamp".
