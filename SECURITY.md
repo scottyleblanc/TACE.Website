@@ -74,7 +74,9 @@ The tracker and coach are the only components holding personal data. They are si
     `UpdateFunctionCode` on the econ Lambda only.
   - Workflows declare `permissions: id-token: write, contents: read`.
   - Branch protection on `main` blocks force pushes and deletion.
-  - Dependabot raises weekly updates for GitHub Actions and the theme submodule.
+  - Every workflow action is pinned to a full commit SHA, so a moved or compromised tag cannot
+    change what runs with the deploy role. Dependabot raises weekly updates for the pins and the
+    theme submodule; each one passes the gate before it can merge.
   - Since v3.4.0 the econ test suite runs before any deploy step; a failing test blocks the release.
   - Changes reach `main` only through a pull request whose `gate` check passes: a ruleset on `main`
     binds every user, the owner included, with no direct push. `gate.yml` runs on `pull_request`

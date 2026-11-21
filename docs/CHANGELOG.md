@@ -6,6 +6,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+- `Gate/message-patterns.psd1` — allows `support@github.com`, the address in every Dependabot commit's `Signed-off-by` line, so Dependabot pull requests can pass GK07.
+
+### Security
+- Every action in `deploy.yml`, `scheduled-rebuild.yml` and `coach-evals.yml` is pinned to a full commit SHA, as in `gate.yml`: `actions/checkout` v7.0.1, `actions/setup-python` v7.1.0, `peaceiris/actions-hugo` v3.3.0, `aws-actions/configure-aws-credentials` v6.3.0. Removes the Node.js 20 deprecation warning. Supersedes Dependabot PRs #8 and #2.
+
+---
+
+## [3.6.0] - 2026-11-21
+
 ### Added
 - Pull request gate: powershell-gate-kit as a squashed subtree at `tools/gate/`, configured in `Gate/gate.config.psd1`. `.github/workflows/gate.yml` runs it on every pull request into `main` (job `gate`); `Gate/hooks/pre-push` runs the quick checks before each push.
 - `Gate/Invoke-UnitTest.ps1` (gate check GK11): the offline econ tests and a Hugo build of the site, so both run before a merge instead of only in `deploy.yml`.

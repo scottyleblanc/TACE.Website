@@ -99,7 +99,8 @@
             Id      = 'CM-001'
             Title   = 'no email address outside the site domain and the example domains'
             Pattern = '[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}'
-            Allow   = '(?i)@tacedata\.ca$|@example\.(com|org|net)$|@users\.noreply\.github\.com$|^noreply@anthropic\.com$'
+            # support@github.com is the address in every Dependabot commit's Signed-off-by line.
+            Allow   = '(?i)@tacedata\.ca$|@example\.(com|org|net)$|@users\.noreply\.github\.com$|^noreply@anthropic\.com$|^support@github\.com$'
         }
     )
 }
