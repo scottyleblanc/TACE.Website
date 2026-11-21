@@ -6,6 +6,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+---
+
+## [3.6.1] - 2026-11-21
+
 ### Changed
 - PaperMod theme submodule `10d3dcc` → `154d006` (76 theme commits; the theme's CSS renames `.post-content` to `.md-content`). Supersedes Dependabot PR #7.
 - Posts' collaboration note now renders through the theme's `extend_post_content.html` hook; the copied `hugo/layouts/_default/single.html` is removed, so post pages take the theme's own layout and its `md-content` styling. Built output is unchanged apart from the theme's markup.
