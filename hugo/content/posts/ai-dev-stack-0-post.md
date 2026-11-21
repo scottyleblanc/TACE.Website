@@ -11,6 +11,8 @@ summary: "first post in the ai development stack series: before building a singl
 
 *This is the first post in a series documenting the build of an AI development stack — a set of layers placed around AI-generated code to make it as correct, secure, and supportable as possible.  The [project page](/projects/ai-dev-stack-proj/) covers the question and the full layer model.  This post is Stack 0: no layers yet, just the starting point they will be measured against.*
 
+*For a visual reference, see the [stack map](/projects/ai-dev-stack-map/): where each layer acts on a change, and the files behind it.*
+
 *In this post, "we" means me and Claude Code, the AI coding assistant I build with.*
 
 ---

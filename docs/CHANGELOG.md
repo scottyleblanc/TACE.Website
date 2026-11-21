@@ -27,6 +27,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Portfolio page — Stack 9 row in the AI Development Stack stage table.
 - Post `/posts/ai-dev-stack-10-post/` — "ai development stack: stack 10 — a gate another repository can use". Eleventh post in the series.
 - Portfolio page — Stack 10 row in the AI Development Stack stage table.
+- Page `/projects/ai-dev-stack-map/` — "ai development stack — the stack map": where each of the nine layers acts on a change, and the files behind each in TACE.Oracle.Admin and powershell-gate-kit. Kept out of the projects list; linked from the project page and from the top of each of the 11 posts in the series.
 
 ### Changed
 - Post `/posts/ai-dev-stack-10-post/`, project page `/projects/ai-dev-stack-proj/` and portfolio page — link the public template repository, powershell-gate-kit; the post states its MIT licence.
