@@ -1,0 +1,11 @@
+# Default gitleaks configuration for the gate (checks GK05 to GK07), gitleaks 8.30.1.
+#
+# The gitleaks default rules apply unchanged. A repository that needs more (an
+# allowlist for generated folders, extra rules) copies Templates/gitleaks.toml to its
+# root and names it in gate.config.psd1 under Gitleaks.
+#
+# A false positive in a committed file goes in .gitleaksignore by fingerprint, with a
+# comment giving the reason.
+
+[extend]
+useDefault = true
