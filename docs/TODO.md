@@ -267,7 +267,7 @@ and add test coverage that prevents the BoC ordering class of bug from recurring
 - [x] Merge, confirm `deploy.yml` deploys from the merge, tag v3.6.0
 - [x] [SEC] Pin every workflow action to a full commit SHA (`deploy.yml`, `scheduled-rebuild.yml`, `coach-evals.yml`); supersedes Dependabot PRs #8 and #2
 - [x] Allow Dependabot's `Signed-off-by` address in `Gate/message-patterns.psd1`, so its pull requests can pass GK07
-- [ ] Update the PaperMod theme submodule (supersedes Dependabot PR #7); keep `hugo/layouts/_default/single.html` in step with the theme's renamed `.md-content` class
+- [x] Update the PaperMod theme submodule (supersedes Dependabot PR #7); the copied `single.html` is replaced by the theme's `extend_post_content.html` hook, so posts get the renamed `.md-content` styling
 
 ---
 

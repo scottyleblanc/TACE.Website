@@ -1,0 +1,4 @@
+{{- /* PaperMod hook: rendered after a page's content, before its footer. Posts get the collaboration note. */ -}}
+{{- if eq .Section "posts" }}
+{{- partial "extend_article_footer.html" . }}
+{{- end }}
