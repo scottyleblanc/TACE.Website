@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(pwsh -NoProfile -File ./tools/gate/Scripts/Invoke-Gate.ps1*)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)"
+    ],
+    "deny": [
+      "Bash(git push *)",
+      "Bash(rm *)",
+      "Bash(rmdir *)",
+      "Read(~/.aws/**)",
+      "Read(~/.ssh/**)",
+      "Read(~/.claude/.credentials.json)",
+      "Bash(reg* add *)",
+      "Bash(reg* delete *)",
+      "Bash(reg* import *)",
+      "Bash(reg* copy *)",
+      "Bash(reg* restore *)",
+      "Bash(reg* load *)",
+      "Bash(reg* unload *)",
+      "Bash(regedit*)",
+      "PowerShell(reg* add *)",
+      "PowerShell(reg* delete *)",
+      "PowerShell(reg* import *)",
+      "PowerShell(reg* copy *)",
+      "PowerShell(reg* restore *)",
+      "PowerShell(reg* load *)",
+      "PowerShell(reg* unload *)",
+      "PowerShell(regedit*)",
+      "PowerShell(Set-* *HK*:*)",
+      "PowerShell(Set-* *Registry::*)",
+      "PowerShell(New-* *HK*:*)",
+      "PowerShell(New-* *Registry::*)",
+      "PowerShell(Remove-* *HK*:*)",
+      "PowerShell(Remove-* *Registry::*)",
+      "PowerShell(Rename-* *HK*:*)",
+      "PowerShell(Rename-* *Registry::*)",
+      "PowerShell(Clear-* *HK*:*)",
+      "PowerShell(Clear-* *Registry::*)",
+      "PowerShell(Copy-* *HK*:*)",
+      "PowerShell(Copy-* *Registry::*)",
+      "PowerShell(Move-* *HK*:*)",
+      "PowerShell(Move-* *Registry::*)"
+    ]
+  }
+}

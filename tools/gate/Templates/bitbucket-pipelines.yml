@@ -1,0 +1,42 @@
+# Runs the gate on every pull request in Bitbucket Pipelines. Copy to the repository
+# root as bitbucket-pipelines.yml.
+#
+# Every rule lives in tools/gate/Scripts/Invoke-Gate.ps1; this file only installs
+# PowerShell and the pinned tools and calls it.
+#
+# Hosted Pipelines runners are Linux. A repository whose unit tests need Windows runs
+# this on a self-hosted Windows runner, or leaves -Unit out here.
+#
+# [SEC] PowerShell is the release tarball, checked against a pinned SHA-256 before it
+# is unpacked; Install-GateTool.ps1 does the same for gitleaks. No repository variable
+# or secret is used.
+
+image: ubuntu:24.04
+
+clone:
+  depth: full
+
+definitions:
+  steps:
+    - step: &gate
+        name: gate
+        max-time: 30
+        script:
+          - apt-get update -qq && apt-get install -y -qq --no-install-recommends ca-certificates curl git libicu74 libssl3t64 libgssapi-krb5-2 > /dev/null
+          - PWSH_VERSION=7.6.10
+          - PWSH_SHA256=e261cabc91c78a9afe8d1e5f24731ab0d38204735ab2ec94b0af55102652e10d
+          - curl -sSfL -o /tmp/pwsh.tar.gz "https://github.com/PowerShell/PowerShell/releases/download/v${PWSH_VERSION}/powershell-${PWSH_VERSION}-linux-x64.tar.gz"
+          - echo "${PWSH_SHA256}  /tmp/pwsh.tar.gz" | sha256sum -c -
+          - mkdir -p /opt/pwsh && tar -xzf /tmp/pwsh.tar.gz -C /opt/pwsh && chmod +x /opt/pwsh/pwsh && rm /tmp/pwsh.tar.gz
+          # The clone may hold only the source branch: fetch the target for -Base.
+          - git fetch --quiet origin "+refs/heads/${BITBUCKET_PR_DESTINATION_BRANCH}:refs/remotes/origin/${BITBUCKET_PR_DESTINATION_BRANCH}"
+          - >-
+            /opt/pwsh/pwsh -NoProfile -Command
+            "& ./tools/gate/Scripts/Install-GateTool.ps1 -Destination /tmp/gate-tools;
+            & ./tools/gate/Scripts/Invoke-Gate.ps1 -Unit -Base origin/${BITBUCKET_PR_DESTINATION_BRANCH};
+            exit \$LASTEXITCODE"
+
+pipelines:
+  pull-requests:
+    '**':
+      - step: *gate

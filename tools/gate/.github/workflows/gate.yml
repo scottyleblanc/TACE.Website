@@ -1,0 +1,47 @@
+# Runs the kit's own gate on every pull request into main: every check, including the
+# ones the pre-push hook skips with -Quick (DEC-011, DEC-020). Make the job 'gate' a
+# required status check on main so a failing pull request cannot merge.
+#
+# Adapted from Templates/github/gate.yml: the kit runs its own Scripts/ folder, not
+# tools/gate/Scripts/, and has no unit tests, so -Unit is not passed.
+#
+# [SEC] Least privilege: a read-only token, no secrets, no write-capable trigger
+# (pull_request, never pull_request_target), the token is not kept in the checkout,
+# and the one action used is pinned to a full commit SHA.
+
+name: gate
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      # The pull request head, not GitHub's merge commit: the commit checks then see
+      # exactly the pull request's own commits. The full history gives origin/<base>
+      # for -Base.
+      - name: Check out the pull request head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install tools and run the gate
+        shell: pwsh
+        env:
+          GATE_BASE: origin/${{ github.base_ref }}
+        run: |
+          & ./Scripts/Install-GateTool.ps1 -Destination (Join-Path -Path $env:RUNNER_TEMP -ChildPath 'gate-tools')
+          & ./Scripts/Invoke-Gate.ps1 -Base $env:GATE_BASE
+          exit $LASTEXITCODE

@@ -1,0 +1,12 @@
+#!/bin/sh
+# Runs the kit's own gate before every push: Scripts/Invoke-Gate.ps1.
+#
+# Turn it on once in each clone:
+#   git config core.hooksPath .githooks
+#
+# The push is refused when any gate check fails. -Quick skips the checks the Quick key
+# in gate.config.psd1 lists (the analyzer and the static tests); the GitHub workflow
+# runs every check on each pull request (DEC-011, DEC-020).
+
+root="$(git rev-parse --show-toplevel)" || exit 1
+exec pwsh -NoProfile -File "$root/Scripts/Invoke-Gate.ps1" -Quick
