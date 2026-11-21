@@ -8,6 +8,11 @@ All notable changes to this kit are recorded here. The format follows
 
 ### Added
 
+- `Invoke-Gate.ps1 -Timestamp` starts every line the gate prints with the UTC time
+  (`yyyy-MM-ddTHH:mm:ssZ`) and ends each `[PASS]` and `[FAIL]` line with how long that
+  check took. `Templates/github/gate.yml`, `Templates/bitbucket-pipelines.yml` and the
+  kit's own workflow pass it; the pre-push hook does not (DEC-021). A target picks it
+  up by copying its CI template again, or adding `-Timestamp` to its own.
 - The `Quick` config key lists the checks `-Quick` skips, `GK03` by default; it may
   list GK03, GK04, GK09, GK14 and GK15 (CF-003, DEC-020). The config, tool, secret
   and permission checks always run.

@@ -81,13 +81,18 @@ six characters. Each other script writes one file named in `gate.config.psd1`:
 holds no host name, user name or outside path), and `Export-AgentInstruction.ps1` the
 agent instruction file (default `AGENTS.md`).
 
+With `-Timestamp`, which the CI templates pass, every line the gate prints starts with
+the UTC time and each `[PASS]` and `[FAIL]` line ends with that check's duration:
+`2026-11-21T15:52:41Z [PASS] GK03 analyzer : 0 new finding(s) over 27 files (43.2 s)`.
+The pre-push hook does not pass it (DEC-021).
+
 ## Current Security State
 
 | Item | Value |
 |---|---|
 | Version | unreleased (first tag pending) |
 | Last audit | not yet audited |
-| Tests | 203 static tests: 46 gate behaviour cases, 98 analyzer rule cases, 59 unbranded file checks |
+| Tests | 205 static tests: 48 gate behaviour cases, 98 analyzer rule cases, 59 unbranded file checks |
 | Open items | See [Docs/SECURITY.md](Docs/SECURITY.md#open-items) |
 
 ## Licence

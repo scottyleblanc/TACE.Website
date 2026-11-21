@@ -26,8 +26,10 @@ first-class; no release is tagged with one open.
       with tests
 - [x] AN-014 reads early exits from the structure, including `continue` and `break`;
       AN-017 accepts the class name in a class method (DEC-015, DEC-016), with tests
-- [ ] Make the `gate` job a required status check on `main` (a GitHub branch protection
-      setting, after the workflow's first run)
+- [x] Make the `gate` job a required status check on `main`: a ruleset on `main` that
+      requires a pull request and a passing `gate` check, with no bypass
+- [x] `Invoke-Gate.ps1 -Timestamp`: the UTC time on every line and each check's
+      duration, passed by the CI templates (DEC-021), with tests
 - [ ] Prove on a copy of an existing module repository hosted on Bitbucket: baseline
       the existing findings, the gate passes, run the Bitbucket template
 - [ ] [SEC] Pin the Bitbucket template's image by digest

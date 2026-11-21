@@ -662,4 +662,32 @@ Describe 'Invoke-Gate' -Tag 'Static' {
             $result.ExitCode | Should -Be 1
         }
     }
+
+    Context 'Output with -Timestamp' {
+
+        It 'starts every line with the UTC time and ends each [PASS] and [FAIL] line with the check''s duration' {
+            $repo   = New-FixtureRepo -Name 'timestamp' -Config $script:minimal
+            $result = Invoke-FixtureGate -Repo $repo -Argument @('-Timestamp')
+            $lines  = @($result.Output | Where-Object { $PSItem })
+            $lines.Count | Should -BeGreaterThan 0
+            foreach ($line in $lines) { $line | Should -Match '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z ' }
+            @($lines | Where-Object { $PSItem -match '\[(PASS|FAIL)\] GK\d\d ' }) | ForEach-Object { $PSItem | Should -Match ' \(\d+\.\d s\)$' }
+            @($lines | Where-Object { $PSItem -match '\[OFF\] ' }) | ForEach-Object { $PSItem | Should -Not -Match ' s\)$' }
+            $result.Text | Should -Match '\[PASS\] gate: all 8 checks passed'
+            $result.ExitCode | Should -Be 0
+        }
+
+        It 'adds no time and no duration without -Timestamp, and times the detail lines of a failure' {
+            $repo   = New-FixtureRepo -Name 'notimestamp' -Config $script:minimal
+            $result = Invoke-FixtureGate -Repo $repo
+            @($result.Output | Where-Object { $PSItem -match '^\d{4}-\d{2}-\d{2}T' }).Count | Should -Be 0
+            @($result.Output | Where-Object { $PSItem -match ' \(\d+\.\d s\)$' }).Count | Should -Be 0
+
+            $bad    = New-FixtureRepo -Name 'timestampfail' -Config "@{ SchemaVersion = 1; Unknown = 1 }"
+            $result = Invoke-FixtureGate -Repo $bad -Argument @('-Timestamp')
+            $result.Text | Should -Match '(?m)^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z \[FAIL\] GK01 config : '
+            $result.Text | Should -Match '(?m)^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z        gate\.config\.psd1: unknown key'
+            $result.ExitCode | Should -Be 1
+        }
+    }
 }

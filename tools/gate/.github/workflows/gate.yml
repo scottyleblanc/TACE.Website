@@ -43,5 +43,5 @@ jobs:
           GATE_BASE: origin/${{ github.base_ref }}
         run: |
           & ./Scripts/Install-GateTool.ps1 -Destination (Join-Path -Path $env:RUNNER_TEMP -ChildPath 'gate-tools')
-          & ./Scripts/Invoke-Gate.ps1 -Base $env:GATE_BASE
+          & ./Scripts/Invoke-Gate.ps1 -Base $env:GATE_BASE -Timestamp
           exit $LASTEXITCODE
