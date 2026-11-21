@@ -252,6 +252,22 @@ and add test coverage that prevents the BoC ordering class of bug from recurring
 
 ---
 
+## Pipeline — Pull Request Gate
+
+- [x] Add powershell-gate-kit as a squashed subtree at `tools/gate/`
+- [x] `Gate/gate.config.psd1` — Unit and Files on; Review, Version, Package, Evidence, Instructions off; analyzer covers `Gate/` only
+- [x] `Gate/message-patterns.psd1` — identifier formats only, no real values [SEC]
+- [x] `Gate/Invoke-UnitTest.ps1` — offline econ tests + Hugo build (GK11)
+- [x] `.claude/settings.json` + `Gate/agent-permissions.psd1` (GK08) [SEC]
+- [x] `Gate/hooks/pre-push`, `.github/workflows/gate.yml`, `.github/pull_request_template.md`
+- [x] Full gate passes locally; a seeded account ID and distribution ID fail GK15
+- [ ] `git config core.hooksPath Gate/hooks` in each clone that pushes
+- [ ] Open the pull request; the `gate` job passes in CI
+- [ ] [SEC] Ruleset on `main`: pull request required, `gate` status check required, no bypass (owner included), block force push and deletion
+- [ ] Merge, confirm `deploy.yml` deploys from the merge, tag
+
+---
+
 ## Security — Open Items (from SECURITY.md, 2026-11-11)
 
 Each maps to an entry in `SECURITY.md` → Open items. Not scheduled into a stage yet.

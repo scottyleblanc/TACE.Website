@@ -1,0 +1,21 @@
+# gitleaks configuration for this repository (gitleaks 8.30.1). Copy into the
+# repository, for example to Gate/gitleaks.toml, and name it in gate.config.psd1
+# under Gitleaks.
+#
+# The default rules apply unchanged. gitleaks scans a directory without reading
+# .gitignore, so folders that are generated and never committed are listed below.
+#
+# A false positive in a file that is committed goes in the ignore file by fingerprint
+# (.gitleaksignore at the root, or the file gate.config.psd1 names under
+# GitleaksIgnore), with a comment giving the reason. It never goes in a path entry
+# here.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Generated output: never committed"
+paths = [
+    '''(^|[\\/])Output[\\/]''',
+    '''(^|[\\/])TestResults[\\/]''',
+]

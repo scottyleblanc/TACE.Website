@@ -1,0 +1,15 @@
+#!/bin/sh
+# Runs the gate before every push: tools/gate/Scripts/Invoke-Gate.ps1.
+#
+# Copy into the repository and turn it on once in each clone: tools/gate/Docs/RUNBOOK.md,
+# ADOPT-5.
+#
+# The push is refused when any gate check fails. git push --no-verify skips the hook;
+# use it only when you know why the gate is failing and the push must still happen.
+#
+# -Quick skips the checks the Quick key in gate.config.psd1 lists, GK03 (the analyzer)
+# by default; CI runs them (DEC-011, DEC-020). Run the full gate locally by calling
+# Invoke-Gate.ps1 without -Quick.
+
+root="$(git rev-parse --show-toplevel)" || exit 1
+exec pwsh -NoProfile -File "$root/tools/gate/Scripts/Invoke-Gate.ps1" -Quick

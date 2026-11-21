@@ -1,0 +1,38 @@
+{
+  "type": "object",
+  "properties": {
+    "summary": {
+      "type": "string",
+      "description": "What the change does and how it was reviewed, in two to five sentences."
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "severity": { "type": "string", "enum": ["High", "Medium", "Low"] },
+          "step": { "type": "string", "enum": ["Intent", "Tests", "Implementation"] },
+          "rule": {
+            "type": "string",
+            "pattern": "^([A-Z]{1,4}-\\d{1,4}|none)$",
+            "description": "A rule ID from the repository's standards or the gate's rules, or none."
+          },
+          "file": {
+            "type": "string",
+            "description": "Path relative to the repository root, with forward slashes."
+          },
+          "line": { "type": "integer", "minimum": 0 },
+          "title": { "type": "string", "description": "The problem in one sentence." },
+          "detail": {
+            "type": "string",
+            "description": "What the code does, why it is wrong, and what would fix it."
+          }
+        },
+        "required": ["severity", "step", "rule", "file", "line", "title", "detail"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["summary", "findings"],
+  "additionalProperties": false
+}

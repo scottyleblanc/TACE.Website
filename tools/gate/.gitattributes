@@ -1,0 +1,12 @@
+# LF everywhere in the repository; Windows command files keep CRLF.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary files: never converted.
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.zip binary
+*.nupkg binary
