@@ -100,4 +100,5 @@ In progress.
 - [stack 8 — checking a release before it is made](/posts/ai-dev-stack-8-post/)
 - [stack 9 — turning missed defects into checks](/posts/ai-dev-stack-9-post/)
 - [stack 10 — a gate another repository can use](/posts/ai-dev-stack-10-post/)
+- [after stack 10 — the template's first release](/posts/ai-dev-stack-template-release-post/)
 - [the stack map — where each layer acts on a change, and the files behind it](/projects/ai-dev-stack-map/)

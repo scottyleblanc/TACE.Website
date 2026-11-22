@@ -133,7 +133,7 @@ The template will be proven on an existing module, one with its own build and ho
 | | |
 |---|---|
 | Previous | [Stack 9 — turning missed defects into checks](/posts/ai-dev-stack-9-post/) |
-| Next | Summary — to come |
+| Next | [After Stack 10 — the template's first release](/posts/ai-dev-stack-template-release-post/) |
 
 ---
 
