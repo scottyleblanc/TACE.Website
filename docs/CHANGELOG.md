@@ -6,6 +6,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+- Post `/posts/ai-dev-stack-template-release-post/` — "ai development stack: after stack 10 — the template's first release": what changed in powershell-gate-kit once it was used on an existing repository and on this site, and its first release, v0.1.0. Linked from the Stack 10 post's Next row and the project page's build series list.
+
 ---
 
 ## [3.6.1] - 2026-11-21
