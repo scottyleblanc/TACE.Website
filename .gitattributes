@@ -1,2 +1,7 @@
 # The pre-push hook runs under sh, which needs LF line endings on every platform.
 Gate/hooks/pre-push text eol=lf
+
+# Vendored third-party files are hashed in Gate/vendor-manifest.psd1; keep their bytes
+# exactly as published (no line-ending conversion) so the hashes match on every platform.
+hugo/static/js/vendor/** -text
+hugo/static/fonts/** -text

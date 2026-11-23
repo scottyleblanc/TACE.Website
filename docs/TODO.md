@@ -275,7 +275,7 @@ and add test coverage that prevents the BoC ordering class of bug from recurring
 
 Each maps to an entry in `SECURITY.md` → Open items. Not scheduled into a stage yet.
 
-- [ ] **O1 [SEC]** — Tighten main-site CSP: remove `'unsafe-inline'` scripts (hash/nonce or external file for the dashboard script), pin or self-host the jsdelivr Mermaid loader, add `frame-ancestors`, `object-src`, `base-uri`, `Permissions-Policy`; consider HSTS `preload`
+- [ ] **O1 [SEC]** — Tighten main-site CSP: remove `'unsafe-inline'` scripts (hash/nonce or external file for the dashboard script); consider HSTS `preload`. Self-hosted Mermaid, `frame-ancestors`, `object-src`, `base-uri` and `Permissions-Policy` done in Phase 1b (2026-11-22)
 - [ ] **O2 [SEC]** — Move Twelve Data and FRED keys from Lambda env vars to Secrets Manager
 - [ ] **O3 [SEC]** — Automated tests for tracker Lambdas: JWT-`sub` scoping, cross-user 404, cookie flags, `state` mismatch, Origin check
 - [ ] **O4 [SEC]** — Refresh or remove stale `app/train/config/*-execution-policy.json` snapshots (still show retired table + `Scan`)
@@ -298,7 +298,18 @@ Each maps to an entry in `SECURITY.md` → Open items. Not scheduled into a stag
 - [x] [SEC] Revoke the refresh token on logout, with tests (SR-07)
 - [x] [SEC] `coach-evals.yml`: read-only token, `persist-credentials: false` (SR-08)
 - [x] [SEC] `auth_guard.py`: no email address in the rejection message (SR-09, O6)
-- [ ] [OPERATOR] Redeploy `auth_guard.py` by hand after merge (it is not deployed by `deploy.yml`)
+- [x] [OPERATOR] Redeploy `auth_guard.py` by hand after merge (it is not deployed by `deploy.yml`) — 2026-11-23; logout revocation and sign-in verified, coach evals pass
+
+---
+
+## Security — 2026-11-22 Review, Phase 1b (main site CSP and third-party assets)
+
+- [x] [SEC] Vendor Mermaid 12.3.0 (single-file build) and load it only on pages with a diagram (SR-03)
+- [x] [SEC] Self-host DM Mono, Fraunces, Newsreader and IBM Plex Mono (Fontsource 5.3.0, SIL OFL) for the two standalone pages (SR-03)
+- [x] [SEC] `Gate/vendor-manifest.psd1` and a gate step that recomputes every vendored file's SHA-256 (SR-03)
+- [x] [SEC] Tightened CSP and `Permissions-Policy` in `security-headers.js`, `response-headers-policy.json` and `hugo.toml` (SR-03)
+- [ ] [OPERATOR] `hugo server` check: a Mermaid post, the econ dashboard and `/what-i-cant-tell-you/` render, fonts load, no CSP violations in the console
+- [ ] [OPERATOR] After merge, publish the updated `security-headers.js` CloudFront Function and verify the live CSP with curl
 
 ---
 

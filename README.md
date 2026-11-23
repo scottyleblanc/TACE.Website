@@ -35,7 +35,6 @@ This is not a consulting brochure. It is a working journal with proof of work.
 tacedata-site/
 ├── README.md                       ← this file
 ├── LICENSE                         ← All Rights Reserved
-├── SECURITY.md                     ← security mechanisms, open items, audit record, reporting
 ├── .claude/settings.json           ← AI agent permissions (checked by gate check GK08)
 ├── .github/
 │   ├── pull_request_template.md    ← pull request checklist
@@ -58,6 +57,7 @@ tacedata-site/
 │   └── rewrite-index-html.js           ← CloudFront Function source
 ├── docs/
 │   ├── TODO.md                     ← active build checklist
+│   ├── SECURITY.md                 ← security mechanisms, open items, audit record, reporting
 │   ├── STAGES.md                   ← phase definitions and current state
 │   ├── DECISIONS.md                ← key decisions and rationale
 │   ├── CHANGELOG.md                ← version history
@@ -128,7 +128,7 @@ squashed subtree at `tools/gate/` and configured in `Gate/gate.config.psd1`.
 | GK05, GK06 | gitleaks over the files and every new commit |
 | GK07, GK15 | No AWS, Cognito, OAuth or email identifier in a commit message or a tracked file (`Gate/message-patterns.psd1`) |
 | GK08 | `.claude/settings.json` matches `Gate/agent-permissions.psd1` |
-| GK11 | `Gate/Invoke-UnitTest.ps1`: the offline econ and tracker tests, a Hugo build of the site, and a check that every workflow `pip install` is hashed and runs before AWS credentials |
+| GK11 | `Gate/Invoke-UnitTest.ps1`: the offline econ and tracker tests, a Hugo build of the site, a check that every workflow `pip install` is hashed and runs before AWS credentials, and a SHA-256 check of every vendored file against `Gate/vendor-manifest.psd1` |
 
 The PowerShell analyzer (GK03) covers `Gate/` only. The version, package and
 second-model review checks are off; `Gate/gate.config.psd1` says why for each.
@@ -209,6 +209,6 @@ See `docs/STAGES.md` for the current phase and what is complete.
 Headline controls: no stored cloud credentials (GitHub OIDC pinned to `main`), private S3 origin
 behind CloudFront + WAF, Cognito allowlist with server-side PKCE and HttpOnly refresh cookie,
 per-user data isolation keyed on the verified JWT `sub`, AI coach key in Secrets Manager with a
-fail-closed medical rail. Full detail, open items and audit record: [`SECURITY.md`](SECURITY.md).
+fail-closed medical rail. Full detail, open items and audit record: [`docs/SECURITY.md`](docs/SECURITY.md).
 
 Updated at the end of every implementation stage.

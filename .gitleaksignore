@@ -1,0 +1,3 @@
+# gitleaks false positives, by <file>:<rule>:<line> (read by GK05 to GK07; tools/gate/Docs/rules.md SE-001).
+# Vendored Mermaid 12.3.0, pinned by hash in Gate/vendor-manifest.psd1: a minified property access matches the generic API-key rule.
+hugo/static/js/vendor/mermaid/12.3.0/mermaid.min.js:generic-api-key:634
