@@ -20,5 +20,7 @@ def _allowed_emails() -> set[str]:
 def handler(event: dict, context) -> dict:
     email = event.get("request", {}).get("userAttributes", {}).get("email", "").lower()
     if email not in _allowed_emails():
-        raise Exception(f"Access denied for {email}")
+        # [SEC] Fixed text: Cognito logs the trigger's exception message, and a
+        # rejected address belongs to a third party, so it is never included.
+        raise Exception("Access denied")
     return event

@@ -1,0 +1,3 @@
+# Top-level dependencies of the tracker-coach Lambda (CPython 3.12, x86_64 Linux).
+# Compile to requirements-coach.txt with hashes -- see the header of that file.
+anthropic==2.12.0

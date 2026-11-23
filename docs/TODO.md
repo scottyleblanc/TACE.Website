@@ -280,12 +280,25 @@ Each maps to an entry in `SECURITY.md` → Open items. Not scheduled into a stag
 - [ ] **O3 [SEC]** — Automated tests for tracker Lambdas: JWT-`sub` scoping, cross-user 404, cookie flags, `state` mismatch, Origin check
 - [ ] **O4 [SEC]** — Refresh or remove stale `app/train/config/*-execution-policy.json` snapshots (still show retired table + `Scan`)
 - [ ] **O5 [SEC]** — Configure throttling on the tracker HTTP API (coach route in particular)
-- [ ] **O6** — Drop the rejected email from `auth_guard.py`'s exception message
+- [x] **O6** — Drop the rejected email from `auth_guard.py`'s exception message (2026-11-22; redeploy by hand)
 - [ ] **O7** — Evaluate a WAF on the tracker distribution
 - [ ] **O8 [SEC]** — Invited-emails store replacing the static allowlist (already tracked in `app/train/docs/TODO.md`; listed here for completeness)
 - [ ] **O9** — Revisit PITR on the tracker plan table if write patterns change
 - [ ] **O10** — Decide on Lambda code signing; renew `security.txt` before 2027-04-04
 - [ ] Fix stale runbook note: `config/runbook-stage3-aws.md` says "WAF: disabled"; a WAF is attached to the main distribution
+
+---
+
+## Security — 2026-11-22 Review, Phase 1 (repository-only)
+
+- [x] [SEC] Hashed, pinned Python requirements for the coach SDK and the CI test packages; every workflow install uses `--require-hashes` and runs before AWS credentials (SR-02)
+- [x] [SEC] Gate check: workflow `pip install` must be hashed and before `configure-aws-credentials` (SR-02)
+- [x] [SEC] Dependabot `pip` entries for both requirements directories (SR-02)
+- [x] Correct the `/auth/*` routing record in `tracker_auth.py` and SECURITY.md mechanism 5 (SR-06)
+- [x] [SEC] Revoke the refresh token on logout, with tests (SR-07)
+- [x] [SEC] `coach-evals.yml`: read-only token, `persist-credentials: false` (SR-08)
+- [x] [SEC] `auth_guard.py`: no email address in the rejection message (SR-09, O6)
+- [ ] [OPERATOR] Redeploy `auth_guard.py` by hand after merge (it is not deployed by `deploy.yml`)
 
 ---
 

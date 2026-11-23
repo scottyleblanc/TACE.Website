@@ -45,7 +45,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install the test packages
-        run: python -m pip install --quiet pytest==9.1.1 boto3==1.43.91
+        run: python -m pip install --quiet --require-hashes -r .github/requirements/ci.txt
 
       - name: Set up Hugo
         uses: peaceiris/actions-hugo@d1c81a15d4e6dca7086a17b9c2565cb70fd576bf # v3.3.0

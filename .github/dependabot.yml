@@ -13,3 +13,18 @@ updates:
       interval: weekly
     labels:
       - dependencies
+
+  # Hashed requirements: the tracker-coach Lambda's SDK, and the CI test packages.
+  - package-ecosystem: pip
+    directory: /app/train/lambda
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+
+  - package-ecosystem: pip
+    directory: /.github/requirements
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
