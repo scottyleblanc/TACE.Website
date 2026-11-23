@@ -2,13 +2,13 @@
 # Regenerate from the repository root after changing ci.in:
 #   uv pip compile .github/requirements/ci.in --universal --python-version 3.12 --generate-hashes --no-header -o .github/requirements/ci.txt
 # [SEC] Every package is listed with its hashes, so CI installs with --require-hashes.
-boto3==1.43.91 \
-    --hash=sha256:5ff948cfac8bff72227930e0894a8542731e1998634d1ffd8a074c20a90af919 \
-    --hash=sha256:98643e500883bf6fcd13d04bb19da983bf97e5f1c600fc11470ce45437fa96b4
+boto3==1.44.8 \
+    --hash=sha256:099caf21553bbbfef118904aa02fadb8776a534704cf00bede0ed9f29a4da88e \
+    --hash=sha256:32f646d28ea25820ec210cfa48e2409bf06a4a529c8b243013fd045716e99826
     # via -r ci.in
-botocore==1.43.127 \
-    --hash=sha256:93bae360fb3a6f1b8e36593faa8bbbfa05b19866f7a37e9606a98f13394156f8 \
-    --hash=sha256:aa0e3188679a2164a2098a14ea9b59520520cb573aaee9999d852480691e134a
+botocore==1.44.10 \
+    --hash=sha256:6fc109eefd1b02899196499d798141be6df70ca257b399741adc9975569d41b6 \
+    --hash=sha256:d9c8602d24df40e366bbe80157c6f94155c91c367eaaabeceb26d47532f6baba
     # via
     #   boto3
     #   s3transfer

@@ -1,4 +1,4 @@
 # Test packages for the econ suite in gate.yml (Windows) and deploy.yml (Linux).
 # Compile to ci.txt with hashes -- see the header of that file.
 pytest==9.2.0
-boto3==1.43.91
+boto3==1.44.8
