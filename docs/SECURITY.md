@@ -84,8 +84,8 @@ The tracker and coach are the only components holding personal data. They are si
     Anthropic SDK is bundled into the coach's own zip, so deploying it needs code access only.
     `UpdateFunctionCode` still lets code that reaches `main` run with that function's execution
     role; that rests on the OIDC `main` pin and the pull-request gate.
-    **Pending:** the live role is replaced with this policy by hand after the bundled coach ships;
-    until that is confirmed, the live role holds broader grants than listed here.
+    Applied to the live role on 2026-11-23, replacing its two earlier inline policies, after the
+    coach's Lambda layer was detached; both deploy workflows ran green with it.
   - Workflows declare `permissions: id-token: write, contents: read`.
   - Branch protection on `main` blocks force pushes and deletion.
   - Every workflow action is pinned to a full commit SHA, so a moved or compromised tag cannot
@@ -157,8 +157,7 @@ The tracker and coach are the only components holding personal data. They are si
     only (v3.4.0, R6). Tests assert that neither API key nor upstream error text can reach the payload.
   - The deploy S3 sync excludes `data/*`, and the deploy role's policy explicitly denies writing or
     deleting anything under the site's `data/` prefix (mechanism 2), so a site deploy cannot overwrite
-    or delete the feed even if the exclusion were removed. **Pending** with the mechanism 2 role
-    change; until then only the sync exclusion protects the feed.
+    or delete the feed even if the exclusion were removed (live since 2026-11-23).
   - Bulk history repairs are dry-run by default and write a backup of original values before
     changing anything (`scripts/fix_boc_history.py`).
 - **Contract:** Nothing in `indicators.json` or the history files is sensitive on any code path,
@@ -290,7 +289,7 @@ Detailed reports are kept private. This is the public summary.
 | 2026-09-14 | v3.3.0 | Seed script | `--preserve-state` could overwrite a noted-but-unchecked day | Now also skips days carrying `notes`; backup taken before the live write. |
 | 2026-11-11 | v3.4.0 | Adversarial review — econ Lambda and dashboard | 12 (R1–R12): 2 HIGH, 3 MEDIUM, 7 LOW. `[SEC]`: R6 (upstream error text in public feed), R10 (notes `innerHTML`) | All resolved — see `docs/CHANGELOG.md` v3.4.0. |
 | 2026-11-11 | v3.4.0 | Full-repository review for this document | 10 open items (5 LOW, 5 ADV) | Recorded as O1–O10 above. Also corrected this file's previous claim that the repo had "no user accounts, no database, and no server-side code". |
-| 2026-11-22 | Unreleased | External (DNS, mail, headers, error handling) and full-repository review | 17 items (SR-01–SR-17) | In progress. Resolved in the repository: Python dependencies pinned with hashes and installed before AWS credentials, with a gate check and Dependabot (SR-02); `/auth/*` routing recorded correctly (SR-06); refresh token revoked on logout (SR-07); eval workflow token reduced to read-only (SR-08); rejected emails no longer logged — closes O6 (SR-09); Mermaid and web fonts self-hosted at pinned, hashed versions, Mermaid only on diagram pages, and a tightened CSP plus `Permissions-Policy` live at the edge — O1 narrowed (SR-03); the deploy role's policy narrowed to exact resources with the econ feed protected by an explicit deny, and the coach SDK bundled so the role needs no layer or configuration access (SR-01; pending the live role change). The other items (edge headers and error pages, canonical host, coach spend, DNS and mail) are scheduled. The auth-guard change takes effect when it is redeployed by hand. |
+| 2026-11-22 | Unreleased | External (DNS, mail, headers, error handling) and full-repository review | 17 items (SR-01–SR-17) | In progress. Resolved in the repository: Python dependencies pinned with hashes and installed before AWS credentials, with a gate check and Dependabot (SR-02); `/auth/*` routing recorded correctly (SR-06); refresh token revoked on logout (SR-07); eval workflow token reduced to read-only (SR-08); rejected emails no longer logged — closes O6 (SR-09); Mermaid and web fonts self-hosted at pinned, hashed versions, Mermaid only on diagram pages, and a tightened CSP plus `Permissions-Policy` live at the edge — O1 narrowed (SR-03); the deploy role's policy narrowed to exact resources with the econ feed protected by an explicit deny, and the coach SDK bundled so the role needs no layer or configuration access (SR-01; applied to the live role 2026-11-23). The other items (edge headers and error pages, canonical host, coach spend, DNS and mail) are scheduled. The auth-guard change takes effect when it is redeployed by hand. |
 
 ---
 
