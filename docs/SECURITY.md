@@ -69,9 +69,23 @@ The tracker and coach are the only components holding personal data. They are si
   - GitHub Actions assumes an AWS role via OIDC. The role trust policy requires audience
     `sts.amazonaws.com` **and** subject `repo:scottyleblanc/TACE.Website:ref:refs/heads/main` —
     only workflows on `main` of this repository can assume it.
-  - The deploy role is least-privilege: `PutObject`/`DeleteObject` on the site prefix only,
-    `ListBucket` on the one bucket, `CreateInvalidation` on the one distribution,
-    `UpdateFunctionCode` on the econ Lambda only.
+  - One deploy role serves `deploy.yml` and `scheduled-rebuild.yml` (the daily rebuild therefore
+    holds the tracker permissions too, by decision). Its policy, `config/iam-permissions-policy.json`,
+    is one statement per purpose with every resource an exact ARN:
+    - site: `PutObject`/`DeleteObject` on the site prefix, and `ListBucket` on the site bucket
+      limited to that prefix — no `GetObject`;
+    - an explicit **Deny** of `PutObject`/`DeleteObject` on the econ feed's `data/` prefix;
+    - tracker SPA: `PutObject`/`DeleteObject`/`ListBucket` on its own bucket;
+    - `CreateInvalidation` on the two distributions;
+    - `UpdateFunctionCode` on the five Lambdas it deploys (econ, tracker API, email, auth, coach).
+
+    It holds no `UpdateFunctionConfiguration`, no layer actions, no `iam:*` (including
+    `iam:PassRole`), nothing on the Cognito auth guard, and no `"Resource": "*"`. The coach's
+    Anthropic SDK is bundled into the coach's own zip, so deploying it needs code access only.
+    `UpdateFunctionCode` still lets code that reaches `main` run with that function's execution
+    role; that rests on the OIDC `main` pin and the pull-request gate.
+    **Pending:** the live role is replaced with this policy by hand after the bundled coach ships;
+    until that is confirmed, the live role holds broader grants than listed here.
   - Workflows declare `permissions: id-token: write, contents: read`.
   - Branch protection on `main` blocks force pushes and deletion.
   - Every workflow action is pinned to a full commit SHA, so a moved or compromised tag cannot
@@ -121,13 +135,12 @@ The tracker and coach are the only components holding personal data. They are si
     and `hugo/static/fonts/`, each with its licence, and listed with its SHA-256 in
     `Gate/vendor-manifest.psd1`; the pull-request gate fails on a changed or unlisted vendored file.
     Mermaid is loaded only on pages that contain a diagram.
-  - `config/security-headers.js` defines the tightened policy —
-    `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';
-    img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self';
-    form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests` — and a
-    `Permissions-Policy` denying geolocation, camera, microphone, payment and USB.
-    **Pending:** the live function is updated by hand and still serves the previous policy, which
-    also allows `cdn.jsdelivr.net`, until it is published.
+  - The CSP is `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self'
+    'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none';
+    base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests`, with a
+    `Permissions-Policy` denying geolocation, camera, microphone, payment and USB (published
+    2026-11-23 and verified with curl and in the browser). The function is published by hand, so a
+    change to `config/security-headers.js` takes effect only once it is published.
 - **Contract:** Content is reachable only through CloudFront over HTTPS, and every response carries
   the headers above. The CSP still allows `'unsafe-inline'` — see open item O1.
 
@@ -142,7 +155,10 @@ The tracker and coach are the only components holding personal data. They are si
   - The feed contains only public market data. When a source fails, the public `errors` value is a
     fixed `"source unavailable"`; upstream exception text (URLs, API error bodies) goes to CloudWatch
     only (v3.4.0, R6). Tests assert that neither API key nor upstream error text can reach the payload.
-  - The deploy S3 sync excludes `data/*`, so a site deploy can never overwrite or delete the feed.
+  - The deploy S3 sync excludes `data/*`, and the deploy role's policy explicitly denies writing or
+    deleting anything under the site's `data/` prefix (mechanism 2), so a site deploy cannot overwrite
+    or delete the feed even if the exclusion were removed. **Pending** with the mechanism 2 role
+    change; until then only the sync exclusion protects the feed.
   - Bulk history repairs are dry-run by default and write a backup of original values before
     changing anything (`scripts/fix_boc_history.py`).
 - **Contract:** Nothing in `indicators.json` or the history files is sensitive on any code path,
@@ -274,7 +290,7 @@ Detailed reports are kept private. This is the public summary.
 | 2026-09-14 | v3.3.0 | Seed script | `--preserve-state` could overwrite a noted-but-unchecked day | Now also skips days carrying `notes`; backup taken before the live write. |
 | 2026-11-11 | v3.4.0 | Adversarial review — econ Lambda and dashboard | 12 (R1–R12): 2 HIGH, 3 MEDIUM, 7 LOW. `[SEC]`: R6 (upstream error text in public feed), R10 (notes `innerHTML`) | All resolved — see `docs/CHANGELOG.md` v3.4.0. |
 | 2026-11-11 | v3.4.0 | Full-repository review for this document | 10 open items (5 LOW, 5 ADV) | Recorded as O1–O10 above. Also corrected this file's previous claim that the repo had "no user accounts, no database, and no server-side code". |
-| 2026-11-22 | Unreleased | External (DNS, mail, headers, error handling) and full-repository review | 17 items (SR-01–SR-17) | In progress. Resolved in the repository: Python dependencies pinned with hashes and installed before AWS credentials, with a gate check and Dependabot (SR-02); `/auth/*` routing recorded correctly (SR-06); refresh token revoked on logout (SR-07); eval workflow token reduced to read-only (SR-08); rejected emails no longer logged — closes O6 (SR-09); Mermaid and web fonts self-hosted at pinned, hashed versions, Mermaid only on diagram pages, and a tightened CSP plus `Permissions-Policy` defined for the edge — O1 narrowed (SR-03; live once the header function is published). The other items (deploy role, edge headers and error pages, canonical host, coach spend, DNS and mail) are scheduled. The auth-guard change takes effect when it is redeployed by hand. |
+| 2026-11-22 | Unreleased | External (DNS, mail, headers, error handling) and full-repository review | 17 items (SR-01–SR-17) | In progress. Resolved in the repository: Python dependencies pinned with hashes and installed before AWS credentials, with a gate check and Dependabot (SR-02); `/auth/*` routing recorded correctly (SR-06); refresh token revoked on logout (SR-07); eval workflow token reduced to read-only (SR-08); rejected emails no longer logged — closes O6 (SR-09); Mermaid and web fonts self-hosted at pinned, hashed versions, Mermaid only on diagram pages, and a tightened CSP plus `Permissions-Policy` live at the edge — O1 narrowed (SR-03); the deploy role's policy narrowed to exact resources with the econ feed protected by an explicit deny, and the coach SDK bundled so the role needs no layer or configuration access (SR-01; pending the live role change). The other items (edge headers and error pages, canonical host, coach spend, DNS and mail) are scheduled. The auth-guard change takes effect when it is redeployed by hand. |
 
 ---
 

@@ -308,8 +308,21 @@ Each maps to an entry in `SECURITY.md` → Open items. Not scheduled into a stag
 - [x] [SEC] Self-host DM Mono, Fraunces, Newsreader and IBM Plex Mono (Fontsource 5.3.0, SIL OFL) for the two standalone pages (SR-03)
 - [x] [SEC] `Gate/vendor-manifest.psd1` and a gate step that recomputes every vendored file's SHA-256 (SR-03)
 - [x] [SEC] Tightened CSP and `Permissions-Policy` in `security-headers.js`, `response-headers-policy.json` and `hugo.toml` (SR-03)
-- [ ] [OPERATOR] `hugo server` check: a Mermaid post, the econ dashboard and `/what-i-cant-tell-you/` render, fonts load, no CSP violations in the console
-- [ ] [OPERATOR] After merge, publish the updated `security-headers.js` CloudFront Function and verify the live CSP with curl
+- [x] [OPERATOR] `hugo server` check: a Mermaid post, the econ dashboard and `/what-i-cant-tell-you/` render, fonts load, no CSP violations in the console
+- [x] [OPERATOR] After merge, publish the updated `security-headers.js` CloudFront Function and verify the live CSP with curl — 2026-11-23; browser checks passed on the live site
+
+---
+
+## Security — 2026-11-22 Review, Phase 2 (deploy role)
+
+- [x] [SEC] Bundle the coach's Anthropic SDK into its zip; remove the layer and configuration steps from `deploy.yml` (SR-01)
+- [x] [SEC] `config/iam-permissions-policy.json` as the exact deploy-role policy, with an explicit deny on the econ feed (SR-01)
+- [x] `config/iam-trust-policy.json`: `StringEquals` on the OIDC `sub`
+- [ ] [OPERATOR] After merge and deploy: detach the layer from the coach and confirm the coach replies
+- [ ] [OPERATOR] Replace both inline policies with the new one; delete the coach policy
+- [ ] [OPERATOR] Run `scheduled-rebuild.yml` and a trivial `deploy.yml` change; every step succeeds
+- [ ] [OPERATOR] Update the private tracker runbook; mark the old deploy-policy steps superseded
+- [ ] Remove the Pending notes from SECURITY.md mechanisms 2 and 4
 
 ---
 
