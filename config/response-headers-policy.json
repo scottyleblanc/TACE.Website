@@ -26,7 +26,17 @@
         },
         "ContentSecurityPolicy": {
             "Override": true,
-            "ContentSecurityPolicy": "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self';"
+            "ContentSecurityPolicy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests"
         }
+    },
+    "CustomHeadersConfig": {
+        "Quantity": 1,
+        "Items": [
+            {
+                "Header": "Permissions-Policy",
+                "Value": "geolocation=(), camera=(), microphone=(), payment=(), usb=()",
+                "Override": true
+            }
+        ]
     }
 }

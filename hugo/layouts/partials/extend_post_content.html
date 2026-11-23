@@ -2,3 +2,10 @@
 {{- if eq .Section "posts" }}
 {{- partial "extend_article_footer.html" . }}
 {{- end }}
+{{- /* Mermaid loads only on pages with a diagram: render-codeblock-mermaid.html sets the flag while
+       .Content renders, which is before this hook runs. Not in the footer, which the theme caches
+       across pages. [SEC] Self-hosted, pinned and hashed (Gate/vendor-manifest.psd1). */ -}}
+{{- if .Store.Get "hasMermaid" }}
+<script src="{{ "js/vendor/mermaid/12.3.0/mermaid.min.js" | relURL }}" defer></script>
+<script src="{{ "js/mermaid-init.js" | relURL }}" defer></script>
+{{- end }}

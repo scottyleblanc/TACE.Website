@@ -16,6 +16,10 @@
     with --require-hashes, or comes after configure-aws-credentials in the same file.
     Shell line continuations are joined first; comment lines are skipped.
 
+    The vendor check recomputes the SHA-256 of every file listed in
+    Gate/vendor-manifest.psd1 and fails on a mismatch, a listed file that is missing, or a
+    file under one of its VendorRoots that is not listed.
+
     Python with pytest and boto3, and Hugo Extended, must be on PATH. The PaperMod theme
     submodule must be checked out (git submodule update --init).
 
@@ -114,6 +118,44 @@ else {
     $failures++
     $pipProblems | ForEach-Object { Write-Output "  $PSItem" }
     Write-Output "[FAIL] workflow pip installs ($($pipProblems.Count) problem(s))"
+}
+
+# Step 4: every vendored third-party file is listed in the manifest and matches its hash.
+# [SEC] The site's only third-party code is these pinned copies; a changed or unlisted
+# file means it would serve code nobody reviewed.
+$manifestPath    = Join-Path -Path $PSScriptRoot -ChildPath 'vendor-manifest.psd1'
+$manifest        = Import-PowerShellDataFile -LiteralPath $manifestPath
+$vendorProblems  = [System.Collections.Generic.List[string]]::new()
+$listed          = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+foreach ($entry in @($manifest.Files)) {
+    $null = $listed.Add($entry.Path)
+    $full = Join-Path -Path $repoRoot -ChildPath $entry.Path
+    if (-not (Test-Path -LiteralPath $full -PathType Leaf)) {
+        $vendorProblems.Add("missing: $($entry.Path)")
+        continue
+    }
+    $actual = (Get-FileHash -LiteralPath $full -Algorithm SHA256).Hash
+    if ($actual -ne $entry.Sha256) {
+        $vendorProblems.Add("hash mismatch: $($entry.Path)")
+    }
+}
+foreach ($root in @($manifest.VendorRoots)) {
+    $rootFull = Join-Path -Path $repoRoot -ChildPath $root
+    if (-not (Test-Path -LiteralPath $rootFull -PathType Container)) { continue }
+    foreach ($file in @(Get-ChildItem -LiteralPath $rootFull -File -Recurse)) {
+        $relative = [System.IO.Path]::GetRelativePath($repoRoot, $file.FullName) -replace '\\', '/'
+        if (-not $listed.Contains($relative)) {
+            $vendorProblems.Add("not in manifest: $relative")
+        }
+    }
+}
+if ($vendorProblems.Count -eq 0) {
+    Write-Output "[PASS] vendored files: $($listed.Count) match Gate/vendor-manifest.psd1"
+}
+else {
+    $failures++
+    $vendorProblems | ForEach-Object { Write-Output "  $PSItem" }
+    Write-Output "[FAIL] vendored files ($($vendorProblems.Count) problem(s))"
 }
 
 if ($failures -gt 0) { exit 1 }

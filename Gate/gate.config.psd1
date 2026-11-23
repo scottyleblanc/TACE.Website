@@ -52,8 +52,11 @@
 
     # GK15. tools/gate/ is the kit, checked by its own gate; its tests and templates
     # hold sample values on purpose. logo.svg holds its own generated element UUIDs.
+    # hugo/static/js/vendor/ is third-party code pinned by hash (Gate/vendor-manifest.psd1,
+    # checked in GK11); minified Mermaid holds numeric constants that match the account-ID
+    # format.
     Files = @{
-        Exclude = @('tools/gate/', 'hugo/static/logo.svg')
+        Exclude = @('tools/gate/', 'hugo/static/logo.svg', 'hugo/static/js/vendor/')
     }
 
     # The checks the pre-push hook (-Quick) skips; CI runs them.

@@ -12,6 +12,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 - `tracker_auth.py` docstring: `/auth/*` is served by API Gateway HTTP API routes with no authorizer, not a Lambda Function URL. SECURITY.md mechanism 5 records the routing and why.
+- `SECURITY.md` moved to `docs/SECURITY.md`, with the other project documents; GitHub still shows it as the repository's security policy from there. README links updated.
+- Mermaid loads from `extend_post_content.html` only on pages with a diagram (six today), instead of from the footer on every page. `extend_footer.html` is now empty: the theme caches the footer across pages, so it cannot carry per-page scripts.
+- `/projects/econ/interest-rate/` and `/what-i-cant-tell-you/` use self-hosted fonts through `/css/fonts.css`. The live CSP already blocked the Google Fonts they linked, so they rendered in fallback fonts; they now render in their intended fonts.
 
 ### Security
 - Hashed, fully pinned Python requirements: `app/train/lambda/requirements-coach.txt` (Anthropic SDK for the tracker-coach layer and the eval workflow) and `.github/requirements/ci.txt` (pytest and boto3 for `gate.yml` and `deploy.yml`, which had drifted apart), each compiled from a `.in` file. Every workflow installs with `--require-hashes`, and every install in `deploy.yml` now runs before `configure-aws-credentials`.
@@ -21,6 +24,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `coach-evals.yml` — `permissions: contents: read` and `persist-credentials: false` on the checkout.
 - `auth_guard.py` — the rejection message no longer contains the email address (closes SECURITY.md O6). Deployed by hand, not by `deploy.yml`.
 - `SECURITY.md` — status block, mechanisms 2 and 5, open items O3 and O6, and the 2026-11-22 audit record row.
+- Third-party assets self-hosted at pinned versions: Mermaid 12.3.0 (`hugo/static/js/vendor/mermaid/12.3.0/`, single-file build) and DM Mono, Fraunces, Newsreader and IBM Plex Mono from Fontsource 5.3.0 (`hugo/static/fonts/<family>/5.3.0/`, latin subset, only the faces the pages use, each with its SIL OFL licence). Replaces the unversioned jsDelivr Mermaid import and the Google Fonts links.
+- `Gate/vendor-manifest.psd1` — version, source package and SHA-256 of every vendored file. A new step in `Gate/Invoke-UnitTest.ps1` fails on a hash mismatch, a missing file or an unlisted file under the vendor roots. `.gitattributes` marks the roots `-text` so the hashes hold on every platform.
+- CSP tightened in `config/security-headers.js`, `config/response-headers-policy.json` and `hugo/hugo.toml` (dev server): `cdn.jsdelivr.net` removed; `connect-src 'self'`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `frame-ancestors 'self'` and `upgrade-insecure-requests` added (the dev copy omits the last, since `hugo server` is plain http). `Permissions-Policy` added in the same three places. The live CloudFront Function changes only when it is published by hand. SECURITY.md mechanism 3 and O1 updated.
 
 ---
 

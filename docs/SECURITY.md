@@ -116,8 +116,20 @@ The tracker and coach are the only components holding personal data. They are si
     `Referrer-Policy: strict-origin-when-cross-origin`. `config/response-headers-policy.json`
     is a reference only and is **not attached** (it conflicted with the WAF configuration).
   - A CloudFront WAF is attached; it rejects requests with no User-Agent (verified 2026-11-11).
+  - The site loads no script, style or font from a third-party host. Mermaid and the web fonts
+    used by the two standalone pages are vendored at pinned versions under `hugo/static/js/vendor/`
+    and `hugo/static/fonts/`, each with its licence, and listed with its SHA-256 in
+    `Gate/vendor-manifest.psd1`; the pull-request gate fails on a changed or unlisted vendored file.
+    Mermaid is loaded only on pages that contain a diagram.
+  - `config/security-headers.js` defines the tightened policy —
+    `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';
+    img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self';
+    form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests` — and a
+    `Permissions-Policy` denying geolocation, camera, microphone, payment and USB.
+    **Pending:** the live function is updated by hand and still serves the previous policy, which
+    also allows `cdn.jsdelivr.net`, until it is published.
 - **Contract:** Content is reachable only through CloudFront over HTTPS, and every response carries
-  the headers above. The current CSP is permissive — see open items.
+  the headers above. The CSP still allows `'unsafe-inline'` — see open item O1.
 
 ### 4. Econ data pipeline
 
@@ -237,7 +249,7 @@ Known gaps. Each is a real gap as of 2026-11-11; none is believed to be actively
 
 | # | Severity | Item |
 |---|---|---|
-| O1 | LOW | **Main site CSP is permissive.** `script-src` allows `'unsafe-inline'` and the whole `cdn.jsdelivr.net` host (any package on it). No `frame-ancestors`, `object-src` or `base-uri` directives, no `Permissions-Policy`, and HSTS without `preload`. The tracker site already has a strict policy that can serve as the model. Needs a hash/nonce or self-hosting plan for the inline dashboard script and the Mermaid loader. |
+| O1 | LOW | **Main site CSP allows `'unsafe-inline'` scripts and styles.** Third-party hosts are gone from the policy (mechanism 3), but the theme's inline scripts (theme toggle, menu), the econ dashboard's inline script and Mermaid's injected styles still need it. Removing it means moving those scripts to files or hashing them after `--minify`. HSTS has no `preload` (a separate decision). |
 | O2 | LOW | **Econ API keys (Twelve Data, FRED) are Lambda environment variables**, unlike the Anthropic key, which is in Secrets Manager. Both are free-tier, read-only market-data keys, but they are readable by anyone with `lambda:GetFunctionConfiguration`. |
 | O3 | LOW | **Tracker Lambda tests cover logout revocation and the auth guard only.** Authorisation, cross-user isolation and the rest of the cookie flow were verified by hand against real identities; nothing stops a regression there from shipping. `app/train/tests` (run by the gate and the deploy) is where the rest belongs. |
 | O4 | LOW | **Published IAM policy snapshots are out of date.** `app/train/config/*-execution-policy.json` still describe the retired single-table design with `Scan` grants. The live policies (per-table `Query`, no `Scan`) are documented privately, but the public snapshots are wrong and should be refreshed with placeholders or removed. |
@@ -262,7 +274,7 @@ Detailed reports are kept private. This is the public summary.
 | 2026-09-14 | v3.3.0 | Seed script | `--preserve-state` could overwrite a noted-but-unchecked day | Now also skips days carrying `notes`; backup taken before the live write. |
 | 2026-11-11 | v3.4.0 | Adversarial review — econ Lambda and dashboard | 12 (R1–R12): 2 HIGH, 3 MEDIUM, 7 LOW. `[SEC]`: R6 (upstream error text in public feed), R10 (notes `innerHTML`) | All resolved — see `docs/CHANGELOG.md` v3.4.0. |
 | 2026-11-11 | v3.4.0 | Full-repository review for this document | 10 open items (5 LOW, 5 ADV) | Recorded as O1–O10 above. Also corrected this file's previous claim that the repo had "no user accounts, no database, and no server-side code". |
-| 2026-11-22 | Unreleased | External (DNS, mail, headers, error handling) and full-repository review | 17 items (SR-01–SR-17) | In progress. Resolved in the repository: Python dependencies pinned with hashes and installed before AWS credentials, with a gate check and Dependabot (SR-02); `/auth/*` routing recorded correctly (SR-06); refresh token revoked on logout (SR-07); eval workflow token reduced to read-only (SR-08); rejected emails no longer logged — closes O6 (SR-09). The other items (site CSP and third-party assets, deploy role, edge headers and error pages, canonical host, coach spend, DNS and mail) are scheduled. The auth-guard change takes effect when it is redeployed by hand. |
+| 2026-11-22 | Unreleased | External (DNS, mail, headers, error handling) and full-repository review | 17 items (SR-01–SR-17) | In progress. Resolved in the repository: Python dependencies pinned with hashes and installed before AWS credentials, with a gate check and Dependabot (SR-02); `/auth/*` routing recorded correctly (SR-06); refresh token revoked on logout (SR-07); eval workflow token reduced to read-only (SR-08); rejected emails no longer logged — closes O6 (SR-09); Mermaid and web fonts self-hosted at pinned, hashed versions, Mermaid only on diagram pages, and a tightened CSP plus `Permissions-Policy` defined for the edge — O1 narrowed (SR-03; live once the header function is published). The other items (deploy role, edge headers and error pages, canonical host, coach spend, DNS and mail) are scheduled. The auth-guard change takes effect when it is redeployed by hand. |
 
 ---
 
