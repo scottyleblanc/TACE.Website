@@ -318,11 +318,13 @@ Each maps to an entry in `SECURITY.md` → Open items. Not scheduled into a stag
 - [x] [SEC] Bundle the coach's Anthropic SDK into its zip; remove the layer and configuration steps from `deploy.yml` (SR-01)
 - [x] [SEC] `config/iam-permissions-policy.json` as the exact deploy-role policy, with an explicit deny on the econ feed (SR-01)
 - [x] `config/iam-trust-policy.json`: `StringEquals` on the OIDC `sub`
-- [ ] [OPERATOR] After merge and deploy: detach the layer from the coach and confirm the coach replies
-- [ ] [OPERATOR] Replace both inline policies with the new one; delete the coach policy
-- [ ] [OPERATOR] Run `scheduled-rebuild.yml` and a trivial `deploy.yml` change; every step succeeds
-- [ ] [OPERATOR] Update the private tracker runbook; mark the old deploy-policy steps superseded
-- [ ] Remove the Pending notes from SECURITY.md mechanisms 2 and 4
+- [x] [OPERATOR] After merge and deploy: detach the layer from the coach and confirm the coach replies — 2026-11-23
+- [x] [OPERATOR] Replace both inline policies with the new one; delete the coach policy — 2026-11-23; trust policy applied too
+- [x] [OPERATOR] Run `scheduled-rebuild.yml` and a `deploy.yml` run; every step succeeds — 2026-11-23 (deploy re-run instead of a trivial change)
+- [x] [OPERATOR] Update the private tracker runbook; mark the old deploy-policy steps superseded
+- [x] Remove the Pending notes from SECURITY.md mechanisms 2 and 4
+- [ ] [OPERATOR] Optional: delete the unused coach layer versions
+- [ ] [OPERATOR] Identify the organization policy the IAM simulator reports on the coach's Lambda actions (details in the private runbook)
 
 ---
 
