@@ -2,7 +2,7 @@
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "S3PutDelete",
+      "Sid": "SiteSyncPutDelete",
       "Effect": "Allow",
       "Action": [
         "s3:PutObject",
@@ -11,27 +11,63 @@
       "Resource": "arn:aws:s3:::<S3_BUCKET_NAME>/tacedata-site/*"
     },
     {
-      "Sid": "S3List",
+      "Sid": "SiteSyncList",
       "Effect": "Allow",
       "Action": "s3:ListBucket",
       "Resource": "arn:aws:s3:::<S3_BUCKET_NAME>",
       "Condition": {
         "StringLike": {
-          "s3:prefix": "tacedata-site/*"
+          "s3:prefix": [
+            "tacedata-site/",
+            "tacedata-site/*"
+          ]
         }
       }
+    },
+    {
+      "Sid": "SiteProtectEconFeed",
+      "Effect": "Deny",
+      "Action": [
+        "s3:PutObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": "arn:aws:s3:::<S3_BUCKET_NAME>/tacedata-site/data/*"
+    },
+    {
+      "Sid": "TrackerSyncPutDelete",
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": "arn:aws:s3:::<TRACKER_S3_BUCKET>/*"
+    },
+    {
+      "Sid": "TrackerSyncList",
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::<TRACKER_S3_BUCKET>"
     },
     {
       "Sid": "CloudFrontInvalidation",
       "Effect": "Allow",
       "Action": "cloudfront:CreateInvalidation",
-      "Resource": "arn:aws:cloudfront::<AWS_ACCOUNT_ID>:distribution/<CLOUDFRONT_DISTRIBUTION_ID>"
+      "Resource": [
+        "arn:aws:cloudfront::<AWS_ACCOUNT_ID>:distribution/<CLOUDFRONT_DISTRIBUTION_ID>",
+        "arn:aws:cloudfront::<AWS_ACCOUNT_ID>:distribution/<TRACKER_DISTRIBUTION_ID>"
+      ]
     },
     {
       "Sid": "LambdaUpdateCode",
       "Effect": "Allow",
       "Action": "lambda:UpdateFunctionCode",
-      "Resource": "arn:aws:lambda:ca-central-1:<AWS_ACCOUNT_ID>:function:<ECON_LAMBDA_FUNCTION_NAME>"
+      "Resource": [
+        "arn:aws:lambda:ca-central-1:<AWS_ACCOUNT_ID>:function:<ECON_LAMBDA_FUNCTION_NAME>",
+        "arn:aws:lambda:ca-central-1:<AWS_ACCOUNT_ID>:function:<TRACKER_LAMBDA_API>",
+        "arn:aws:lambda:ca-central-1:<AWS_ACCOUNT_ID>:function:<TRACKER_LAMBDA_EMAIL>",
+        "arn:aws:lambda:ca-central-1:<AWS_ACCOUNT_ID>:function:<TRACKER_LAMBDA_AUTH>",
+        "arn:aws:lambda:ca-central-1:<AWS_ACCOUNT_ID>:function:<TRACKER_LAMBDA_COACH>"
+      ]
     }
   ]
 }
