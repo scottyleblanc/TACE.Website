@@ -6,11 +6,12 @@ refresh token is held only in an httpOnly, Secure, SameSite cookie that browser
 JavaScript can never read. The SPA keeps a short-lived access token in memory
 and re-mints it via /auth/refresh.
 
-Routes (Lambda Function URL behind CloudFront /auth/*, payload format 2.0):
+Routes (API Gateway HTTP API routes (no authorizer) behind CloudFront /auth/*,
+payload format 2.0):
   GET  /auth/login    -- start login: set PKCE/state tx cookie, 302 to Cognito
   GET  /auth/callback -- exchange code for tokens, set refresh cookie, 302 to app
   POST /auth/refresh  -- mint a new access token from the refresh cookie
-  GET  /auth/logout   -- clear the refresh cookie, 302 to Cognito logout
+  GET  /auth/logout   -- revoke the refresh token, clear the cookie, 302 to Cognito logout
 
 Environment:
   COGNITO_DOMAIN          Hosted UI base, e.g. https://<domain>.auth.<region>.amazoncognito.com
@@ -25,6 +26,8 @@ Environment:
 [SEC] No token, PKCE verifier, or OAuth state is ever returned to JS storage.
 [SEC] Refresh token lives only in __Secure-trk_rt (HttpOnly; Secure; SameSite=Strict; Path=/auth).
 [SEC] No token or authorization code is ever written to logs.
+[SEC] Logout revokes the refresh token at Cognito (best effort), so a copied
+      cookie stops working at logout instead of at its expiry.
 """
 
 import base64
@@ -127,6 +130,20 @@ def _token_request(params: dict) -> dict:
         return json.loads(resp.read().decode("utf-8"))
 
 
+def _revoke_request(refresh: str) -> None:
+    # Public client: client_id only, no secret. Requires token revocation to be
+    # enabled on the app client. The response body is not read or logged.
+    data = urllib.parse.urlencode({"token": refresh, "client_id": _CLIENT_ID}).encode("ascii")
+    req = urllib.request.Request(
+        f"{_COGNITO_DOMAIN}/oauth2/revoke",
+        data=data,
+        method="POST",
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    with urllib.request.urlopen(req, timeout=5):  # noqa: S310 - fixed Cognito host
+        pass
+
+
 # --- route handlers ----------------------------------------------------------
 
 def _handle_login() -> dict:
@@ -217,7 +234,15 @@ def _handle_refresh(event: dict) -> dict:
     return _json(200, body, cookies=cookies)
 
 
-def _handle_logout() -> dict:
+def _handle_logout(event: dict) -> dict:
+    refresh = _request_cookies(event).get(_RT_COOKIE)
+    if refresh:
+        try:
+            _revoke_request(refresh)
+        except OSError:
+            # Best effort (URLError, HTTPError and timeouts are all OSError): the
+            # cookie is still cleared and the user is still signed out of Cognito.
+            logger.info("auth logout: refresh token revocation failed")
     logout_url = (
         f"{_COGNITO_DOMAIN}/logout"
         f"?client_id={urllib.parse.quote(_CLIENT_ID, safe='')}"
@@ -249,5 +274,5 @@ def handler(event: dict, context) -> dict:
     if route == "refresh" and method == "POST":
         return _handle_refresh(event)
     if route == "logout" and method == "GET":
-        return _handle_logout()
+        return _handle_logout(event)
     return _json(404, {"error": "not_found"})

@@ -2,11 +2,11 @@
 
 | | |
 |---|---|
-| **Version** | v3.4.0 |
-| **Last review** | 2026-11-11 — full-repository review for this document, plus an adversarial review of the econ Lambda and dashboard |
-| **Findings resolved** | 12 of 12 from the 2026-11-11 econ review (2 HIGH, 3 MEDIUM, 7 LOW; 2 tagged `[SEC]`) |
-| **Open items** | 10 — see [Open items](#open-items) |
-| **Automated tests** | Econ Lambda: 83 offline (CI deploy gate) + 6 opt-in live. AI coach: 37 eval cases (CI on prompt changes). Tracker SPA: static id-consistency check. Tracker Lambdas: none — see open items. |
+| **Version** | v3.6.1 (plus unreleased changes — see `docs/CHANGELOG.md`) |
+| **Last review** | 2026-11-22 — external (DNS, mail, headers, error handling) and full-repository review; remediation in progress, see the audit record |
+| **Findings resolved** | 12 of 12 from the 2026-11-11 econ review; 2026-11-22 review: repository-only items resolved, remaining items scheduled |
+| **Open items** | 9 — see [Open items](#open-items) |
+| **Automated tests** | Econ Lambda: 89 offline (pull-request gate and deploy) + 6 opt-in live. Tracker Lambdas: 8 (logout token revocation, auth-guard error text; gate and deploy) — the wider suite is open item O3. AI coach: 37 eval cases (CI on prompt changes). Tracker SPA: static id-consistency check. |
 
 This document describes what is **built and running**, not what is planned. It is updated at the
 end of every implementation stage. Infrastructure identifiers (account IDs, bucket names, distribution
@@ -78,6 +78,14 @@ The tracker and coach are the only components holding personal data. They are si
     change what runs with the deploy role. Dependabot raises weekly updates for the pins and the
     theme submodule; each one passes the gate before it can merge.
   - Since v3.4.0 the econ test suite runs before any deploy step; a failing test blocks the release.
+    The tracker Lambda tests run in the same step.
+  - Every Python package a workflow installs comes from a fully pinned requirements file with
+    hashes (`--require-hashes`): `app/train/lambda/requirements-coach.txt` for the coach's Anthropic
+    SDK, shipped to the Lambda and used by the eval workflow, and `.github/requirements/ci.txt` for
+    the test packages. Every install runs before the job obtains AWS credentials, and only wheels
+    are accepted for the Lambda. `Gate/Invoke-UnitTest.ps1` fails a pull request that adds an
+    unhashed install or one after `configure-aws-credentials`. Dependabot raises weekly updates for
+    both files.
   - Changes reach `main` only through a pull request whose `gate` check passes: a ruleset on `main`
     binds every user, the owner included, with no direct push. `gate.yml` runs on `pull_request`
     (never `pull_request_target`) with a read-only token, no secrets and SHA-pinned actions; it runs
@@ -87,8 +95,10 @@ The tracker and coach are the only components holding personal data. They are si
     an AI agent working in the repository is denied `git push`, `rm`, registry changes and reading
     `~/.aws`, `~/.ssh` and its own credentials file.
   - The coach-evals workflow is the only one holding an API secret (Anthropic). It runs on
-    `pull_request` (paths-filtered) and manual dispatch, has no AWS access, and GitHub does not pass
-    repository secrets to pull requests from forks.
+    `pull_request` (paths-filtered) and manual dispatch, has no AWS access, declares
+    `permissions: contents: read`, does not keep the token in its checkout
+    (`persist-credentials: false`), and GitHub does not pass repository secrets to pull requests
+    from forks.
 - **Contract:** No cloud credential is stored in the repository or as a long-lived CI secret. A
   workflow on any branch other than `main`, or in a fork, cannot obtain AWS credentials. Nothing is
   deployed that did not pass the gate on a pull request.
@@ -134,7 +144,14 @@ The tracker and coach are the only components holding personal data. They are si
 - **How:**
   - Sign-in goes through the Cognito Hosted UI. A Cognito pre-token-generation trigger
     (`auth_guard.py`) rejects any account whose email is not on the allowlist **before** tokens are
-    issued; self sign-up is closed.
+    issued; self sign-up is closed. The rejection message is fixed text, so a rejected address is
+    never written to logs.
+  - `/auth/*` is served by API Gateway HTTP API routes with no authorizer (by design — they are
+    how a session starts), reached through the tracker's CloudFront `/auth/*` behaviour. A Lambda
+    Function URL is not used: the account's organization policies block them. The API's own
+    endpoint can also be called directly, bypassing CloudFront, but that grants no session: the
+    transaction and refresh cookies are host-only cookies for the tracker's domain, so a direct
+    caller never holds them, and every route that issues tokens requires one.
   - A backend-for-frontend Lambda (`tracker_auth.py`) runs the OAuth2 Authorization Code flow
     with PKCE (S256) entirely server-side. The PKCE verifier and `state` travel in a short-lived
     (10 min) `HttpOnly; Secure; SameSite=Lax` cookie; `state` is compared in constant time.
@@ -143,6 +160,10 @@ The tracker and coach are the only components holding personal data. They are si
     memory only and re-mints it via `POST /auth/refresh`.
   - `/auth/refresh` rejects any request whose `Origin` header is present and not the app origin
     (CSRF defence in depth on top of `SameSite=Strict`). Refresh-token rotation is honoured.
+  - Logout revokes the refresh token at Cognito (`/oauth2/revoke`; token revocation is enabled on
+    the app client) before clearing the cookie, so a copied refresh token stops working at logout
+    rather than at its 30-day expiry. Revocation is best effort: if Cognito cannot be reached, the
+    cookie is still cleared and the user is still signed out, and a fixed message is logged.
   - Auth responses are `Cache-Control: no-store`. No token, code or verifier is written to logs.
 - **Contract:** No credential is ever in `localStorage`, `sessionStorage` or a JS-readable cookie.
   An account not on the allowlist never receives a token.
@@ -218,10 +239,9 @@ Known gaps. Each is a real gap as of 2026-11-11; none is believed to be actively
 |---|---|---|
 | O1 | LOW | **Main site CSP is permissive.** `script-src` allows `'unsafe-inline'` and the whole `cdn.jsdelivr.net` host (any package on it). No `frame-ancestors`, `object-src` or `base-uri` directives, no `Permissions-Policy`, and HSTS without `preload`. The tracker site already has a strict policy that can serve as the model. Needs a hash/nonce or self-hosting plan for the inline dashboard script and the Mermaid loader. |
 | O2 | LOW | **Econ API keys (Twelve Data, FRED) are Lambda environment variables**, unlike the Anthropic key, which is in Secrets Manager. Both are free-tier, read-only market-data keys, but they are readable by anyone with `lambda:GetFunctionConfiguration`. |
-| O3 | LOW | **No automated tests for the tracker Lambdas.** Authorisation, cross-user isolation and the cookie flow were verified by hand against real identities; nothing stops a regression from shipping. The econ suite and the coach eval gate show the pattern to follow. |
+| O3 | LOW | **Tracker Lambda tests cover logout revocation and the auth guard only.** Authorisation, cross-user isolation and the rest of the cookie flow were verified by hand against real identities; nothing stops a regression there from shipping. `app/train/tests` (run by the gate and the deploy) is where the rest belongs. |
 | O4 | LOW | **Published IAM policy snapshots are out of date.** `app/train/config/*-execution-policy.json` still describe the retired single-table design with `Scan` grants. The live policies (per-table `Query`, no `Scan`) are documented privately, but the public snapshots are wrong and should be refreshed with placeholders or removed. |
 | O5 | LOW | **No API throttling configured on the tracker HTTP API.** It relies on API Gateway account defaults. Every coach call spends Anthropic credit; exposure is limited to allowlisted users today. |
-| O6 | ADV | `auth_guard.py` puts the rejected email address in its exception message, so rejected sign-in attempts write a third party's email into CloudWatch. |
 | O7 | ADV | **No WAF on the tracker distribution.** The main site has one. Cognito and the JWT authorizer carry access control there, so this is defence in depth only. |
 | O8 | ADV | **The allowlist is a static environment variable.** An invited-emails store is planned before any second user (tracked as `[SEC]` in `app/train/docs/TODO.md`). |
 | O9 | ADV | **Point-in-time recovery is disabled on the tracker plan table** — the owner's decision, since writes only happen during deliberate sessions. Bulk operations take a backup first instead. |
@@ -242,6 +262,7 @@ Detailed reports are kept private. This is the public summary.
 | 2026-09-14 | v3.3.0 | Seed script | `--preserve-state` could overwrite a noted-but-unchecked day | Now also skips days carrying `notes`; backup taken before the live write. |
 | 2026-11-11 | v3.4.0 | Adversarial review — econ Lambda and dashboard | 12 (R1–R12): 2 HIGH, 3 MEDIUM, 7 LOW. `[SEC]`: R6 (upstream error text in public feed), R10 (notes `innerHTML`) | All resolved — see `docs/CHANGELOG.md` v3.4.0. |
 | 2026-11-11 | v3.4.0 | Full-repository review for this document | 10 open items (5 LOW, 5 ADV) | Recorded as O1–O10 above. Also corrected this file's previous claim that the repo had "no user accounts, no database, and no server-side code". |
+| 2026-11-22 | Unreleased | External (DNS, mail, headers, error handling) and full-repository review | 17 items (SR-01–SR-17) | In progress. Resolved in the repository: Python dependencies pinned with hashes and installed before AWS credentials, with a gate check and Dependabot (SR-02); `/auth/*` routing recorded correctly (SR-06); refresh token revoked on logout (SR-07); eval workflow token reduced to read-only (SR-08); rejected emails no longer logged — closes O6 (SR-09). The other items (site CSP and third-party assets, deploy role, edge headers and error pages, canonical host, coach spend, DNS and mail) are scheduled. The auth-guard change takes effect when it is redeployed by hand. |
 
 ---
 

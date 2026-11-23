@@ -128,15 +128,16 @@ squashed subtree at `tools/gate/` and configured in `Gate/gate.config.psd1`.
 | GK05, GK06 | gitleaks over the files and every new commit |
 | GK07, GK15 | No AWS, Cognito, OAuth or email identifier in a commit message or a tracked file (`Gate/message-patterns.psd1`) |
 | GK08 | `.claude/settings.json` matches `Gate/agent-permissions.psd1` |
-| GK11 | `Gate/Invoke-UnitTest.ps1`: the offline econ tests and a Hugo build of the site |
+| GK11 | `Gate/Invoke-UnitTest.ps1`: the offline econ and tracker tests, a Hugo build of the site, and a check that every workflow `pip install` is hashed and runs before AWS credentials |
 
 The PowerShell analyzer (GK03) covers `Gate/` only. The version, package and
 second-model review checks are off; `Gate/gate.config.psd1` says why for each.
 
-One-time setup per machine and clone (needs PowerShell 7.6, Python 3.12 with `pytest` and
-`boto3`, and Hugo Extended):
+One-time setup per machine and clone (needs PowerShell 7.6, Python 3.12 with the test packages
+from `.github/requirements/ci.txt`, and Hugo Extended):
 
 ```powershell
+python -m pip install --require-hashes -r .github/requirements/ci.txt
 & ./tools/gate/Scripts/Install-GateTool.ps1 -Destination (Join-Path -Path $HOME -ChildPath 'gate-tools')
 git config core.hooksPath Gate/hooks
 ```

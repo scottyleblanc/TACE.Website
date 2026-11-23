@@ -28,10 +28,23 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Test econ Lambda
+      # [SEC] Every pip install runs before "Configure AWS credentials", from a hashed
+      # requirements file (--require-hashes); Gate/Invoke-UnitTest.ps1 enforces both.
+      - name: Test econ and tracker Lambdas
         run: |
-          pip install --quiet pytest boto3
+          python -m pip install --quiet --require-hashes -r .github/requirements/ci.txt
           python -m pytest app/econ -q
+          python -m pytest app/train -q
+
+      - name: Install Anthropic SDK for the tracker-coach layer
+        run: |
+          python -m pip install --require-hashes --no-deps -r app/train/lambda/requirements-coach.txt \
+            --platform manylinux2014_x86_64 \
+            --python-version 3.12 \
+            --implementation cp \
+            --only-binary=:all: \
+            --target layer/python \
+            --no-cache-dir
 
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@d1c81a15d4e6dca7086a17b9c2565cb70fd576bf # v3.3.0
@@ -106,15 +119,8 @@ jobs:
             --zip-file fileb://tracker-auth.zip \
             --region ca-central-1
 
-      - name: Build and publish Anthropic SDK layer for tracker-coach
+      - name: Publish Anthropic SDK layer for tracker-coach
         run: |
-          pip install anthropic \
-            --platform manylinux2014_x86_64 \
-            --python-version 3.12 \
-            --implementation cp \
-            --only-binary=:all: \
-            --target layer/python \
-            --no-cache-dir
           cd layer && zip -r ../anthropic-layer.zip python && cd ..
           LAYER_VERSION_ARN=$(aws lambda publish-layer-version \
             --layer-name tracker-coach-anthropic-sdk \

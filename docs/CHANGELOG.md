@@ -8,6 +8,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 - Post `/posts/ai-dev-stack-template-release-post/` — "ai development stack: after stack 10 — the template's first release": what changed in powershell-gate-kit once it was used on an existing repository and on this site, and its first release, v0.1.0. Linked from the Stack 10 post's Next row and the project page's build series list.
+- `app/train/tests/` — first tests for the tracker Lambdas (pytest, `app/train/pytest.ini`): logout token revocation and the auth guard's error text. Run by `Gate/Invoke-UnitTest.ps1` and by `deploy.yml` before any deploy step.
+
+### Changed
+- `tracker_auth.py` docstring: `/auth/*` is served by API Gateway HTTP API routes with no authorizer, not a Lambda Function URL. SECURITY.md mechanism 5 records the routing and why.
+
+### Security
+- Hashed, fully pinned Python requirements: `app/train/lambda/requirements-coach.txt` (Anthropic SDK for the tracker-coach layer and the eval workflow) and `.github/requirements/ci.txt` (pytest and boto3 for `gate.yml` and `deploy.yml`, which had drifted apart), each compiled from a `.in` file. Every workflow installs with `--require-hashes`, and every install in `deploy.yml` now runs before `configure-aws-credentials`.
+- `Gate/Invoke-UnitTest.ps1` — new step fails when a workflow `pip install` is not from a hashed requirements file or comes after `configure-aws-credentials`; also runs the tracker tests.
+- `.github/dependabot.yml` — weekly `pip` updates for both requirements directories.
+- `tracker_auth.py` — logout revokes the refresh token at Cognito (`/oauth2/revoke`, best effort) before clearing the cookie.
+- `coach-evals.yml` — `permissions: contents: read` and `persist-credentials: false` on the checkout.
+- `auth_guard.py` — the rejection message no longer contains the email address (closes SECURITY.md O6). Deployed by hand, not by `deploy.yml`.
+- `SECURITY.md` — status block, mechanisms 2 and 5, open items O3 and O6, and the 2026-11-22 audit record row.
 
 ---
 
