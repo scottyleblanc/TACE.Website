@@ -2,14 +2,13 @@
 # Regenerate from this directory after changing requirements-coach.in:
 #   uv pip compile requirements-coach.in --python-version 3.12 --python-platform x86_64-manylinux_2_17 --generate-hashes --no-header -o requirements-coach.txt
 # [SEC] Every package is listed with its hashes, so CI installs with --require-hashes --no-deps.
-
 annotated-types==0.8.0 \
     --hash=sha256:13b2beaad985e05e2d6407ee4c4f35590b11f8d693a258a561055cac8f64cab7 \
     --hash=sha256:f072f4d804ea359e4eaf198b1af7a8b0943881a87f31bb764f8bf219bb9419e0
     # via pydantic
-anthropic==2.12.0 \
-    --hash=sha256:571e6d250bcd6bbaf5fd5f3c764b8e11af9901ad2e44b025f8e773c6cc7a7173 \
-    --hash=sha256:8631e3880ee18b0f87ce61d5d08e67804200463cf27c4182024715e232c99ba6
+anthropic==2.14.0 \
+    --hash=sha256:5cf986851f61c0858ac88c6f7c28490369a68ff4a89c309849605b764da0664d \
+    --hash=sha256:afb02f4df8efba429ff769bbfd71340d8b244b41ba42c073a45cc307702549fe
     # via -r requirements-coach.in
 anyio==4.16.0 \
     --hash=sha256:59bb03251907983d1603d27c3087ddb1e93299ea2163adcdba37899a4fb12ffb \
@@ -311,8 +310,6 @@ typing-extensions==4.16.0 \
     --hash=sha256:dc983d19a509c94dba722ee6abd33940f7c05a89e243c47e907eb4db6f1a43e5
     # via
     #   anthropic
-    #   anyio
-    #   httpx2
     #   opentelemetry-api
     #   pydantic
     #   pydantic-core
